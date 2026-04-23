@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShopFlow Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Battambang:wght@400;700&family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="hero">
+      <div class="hero__top">
+        <div>
+          <p class="eyebrow" data-i18n="eyebrow">Daily shop overview</p>
+          <h1 data-i18n="heroTitle">A simple dashboard for your shop</h1>
+          <p class="hero__text" data-i18n="heroText">
+            See sales, cash, and stock in one place. Built to feel clear, calm, and easy on a phone.
+          </p>
+        </div>
+        <button class="language-toggle" id="languageToggle" type="button" aria-label="Toggle language">
+          ខ្មែរ
+        </button>
+      </div>
+
+      <div class="hero__stats">
+        <article class="stat-card stat-card--accent">
+          <p data-i18n="todaySales">Today sales</p>
+          <strong id="todaySalesValue">$1,240</strong>
+          <span data-i18n="salesHint">12 orders closed today</span>
+        </article>
+        <article class="stat-card">
+          <p data-i18n="cashOnHand">Cash on hand</p>
+          <strong id="cashOnHandValue">$3,480</strong>
+          <span data-i18n="cashHint">After expenses and payout</span>
+        </article>
+        <article class="stat-card">
+          <p data-i18n="lowStock">Low stock items</p>
+          <strong id="lowStockValue">08</strong>
+          <span data-i18n="stockHint">Time to refill soon</span>
+        </article>
+      </div>
+    </header>
+
+    <main class="dashboard-grid">
+      <section class="panel">
+        <div class="panel__head">
+          <div>
+            <p class="panel__eyebrow" data-i18n="salesSection">Sales</p>
+            <h2 data-i18n="quickSale">Quick sale</h2>
+          </div>
+          <span class="pill" data-i18n="fastEntry">Fast entry</span>
+        </div>
+
+        <form id="saleForm" class="form-grid">
+          <label>
+            <span data-i18n="productName">Product name</span>
+            <input id="saleProduct" type="text" value="Iced Coffee" data-i18n-placeholder="productPlaceholder">
+          </label>
+          <label>
+            <span data-i18n="qty">Qty</span>
+            <input id="saleQty" type="number" min="1" value="2">
+          </label>
+          <label>
+            <span data-i18n="price">Price</span>
+            <input id="salePrice" type="number" min="0" value="2.5" step="0.01">
+          </label>
+          <button class="primary-button" type="submit" data-i18n="addSale">Add sale</button>
+        </form>
+
+        <div class="list-card">
+          <div class="list-card__head">
+            <h3 data-i18n="recentSales">Recent sales</h3>
+            <span id="salesCount">3</span>
+          </div>
+          <div id="salesList" class="stack-list"></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel__head">
+          <div>
+            <p class="panel__eyebrow" data-i18n="moneySection">Money in / out</p>
+            <h2 data-i18n="cashFlow">Cash flow</h2>
+          </div>
+          <span class="pill pill--soft" data-i18n="easyTrack">Easy track</span>
+        </div>
+
+        <form id="cashForm" class="form-grid">
+          <label>
+            <span data-i18n="entryNote">Note</span>
+            <input id="cashNote" type="text" value="Electricity bill" data-i18n-placeholder="notePlaceholder">
+          </label>
+          <label>
+            <span data-i18n="amount">Amount</span>
+            <input id="cashAmount" type="number" min="0" value="45" step="0.01">
+          </label>
+          <label>
+            <span data-i18n="type">Type</span>
+            <select id="cashType">
+              <option value="in" data-i18n="moneyIn">Money in</option>
+              <option value="out" selected data-i18n="moneyOut">Money out</option>
+            </select>
+          </label>
+          <button class="primary-button" type="submit" data-i18n="saveEntry">Save entry</button>
+        </form>
+
+        <div class="cash-summary">
+          <article>
+            <p data-i18n="moneyIn">Money in</p>
+            <strong id="moneyInValue">$1,820</strong>
+          </article>
+          <article>
+            <p data-i18n="moneyOut">Money out</p>
+            <strong id="moneyOutValue">$580</strong>
+          </article>
+        </div>
+
+        <div class="list-card">
+          <div class="list-card__head">
+            <h3 data-i18n="todayEntries">Today entries</h3>
+            <span id="cashCount">3</span>
+          </div>
+          <div id="cashList" class="stack-list"></div>
+        </div>
+      </section>
+
+      <section class="panel panel--wide">
+        <div class="panel__head">
+          <div>
+            <p class="panel__eyebrow" data-i18n="stockSection">Stock count</p>
+            <h2 data-i18n="simpleStock">Simple stock watch</h2>
+          </div>
+          <span class="pill" data-i18n="mobileReady">Mobile ready</span>
+        </div>
+
+        <form id="stockForm" class="form-grid form-grid--stock">
+          <label>
+            <span data-i18n="itemName">Item name</span>
+            <input id="stockName" type="text" value="Milk" data-i18n-placeholder="stockPlaceholder">
+          </label>
+          <label>
+            <span data-i18n="currentCount">Current count</span>
+            <input id="stockCount" type="number" min="0" value="14">
+          </label>
+          <label>
+            <span data-i18n="warningAt">Warning at</span>
+            <input id="stockLimit" type="number" min="0" value="10">
+          </label>
+          <button class="primary-button" type="submit" data-i18n="updateStock">Update stock</button>
+        </form>
+
+        <div id="stockGrid" class="stock-grid"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
