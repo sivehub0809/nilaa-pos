@@ -1,38 +1,9 @@
-import { firebaseConfig, appSettings } from "./firebase-config.js";
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {
-  browserLocalPersistence,
-  getAuth,
-  onAuthStateChanged,
-  setPersistence,
-  signInWithEmailAndPassword,
-  signOut as firebaseSignOut
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  getDoc,
-  getDocs,
-  getFirestore,
-  onSnapshot,
-  orderBy,
-  query,
-  runTransaction,
-  serverTimestamp,
-  setDoc,
-  updateDoc,
-  where
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import {
-  getFunctions,
-  httpsCallable
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { appSettings, supabaseConfig } from "./supabase-config.js";
 
 const ADMIN_USERNAME = "nilaa-os0809$";
 const ADMIN_PASSWORD = "08090809";
-const MOCK_STORAGE_KEY = "nilaa-os-preview-store-v1";
+const MOCK_STORAGE_KEY = "nilaa-os-preview-store-v2";
 
 const state = {
   route: "orders",
@@ -165,7 +136,7 @@ function currentReservedQty(productId) {
 }
 
 function effectiveStock(product) {
-  return Number(product.stockQty || 0) - currentReservedQty(product.id);
+  return Number(product.stock_qty || product.stockQty || 0) - currentReservedQty(product.id);
 }
 
 function orderSummary(order) {
@@ -193,27 +164,25 @@ function switchAuthTab(mode) {
   elements.showRequestTab.classList.toggle("tab-button--active", !showLogin);
 }
 
-function setRoute(route) {
-  state.route = route;
-  Object.entries(elements.screens).forEach(([key, screen]) => {
-    screen.classList.toggle("hidden", key !== route);
-    screen.classList.toggle("screen--active", key === route);
-  });
-  elements.navButtons.forEach((button) => {
-    button.classList.toggle("nav-button--active", button.dataset.route === route);
-  });
-  elements.shopName.textContent = route === "orders" ? "ការបញ្ជាទិញ" : buttonLabel(route);
-}
-
 function buttonLabel(route) {
-  const labels = {
+  return {
     orders: "ការបញ្ជាទិញ",
     money: "លុយ",
     stock: "ស្តុក",
     reports: "របាយការណ៍",
     admin: "Admin"
-  };
-  return labels[route] || "nilaa-os";
+  }[route] || "nilaa-os";
+}
+
+function setRoute(route) {
+  state.route = route;
+  Object.entries(elements.screens).forEach(([key, screen]) => {
+    screen.classList.toggle("hidden", key !== route);
+  });
+  elements.navButtons.forEach((button) => {
+    button.classList.toggle("nav-button--active", button.dataset.route === route);
+  });
+  elements.shopName.textContent = route === "orders" ? "ការបញ្ជាទិញ" : buttonLabel(route);
 }
 
 function openDrawer(open) {
@@ -224,11 +193,7 @@ function renderAuth() {
   const loggedIn = Boolean(state.authUser && state.profile);
   elements.authShell.classList.toggle("hidden", loggedIn);
   elements.appShell.classList.toggle("hidden", !loggedIn);
-
-  if (!loggedIn) {
-    return;
-  }
-
+  if (!loggedIn) return;
   elements.welcomeLabel.textContent = `សួស្តី ${state.profile.username}`;
   elements.adminNavButton.classList.toggle("hidden", state.profile.role !== "admin");
   if (state.profile.role !== "admin" && state.route === "admin") {
@@ -239,20 +204,12 @@ function renderAuth() {
 function renderCart() {
   const subtotal = state.cart.reduce((sum, item) => sum + item.qty * item.price, 0);
   const fee = Number(elements.orderFee.value || 0);
-  const total = subtotal + fee;
-
   elements.cartCount.textContent = `${state.cart.length} មុខ`;
   elements.cartSubtotal.textContent = money(subtotal);
-  elements.cartTotal.textContent = money(total);
+  elements.cartTotal.textContent = money(subtotal + fee);
 
-  if (!state.cart.length) {
-    elements.cartList.innerHTML = blankState("មិនទាន់មានទំនិញក្នុងកន្ត្រកទេ");
-    return;
-  }
-
-  elements.cartList.innerHTML = state.cart
-    .map(
-      (item) => `
+  elements.cartList.innerHTML = state.cart.length
+    ? state.cart.map((item) => `
         <article class="cart-row">
           <div>
             <strong>${safeText(item.name)}</strong>
@@ -263,42 +220,31 @@ function renderCart() {
             <button class="delete-button" type="button" data-cart-id="${item.id}">លុប</button>
           </div>
         </article>
-      `
-    )
-    .join("");
+      `).join("")
+    : blankState("មិនទាន់មានទំនិញក្នុងកន្ត្រកទេ");
 }
 
 function renderMoney() {
-  const todaySales = state.orders.reduce((sum, order) => sum + order.total, 0);
-  const todayExpenses = state.expenses.reduce((sum, expense) => sum + expense.amount, 0);
-  const net = todaySales - todayExpenses;
-
+  const todaySales = state.orders.reduce((sum, order) => sum + Number(order.total || 0), 0);
+  const todayExpenses = state.expenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
   elements.todaySalesValue.textContent = money(todaySales);
   elements.todayExpenseValue.textContent = money(todayExpenses);
-  elements.todayNetValue.textContent = money(net);
+  elements.todayNetValue.textContent = money(todaySales - todayExpenses);
   elements.expenseCount.textContent = state.expenses.length;
-
-  if (!state.expenses.length) {
-    elements.expenseList.innerHTML = blankState("មិនទាន់មានចំណាយថ្ងៃនេះទេ");
-    return;
-  }
-
-  elements.expenseList.innerHTML = state.expenses
-    .map(
-      (expense) => `
+  elements.expenseList.innerHTML = state.expenses.length
+    ? state.expenses.map((expense) => `
         <article class="record-row">
           <div>
             <strong>${safeText(expense.note)}</strong>
-            <div class="meta-line">${safeText(formatDateTime(expense.createdAt))}</div>
+            <div class="meta-line">${safeText(formatDateTime(expense.created_at || expense.createdAt))}</div>
           </div>
           <div>
             <strong>${money(expense.amount)}</strong>
             <button class="delete-button" type="button" data-expense-id="${expense.id}">លុប</button>
           </div>
         </article>
-      `
-    )
-    .join("");
+      `).join("")
+    : blankState("មិនទាន់មានចំណាយថ្ងៃនេះទេ");
 }
 
 function renderProducts() {
@@ -309,102 +255,105 @@ function renderProducts() {
     .map((product) => `<option value="${safeText(product.name)}"></option>`)
     .join("");
 
-  if (!state.products.length) {
-    elements.productList.innerHTML = blankState("មិនទាន់មានទំនិញទេ");
-    return;
-  }
-
-  elements.productList.innerHTML = state.products
-    .map((product) => {
-      const left = effectiveStock(product);
-      const isLow = left <= Number(product.lowStockAt || 0);
-      return `
-        <article class="product-row">
-          <div>
-            <strong>${safeText(product.name)}</strong>
-            <div class="meta-line">តម្លៃ ${money(product.price)} • ស្តុកនៅសល់ ${left}</div>
-          </div>
-          <div>
-            <span class="tag ${isLow ? "tag--low" : ""}">${isLow ? "ជិតអស់" : "ធម្មតា"}</span>
-            <button class="delete-button" type="button" data-product-id="${product.id}">លុប</button>
-          </div>
-        </article>
-      `;
-    })
-    .join("");
+  elements.productList.innerHTML = state.products.length
+    ? state.products.map((product) => {
+        const left = effectiveStock(product);
+        const lowAt = Number(product.low_stock_at ?? product.lowStockAt ?? 0);
+        const isLow = left <= lowAt;
+        return `
+          <article class="product-row">
+            <div>
+              <strong>${safeText(product.name)}</strong>
+              <div class="meta-line">តម្លៃ ${money(product.price)} • ស្តុកនៅសល់ ${left}</div>
+            </div>
+            <div>
+              <span class="tag ${isLow ? "tag--low" : ""}">${isLow ? "ជិតអស់" : "ធម្មតា"}</span>
+              <button class="delete-button" type="button" data-product-id="${product.id}">លុប</button>
+            </div>
+          </article>
+        `;
+      }).join("")
+    : blankState("មិនទាន់មានទំនិញទេ");
 }
 
 function renderReports() {
-  const totalItems = state.orders.reduce(
-    (sum, order) => sum + (order.items || []).reduce((itemSum, item) => itemSum + item.qty, 0),
-    0
-  );
-  const lowStock = state.products.filter((product) => effectiveStock(product) <= Number(product.lowStockAt || 0));
-
+  const itemCount = state.orders.reduce((sum, order) => sum + (order.items || []).reduce((s, item) => s + item.qty, 0), 0);
+  const lowStock = state.products.filter((product) => effectiveStock(product) <= Number(product.low_stock_at ?? product.lowStockAt ?? 0));
   elements.reportOrderCount.textContent = state.orders.length;
-  elements.reportItemCount.textContent = totalItems;
+  elements.reportItemCount.textContent = itemCount;
   elements.reportLowStockCount.textContent = lowStock.length;
   elements.orderCount.textContent = state.orders.length;
   elements.lowStockLabel.textContent = lowStock.length;
-
   elements.orderList.innerHTML = state.orders.length
-    ? state.orders
-        .map(
-          (order) => `
-            <article class="record-row">
-              <div>
-                <strong>${safeText(order.invoiceNo)}</strong>
-                <div class="meta-line">${safeText(order.buyerName || "ភ្ញៀវ")} • ${safeText(orderSummary(order))}</div>
-              </div>
-              <div>
-                <strong>${money(order.total)}</strong>
-                <button class="delete-button" type="button" data-order-id="${order.id}">លុប</button>
-              </div>
-            </article>
-          `
-        )
-        .join("")
+    ? state.orders.map((order) => `
+        <article class="record-row">
+          <div>
+            <strong>${safeText(order.invoice_no || order.invoiceNo)}</strong>
+            <div class="meta-line">${safeText(order.buyer_name || order.buyerName || "ភ្ញៀវ")} • ${safeText(orderSummary(order))}</div>
+          </div>
+          <div>
+            <strong>${money(order.total)}</strong>
+            <button class="delete-button" type="button" data-order-id="${order.id}">លុប</button>
+          </div>
+        </article>
+      `).join("")
     : blankState("មិនទាន់មានការលក់ថ្ងៃនេះទេ");
-
   elements.lowStockList.innerHTML = lowStock.length
-    ? lowStock
-        .map(
-          (product) => `
-            <article class="record-row">
-              <div>
-                <strong>${safeText(product.name)}</strong>
-                <div class="meta-line">នៅសល់ ${effectiveStock(product)} • ព្រមាននៅ ${product.lowStockAt}</div>
-              </div>
-              <span class="tag tag--low">ជិតអស់</span>
-            </article>
-          `
-        )
-        .join("")
+    ? lowStock.map((product) => `
+        <article class="record-row">
+          <div>
+            <strong>${safeText(product.name)}</strong>
+            <div class="meta-line">នៅសល់ ${effectiveStock(product)} • ព្រមាននៅ ${product.low_stock_at ?? product.lowStockAt}</div>
+          </div>
+          <span class="tag tag--low">ជិតអស់</span>
+        </article>
+      `).join("")
     : blankState("ស្តុកមិនទាបទេ");
 }
 
 function renderUsers() {
   if (!state.profile || state.profile.role !== "admin") {
-    elements.userList.innerHTML = blankState("Admin ប៉ុណ្ណោះដែលអាចមើលបាន");
     elements.userCount.textContent = 0;
+    elements.userList.innerHTML = blankState("Admin ប៉ុណ្ណោះដែលអាចមើលបាន");
     return;
   }
-
   elements.userCount.textContent = state.users.length;
   elements.userList.innerHTML = state.users.length
-    ? state.users
-        .map(
-          (user) => `
-            <article class="record-row">
-              <div>
-                <strong>${safeText(user.username)}</strong>
-                <div class="meta-line">${safeText(user.role)} • ${safeText(user.status || "active")}</div>
-              </div>
-            </article>
-          `
-        )
-        .join("")
+    ? state.users.map((user) => `
+        <article class="record-row">
+          <div>
+            <strong>${safeText(user.username)}</strong>
+            <div class="meta-line">${safeText(user.role)} • ${safeText(user.status || "active")}</div>
+          </div>
+        </article>
+      `).join("")
     : blankState("មិនទាន់មានអ្នកប្រើទេ");
+}
+
+function formatDateTime(value) {
+  if (!value) return "";
+  const date = typeof value === "string" ? new Date(value) : new Date(value);
+  return Number.isNaN(date.getTime())
+    ? String(value)
+    : date.toLocaleString("en-GB", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+}
+
+function buildReceipt(order) {
+  return {
+    invoiceNo: order.invoice_no || order.invoiceNo,
+    buyerName: order.buyer_name || order.buyerName,
+    items: order.items || [],
+    subtotal: Number(order.subtotal || 0),
+    fee: Number(order.fee || 0),
+    total: Number(order.total || 0),
+    createdAtText: formatDateTime(order.created_at || order.createdAt)
+  };
 }
 
 function renderReceipt() {
@@ -412,22 +361,17 @@ function renderReceipt() {
     elements.receiptModal.classList.add("hidden");
     return;
   }
-
   elements.receiptModal.classList.remove("hidden");
   elements.receiptBuyer.textContent = `អ្នកទិញ: ${state.latestReceipt.buyerName || "ភ្ញៀវ"}`;
   elements.receiptDate.textContent = state.latestReceipt.createdAtText;
   elements.receiptInvoice.textContent = state.latestReceipt.invoiceNo;
-  elements.receiptItems.innerHTML = state.latestReceipt.items
-    .map(
-      (item) => `
-        <div class="receipt-row">
-          <span>${item.qty}</span>
-          <span>${safeText(item.name)}</span>
-          <span>${money(item.qty * item.price)}</span>
-        </div>
-      `
-    )
-    .join("");
+  elements.receiptItems.innerHTML = state.latestReceipt.items.map((item) => `
+      <div class="receipt-row">
+        <span>${item.qty}</span>
+        <span>${safeText(item.name)}</span>
+        <span>${money(item.qty * item.price)}</span>
+      </div>
+    `).join("");
   elements.receiptSubtotal.textContent = money(state.latestReceipt.subtotal);
   elements.receiptFee.textContent = money(state.latestReceipt.fee);
   elements.receiptTotal.textContent = money(state.latestReceipt.total);
@@ -435,9 +379,7 @@ function renderReceipt() {
 
 function renderAll() {
   renderAuth();
-  if (!state.authUser || !state.profile) {
-    return;
-  }
+  if (!state.authUser || !state.profile) return;
   elements.buyerName.value = state.currentBuyer;
   renderCart();
   renderMoney();
@@ -448,112 +390,77 @@ function renderAll() {
   setRoute(state.route);
 }
 
-function formatDateTime(value) {
-  if (!value) return "";
-  if (typeof value === "string") return value;
-  const date = value.toDate ? value.toDate() : new Date(value);
-  return date.toLocaleString("en-GB", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit"
-  });
+function closeReceipt() {
+  state.latestReceipt = null;
+  renderReceipt();
 }
 
-function buildReceipt(order) {
-  return {
-    invoiceNo: order.invoiceNo,
-    buyerName: order.buyerName,
-    items: order.items,
-    subtotal: order.subtotal,
-    fee: order.fee,
-    total: order.total,
-    createdAtText: formatDateTime(order.createdAt)
-  };
-}
-
-function normalizeFirestoreOrder(docSnap) {
-  const data = docSnap.data();
-  return { id: docSnap.id, ...data };
-}
-
-function normalizeFirestoreExpense(docSnap) {
-  const data = docSnap.data();
-  return { id: docSnap.id, ...data };
-}
-
-function normalizeFirestoreProduct(docSnap) {
-  const data = docSnap.data();
-  return { id: docSnap.id, ...data };
-}
-
-function normalizeFirestoreUser(docSnap) {
-  const data = docSnap.data();
-  return { id: docSnap.id, ...data };
+function makeDownload(data) {
+  if (data.html) {
+    const preview = window.open("", "_blank", "width=420,height=720");
+    if (!preview) {
+      window.alert("សូមអនុញ្ញាត popup ដើម្បី print receipt");
+      return;
+    }
+    preview.document.open();
+    preview.document.write(data.html);
+    preview.document.close();
+    preview.focus();
+    setTimeout(() => preview.print(), 400);
+    return;
+  }
+  if (data.url) {
+    window.open(data.url, "_blank", "noreferrer");
+  }
 }
 
 function createMockBackend() {
   const listeners = new Set();
-
   const seed = () => ({
     sessionUserId: null,
-    shops: [
-      { id: "shop-admin", name: "Nilaa Main Shop", status: "active", createdAt: new Date().toISOString() }
-    ],
-    users: [
-      {
-        id: "admin-user",
-        username: ADMIN_USERNAME,
-        password: ADMIN_PASSWORD,
-        role: "admin",
-        shopId: "shop-admin",
-        shopName: "Nilaa Main Shop",
-        status: "active",
-        createdAt: new Date().toISOString()
-      }
-    ],
+    shops: [{ id: "shop-admin", name: "Nilaa Main Shop", status: "active", created_at: new Date().toISOString() }],
+    users: [{
+      id: "admin-user",
+      username: ADMIN_USERNAME,
+      password: ADMIN_PASSWORD,
+      role: "admin",
+      shop_id: "shop-admin",
+      status: "active",
+      created_at: new Date().toISOString()
+    }],
     products: [
-      { id: crypto.randomUUID(), shopId: "shop-admin", name: "កាហ្វេទឹកកក", price: 1.5, stockQty: 20, lowStockAt: 5 },
-      { id: crypto.randomUUID(), shopId: "shop-admin", name: "តែទឹកដោះគោ", price: 2, stockQty: 15, lowStockAt: 5 }
+      { id: crypto.randomUUID(), shop_id: "shop-admin", name: "កាហ្វេទឹកកក", price: 1.5, stock_qty: 20, low_stock_at: 5 },
+      { id: crypto.randomUUID(), shop_id: "shop-admin", name: "តែទឹកដោះគោ", price: 2, stock_qty: 15, low_stock_at: 5 }
     ],
     expenses: [],
     orders: []
   });
-
   const load = () => JSON.parse(localStorage.getItem(MOCK_STORAGE_KEY) || "null") || seed();
   const save = (store) => localStorage.setItem(MOCK_STORAGE_KEY, JSON.stringify(store));
   const notify = async () => {
     const store = load();
     const user = store.users.find((item) => item.id === store.sessionUserId) || null;
     for (const callback of listeners) {
-      await callback(user ? { uid: user.id, username: user.username } : null);
+      await callback(user ? { id: user.id, email: usernameToEmail(user.username) } : null);
     }
   };
-
   return {
     mode: "preview",
     async init() {
-      if (!localStorage.getItem(MOCK_STORAGE_KEY)) {
-        save(seed());
-      }
-      hideSetupBanner();
-      showSetupBanner("Preview mode is active. Add Firebase config and deploy to Firebase Hosting for real production auth, database, and PDF functions.");
-      await notify();
+      if (!localStorage.getItem(MOCK_STORAGE_KEY)) save(seed());
+      showSetupBanner("Preview mode is active. Add Supabase URL and anon key, then run the SQL in supabase/schema.sql to move to real production.");
     },
     onAuthChange(callback) {
       listeners.add(callback);
       const store = load();
       const user = store.users.find((item) => item.id === store.sessionUserId) || null;
-      callback(user ? { uid: user.id, username: user.username } : null);
-      return () => listeners.delete(callback);
+      callback(user ? { id: user.id, email: usernameToEmail(user.username) } : null);
+      return { unsubscribe: () => listeners.delete(callback) };
     },
     async signIn(username, password) {
       const store = load();
       const user = store.users.find((item) => item.username === username && item.password === password && item.status !== "disabled");
-      if (!user) {
-        throw new Error("ឈ្មោះអ្នកប្រើ ឬ ពាក្យសម្ងាត់មិនត្រឹមត្រូវ");
-      }
+      if (!user) throw new Error("ឈ្មោះអ្នកប្រើ ឬ ពាក្យសម្ងាត់មិនត្រឹមត្រូវ");
       store.sessionUserId = user.id;
       save(store);
       await notify();
@@ -566,89 +473,66 @@ function createMockBackend() {
     },
     async getProfile(uid) {
       const store = load();
-      return store.users.find((item) => item.id === uid) || null;
+      const user = store.users.find((item) => item.id === uid);
+      return user ? { id: user.id, username: user.username, role: user.role, shop_id: user.shop_id, status: user.status } : null;
     },
     async getShop(shopId) {
       const store = load();
       return store.shops.find((item) => item.id === shopId) || null;
     },
-    async subscribeProducts(shopId, callback) {
+    async fetchDashboard(shopId, role) {
       const store = load();
-      callback(store.products.filter((item) => item.shopId === shopId));
-      return () => {};
-    },
-    async subscribeExpenses(shopId, callback) {
-      const store = load();
-      callback(store.expenses.filter((item) => item.shopId === shopId && item.date === todayKey()).reverse());
-      return () => {};
-    },
-    async subscribeOrders(shopId, callback) {
-      const store = load();
-      callback(store.orders.filter((item) => item.shopId === shopId && item.date === todayKey()).reverse());
-      return () => {};
-    },
-    async subscribeUsers(shopId, callback) {
-      const store = load();
-      callback(shopId === "all" ? store.users : store.users.filter((item) => item.shopId === shopId));
-      return () => {};
+      return {
+        products: store.products.filter((item) => item.shop_id === shopId),
+        expenses: store.expenses.filter((item) => item.shop_id === shopId && item.date === todayKey()).reverse(),
+        orders: store.orders.filter((item) => item.shop_id === shopId && item.date === todayKey()).reverse(),
+        users: role === "admin" ? store.users : store.users.filter((item) => item.shop_id === shopId)
+      };
     },
     async saveProduct(shopId, payload) {
       const store = load();
-      const existing = store.products.find((item) => item.shopId === shopId && item.name.toLowerCase() === payload.name.toLowerCase());
-      if (existing) {
-        Object.assign(existing, payload);
-      } else {
-        store.products.push({ id: crypto.randomUUID(), shopId, ...payload });
-      }
+      const existing = store.products.find((item) => item.shop_id === shopId && item.name.toLowerCase() === payload.name.toLowerCase());
+      if (existing) Object.assign(existing, payload);
+      else store.products.push({ id: crypto.randomUUID(), shop_id: shopId, ...payload });
       save(store);
     },
     async deleteProduct(shopId, productId) {
       const store = load();
-      store.products = store.products.filter((item) => !(item.shopId === shopId && item.id === productId));
+      store.products = store.products.filter((item) => !(item.shop_id === shopId && item.id === productId));
       save(store);
     },
     async createExpense(shopId, payload, profile) {
       const store = load();
-      store.expenses.push({
-        id: crypto.randomUUID(),
-        shopId,
-        note: payload.note,
-        amount: payload.amount,
-        date: todayKey(),
-        createdAt: new Date().toISOString(),
-        createdBy: profile.username
-      });
+      store.expenses.push({ id: crypto.randomUUID(), shop_id: shopId, note: payload.note, amount: payload.amount, created_by: profile.username, created_at: new Date().toISOString(), date: todayKey() });
       save(store);
     },
     async deleteExpense(shopId, expenseId) {
       const store = load();
-      store.expenses = store.expenses.filter((item) => !(item.shopId === shopId && item.id === expenseId));
+      store.expenses = store.expenses.filter((item) => !(item.shop_id === shopId && item.id === expenseId));
       save(store);
     },
     async checkout(shopId, payload, profile) {
       const store = load();
-      const invoiceNo = `#${String(store.orders.length + 1).padStart(4, "0")}`;
-      payload.items.forEach((cartItem) => {
-        const product = store.products.find((item) => item.shopId === shopId && item.id === cartItem.productId);
-        if (product) {
-          if (product.stockQty < cartItem.qty) {
-            throw new Error(`ស្តុកមិនគ្រប់សម្រាប់ ${cartItem.name}`);
-          }
-          product.stockQty -= cartItem.qty;
-        }
+      for (const item of payload.items) {
+        const product = store.products.find((row) => row.id === item.productId && row.shop_id === shopId);
+        if (!product || product.stock_qty < item.qty) throw new Error(`ស្តុកមិនគ្រប់សម្រាប់ ${item.name}`);
+      }
+      payload.items.forEach((item) => {
+        const product = store.products.find((row) => row.id === item.productId && row.shop_id === shopId);
+        product.stock_qty -= item.qty;
       });
       const order = {
         id: crypto.randomUUID(),
-        shopId,
-        invoiceNo,
-        buyerName: payload.buyerName,
+        shop_id: shopId,
+        invoice_no: `#${String(store.orders.length + 1).padStart(4, "0")}`,
+        buyer_name: payload.buyerName,
         items: payload.items,
         subtotal: payload.subtotal,
         fee: payload.fee,
         total: payload.total,
         status: "completed",
-        createdBy: profile.username,
-        createdAt: new Date().toISOString(),
+        created_by: profile.username,
+        created_at: new Date().toISOString(),
         date: todayKey()
       };
       store.orders.push(order);
@@ -657,302 +541,188 @@ function createMockBackend() {
     },
     async deleteOrder(shopId, orderId) {
       const store = load();
-      const order = store.orders.find((item) => item.shopId === shopId && item.id === orderId);
+      const order = store.orders.find((item) => item.shop_id === shopId && item.id === orderId);
       if (order) {
         order.items.forEach((item) => {
-          const product = store.products.find((productRow) => productRow.id === item.productId);
-          if (product) {
-            product.stockQty += item.qty;
-          }
+          const product = store.products.find((row) => row.id === item.productId);
+          if (product) product.stock_qty += item.qty;
         });
       }
-      store.orders = store.orders.filter((item) => !(item.shopId === shopId && item.id === orderId));
+      store.orders = store.orders.filter((item) => !(item.shop_id === shopId && item.id === orderId));
       save(store);
     },
     async createUser(payload, profile) {
-      if (profile.role !== "admin") {
-        throw new Error("មានតែ admin ប៉ុណ្ណោះ");
-      }
+      if (profile.role !== "admin") throw new Error("មានតែ admin ប៉ុណ្ណោះ");
       const store = load();
       const shopId = crypto.randomUUID();
-      const userId = crypto.randomUUID();
-      store.shops.push({ id: shopId, name: payload.shopName, status: "active", createdAt: new Date().toISOString() });
-      store.users.push({
-        id: userId,
-        username: payload.username,
-        password: payload.password,
-        role: payload.role,
-        shopId,
-        shopName: payload.shopName,
-        status: "active",
-        createdAt: new Date().toISOString()
-      });
+      store.shops.push({ id: shopId, name: payload.shopName, status: "active", created_at: new Date().toISOString() });
+      store.users.push({ id: crypto.randomUUID(), username: payload.username, password: payload.password, role: payload.role, shop_id: shopId, status: "active", created_at: new Date().toISOString() });
       save(store);
     },
     async generateReceiptPdf(receipt) {
       const html = `
-        <!DOCTYPE html>
-        <html lang="km">
-        <head>
-          <meta charset="UTF-8">
-          <style>
-            body { font-family: Arial, sans-serif; padding: 20px; width: 300px; }
-            h1 { text-align: center; text-transform: uppercase; margin: 0; }
-            p { margin: 4px 0; text-align: center; }
-            .divider { border-top: 1px dashed #666; margin: 12px 0; }
-            .row { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; }
-            .total { font-weight: bold; }
-          </style>
-        </head>
-        <body>
-          <h1>nilaa-os</h1>
-          <p>វិក្កយបត្រលក់</p>
-          <p>អ្នកទិញ: ${safeText(receipt.buyerName || "ភ្ញៀវ")}</p>
-          <div class="divider"></div>
-          <div class="row"><span>${safeText(receipt.createdAtText)}</span><span>${safeText(receipt.invoiceNo)}</span></div>
-          <div class="divider"></div>
-          ${receipt.items.map((item) => `<div class="row"><span>${item.qty}</span><span>${safeText(item.name)}</span><span>${money(item.qty * item.price)}</span></div>`).join("")}
-          <div class="divider"></div>
-          <div class="row"><span>សរុបមុខទំនិញ</span><span>${money(receipt.subtotal)}</span></div>
-          <div class="row"><span>ថ្លៃបន្ថែម</span><span>${money(receipt.fee)}</span></div>
-          <div class="row total"><span>សរុបចុងក្រោយ</span><span>${money(receipt.total)}</span></div>
-          <div class="divider"></div>
-          <p>Thanks you bong! please come again.</p>
-        </body>
-        </html>
-      `;
-      return { html, fileName: `${receipt.invoiceNo}.html`, mimeType: "text/html" };
+      <!DOCTYPE html><html lang="km"><head><meta charset="UTF-8"><style>
+      body{font-family:Arial,sans-serif;padding:20px;width:300px}h1{text-align:center;text-transform:uppercase;margin:0}
+      p{margin:4px 0;text-align:center}.divider{border-top:1px dashed #666;margin:12px 0}.row,.total{display:flex;justify-content:space-between;gap:8px;font-size:12px}.total{font-weight:700}
+      </style></head><body>
+      <h1>nilaa-os</h1><p>វិក្កយបត្រលក់</p><p>អ្នកទិញ: ${safeText(receipt.buyerName || "ភ្ញៀវ")}</p>
+      <div class="divider"></div><div class="row"><span>${safeText(receipt.createdAtText)}</span><span>${safeText(receipt.invoiceNo)}</span></div>
+      <div class="divider"></div>${receipt.items.map((item) => `<div class="row"><span>${item.qty}</span><span>${safeText(item.name)}</span><span>${money(item.qty * item.price)}</span></div>`).join("")}
+      <div class="divider"></div><div class="row"><span>សរុបមុខទំនិញ</span><span>${money(receipt.subtotal)}</span></div>
+      <div class="row"><span>ថ្លៃបន្ថែម</span><span>${money(receipt.fee)}</span></div><div class="row total"><span>សរុបចុងក្រោយ</span><span>${money(receipt.total)}</span></div>
+      <div class="divider"></div><p>Thanks you bong! please come again.</p></body></html>`;
+      return { html };
     }
   };
 }
 
-function createFirebaseBackend() {
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-  const functions = getFunctions(app, firebaseConfig.functionsRegion || "asia-southeast1");
+function createSupabaseBackend() {
+  const supabase = createClient(supabaseConfig.url, supabaseConfig.anonKey, {
+    auth: { persistSession: true, autoRefreshToken: true }
+  });
 
-  const adminCreateUser = httpsCallable(functions, "adminCreateUser");
-  const generateReceiptPdf = httpsCallable(functions, "generateReceiptPdf");
+  const callFunction = async (name, body) => {
+    const { data, error } = await supabase.functions.invoke(name, { body });
+    if (error) throw error;
+    return data;
+  };
 
   return {
-    mode: "firebase",
+    mode: "supabase",
     async init() {
-      await setPersistence(auth, browserLocalPersistence);
       hideSetupBanner();
     },
     onAuthChange(callback) {
-      return onAuthStateChanged(auth, callback);
+      const subscription = supabase.auth.onAuthStateChange((_event, session) => {
+        callback(session?.user || null);
+      });
+      supabase.auth.getSession().then(({ data }) => callback(data.session?.user || null));
+      return subscription.data.subscription;
     },
     async signIn(username, password) {
-      await signInWithEmailAndPassword(auth, usernameToEmail(username), password);
+      const { error } = await supabase.auth.signInWithPassword({ email: usernameToEmail(username), password });
+      if (error) throw error;
     },
     async signOut() {
-      await firebaseSignOut(auth);
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
     },
     async getProfile(uid) {
-      const snapshot = await getDoc(doc(db, "users", uid));
-      return snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null;
+      const { data, error } = await supabase.from("users").select("*").eq("id", uid).single();
+      if (error) throw error;
+      return data;
     },
     async getShop(shopId) {
-      const snapshot = await getDoc(doc(db, "shops", shopId));
-      return snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null;
+      const { data, error } = await supabase.from("shops").select("*").eq("id", shopId).single();
+      if (error) throw error;
+      return data;
     },
-    async subscribeProducts(shopId, callback) {
-      return onSnapshot(
-        query(collection(db, "products"), where("shopId", "==", shopId), orderBy("name")),
-        (snapshot) => callback(snapshot.docs.map(normalizeFirestoreProduct))
-      );
-    },
-    async subscribeExpenses(shopId, callback) {
-      return onSnapshot(
-        query(
-          collection(db, "expenses"),
-          where("shopId", "==", shopId),
-          where("date", "==", todayKey()),
-          orderBy("createdAt", "desc")
-        ),
-        (snapshot) => callback(snapshot.docs.map(normalizeFirestoreExpense))
-      );
-    },
-    async subscribeOrders(shopId, callback) {
-      return onSnapshot(
-        query(
-          collection(db, "orders"),
-          where("shopId", "==", shopId),
-          where("date", "==", todayKey()),
-          orderBy("createdAt", "desc")
-        ),
-        (snapshot) => callback(snapshot.docs.map(normalizeFirestoreOrder))
-      );
-    },
-    async subscribeUsers(shopId, callback) {
-      return onSnapshot(
-        shopId === "all"
-          ? query(collection(db, "users"), orderBy("createdAt", "desc"))
-          : query(collection(db, "users"), where("shopId", "==", shopId), orderBy("createdAt", "desc")),
-        (snapshot) => callback(snapshot.docs.map(normalizeFirestoreUser))
-      );
+    async fetchDashboard(shopId, role) {
+      const [productsRes, expensesRes, ordersRes, usersRes] = await Promise.all([
+        supabase.from("products").select("*").eq("shop_id", shopId).order("name"),
+        supabase.from("expenses").select("*").eq("shop_id", shopId).eq("date", todayKey()).order("created_at", { ascending: false }),
+        supabase.from("orders").select("*").eq("shop_id", shopId).eq("date", todayKey()).order("created_at", { ascending: false }),
+        role === "admin"
+          ? supabase.from("users").select("*").order("created_at", { ascending: false })
+          : supabase.from("users").select("*").eq("shop_id", shopId).order("created_at", { ascending: false })
+      ]);
+
+      for (const result of [productsRes, expensesRes, ordersRes, usersRes]) {
+        if (result.error) throw result.error;
+      }
+
+      return {
+        products: productsRes.data || [],
+        expenses: expensesRes.data || [],
+        orders: (ordersRes.data || []).map((row) => ({ ...row, items: row.items || [] })),
+        users: usersRes.data || []
+      };
     },
     async saveProduct(shopId, payload) {
-      const existing = await getDocs(query(collection(db, "products"), where("shopId", "==", shopId), where("name", "==", payload.name)));
-      if (existing.empty) {
-        await addDoc(collection(db, "products"), {
-          shopId,
-          name: payload.name,
-          price: payload.price,
-          stockQty: payload.stockQty,
-          lowStockAt: payload.lowStockAt,
-          active: true,
-          createdAt: serverTimestamp()
-        });
+      const { data: existing, error: checkError } = await supabase
+        .from("products")
+        .select("id")
+        .eq("shop_id", shopId)
+        .eq("name", payload.name)
+        .maybeSingle();
+      if (checkError) throw checkError;
+      if (existing) {
+        const { error } = await supabase.from("products").update(payload).eq("id", existing.id);
+        if (error) throw error;
       } else {
-        await updateDoc(existing.docs[0].ref, payload);
+        const { error } = await supabase.from("products").insert({ shop_id: shopId, ...payload });
+        if (error) throw error;
       }
     },
     async deleteProduct(_shopId, productId) {
-      await deleteDoc(doc(db, "products", productId));
+      const { error } = await supabase.from("products").delete().eq("id", productId);
+      if (error) throw error;
     },
     async createExpense(shopId, payload, profile) {
-      await addDoc(collection(db, "expenses"), {
-        shopId,
+      const { error } = await supabase.from("expenses").insert({
+        shop_id: shopId,
         note: payload.note,
         amount: payload.amount,
-        date: todayKey(),
-        createdBy: profile.username,
-        createdAt: serverTimestamp()
+        created_by: profile.username,
+        created_at: new Date().toISOString(),
+        date: todayKey()
       });
+      if (error) throw error;
     },
     async deleteExpense(_shopId, expenseId) {
-      await deleteDoc(doc(db, "expenses", expenseId));
+      const { error } = await supabase.from("expenses").delete().eq("id", expenseId);
+      if (error) throw error;
     },
     async checkout(shopId, payload, profile) {
-      const orderRef = doc(collection(db, "orders"));
-      const invoiceNo = `#${Date.now().toString().slice(-6)}`;
-      await runTransaction(db, async (transaction) => {
-        for (const item of payload.items) {
-          const productRef = doc(db, "products", item.productId);
-          const productSnap = await transaction.get(productRef);
-          if (!productSnap.exists()) {
-            throw new Error(`រកមិនឃើញទំនិញ ${item.name}`);
-          }
-          const stockQty = Number(productSnap.data().stockQty || 0);
-          if (stockQty < item.qty) {
-            throw new Error(`ស្តុកមិនគ្រប់សម្រាប់ ${item.name}`);
-          }
-          transaction.update(productRef, { stockQty: stockQty - item.qty });
-        }
-        transaction.set(orderRef, {
-          shopId,
-          invoiceNo,
-          buyerName: payload.buyerName,
-          subtotal: payload.subtotal,
-          fee: payload.fee,
-          total: payload.total,
-          status: "completed",
-          createdBy: profile.username,
-          createdAt: serverTimestamp(),
-          date: todayKey(),
-          items: payload.items.map((item) => ({
-            productId: item.productId,
-            name: item.name,
-            price: item.price,
-            qty: item.qty
-          }))
-        });
+      const result = await callFunction("checkout-order", {
+        shopId,
+        buyerName: payload.buyerName,
+        items: payload.items,
+        subtotal: payload.subtotal,
+        fee: payload.fee,
+        total: payload.total,
+        createdBy: profile.username,
+        date: todayKey()
       });
-      const snapshot = await getDoc(orderRef);
-      return { id: snapshot.id, ...snapshot.data() };
+      return result.order;
     },
-    async deleteOrder(_shopId, orderId) {
-      const orderRef = doc(db, "orders", orderId);
-      await runTransaction(db, async (transaction) => {
-        const orderSnap = await transaction.get(orderRef);
-        if (!orderSnap.exists()) {
-          return;
-        }
-        const order = orderSnap.data();
-        for (const item of order.items || []) {
-          const productRef = doc(db, "products", item.productId);
-          const productSnap = await transaction.get(productRef);
-          if (productSnap.exists()) {
-            const nextQty = Number(productSnap.data().stockQty || 0) + item.qty;
-            transaction.update(productRef, { stockQty: nextQty });
-          }
-        }
-        transaction.delete(orderRef);
-      });
+    async deleteOrder(shopId, orderId) {
+      await callFunction("delete-order", { shopId, orderId });
     },
     async createUser(payload) {
-      await adminCreateUser(payload);
+      await callFunction("admin-create-user", payload);
     },
     async generateReceiptPdf(receipt) {
-      const result = await generateReceiptPdf({ receipt });
-      return result.data;
+      return await callFunction("generate-receipt-pdf", { receipt });
     }
   };
 }
 
-const isFirebaseConfigured =
-  Boolean(firebaseConfig.apiKey) &&
-  Boolean(firebaseConfig.projectId) &&
-  Boolean(firebaseConfig.appId);
-
-const backend = isFirebaseConfigured ? createFirebaseBackend() : createMockBackend();
+const isSupabaseConfigured = Boolean(supabaseConfig.url) && Boolean(supabaseConfig.anonKey);
+const backend = isSupabaseConfigured ? createSupabaseBackend() : createMockBackend();
 state.backendMode = backend.mode;
 
-const unsubscribers = [];
-
-async function refreshSubscriptions() {
-  unsubscribers.splice(0).forEach((unsubscribe) => {
-    if (typeof unsubscribe === "function") {
-      unsubscribe();
-    }
-  });
-
-  if (!state.profile?.shopId) {
-    return;
-  }
-
-  unsubscribers.push(await backend.subscribeProducts(state.profile.shopId, (products) => {
-    state.products = products.map((item) => ({
-      ...item,
-      stockQty: Number(item.stockQty || 0),
-      price: Number(item.price || 0),
-      lowStockAt: Number(item.lowStockAt || 0)
-    }));
-    renderAll();
+async function loadDashboardData() {
+  if (!state.profile) return;
+  const data = await backend.fetchDashboard(state.profile.shop_id || state.profile.shopId, state.profile.role);
+  state.products = data.products.map((row) => ({
+    ...row,
+    stock_qty: Number(row.stock_qty ?? row.stockQty ?? 0),
+    price: Number(row.price || 0),
+    low_stock_at: Number(row.low_stock_at ?? row.lowStockAt ?? 0)
   }));
-
-  unsubscribers.push(await backend.subscribeExpenses(state.profile.shopId, (expenses) => {
-    state.expenses = expenses.map((item) => ({ ...item, amount: Number(item.amount || 0) }));
-    renderAll();
+  state.expenses = data.expenses.map((row) => ({ ...row, amount: Number(row.amount || 0) }));
+  state.orders = data.orders.map((row) => ({
+    ...row,
+    subtotal: Number(row.subtotal || 0),
+    fee: Number(row.fee || 0),
+    total: Number(row.total || 0)
   }));
-
-  unsubscribers.push(await backend.subscribeOrders(state.profile.shopId, (orders) => {
-    state.orders = orders.map((item) => ({
-      ...item,
-      fee: Number(item.fee || 0),
-      subtotal: Number(item.subtotal || 0),
-      total: Number(item.total || 0)
-    }));
-    renderAll();
-  }));
-
-  if (state.profile.role === "admin") {
-    unsubscribers.push(await backend.subscribeUsers("all", (users) => {
-      state.users = users;
-      renderAll();
-    }));
-  } else {
-    state.users = [];
-  }
+  state.users = data.users;
 }
 
 async function afterMutation() {
-  if (backend.mode === "preview") {
-    await refreshSubscriptions();
-  }
+  if (state.profile) await loadDashboardData();
   renderAll();
 }
 
@@ -962,18 +732,17 @@ async function loadSignedInUser(user) {
     state.profile = null;
     state.shop = null;
     state.products = [];
-    state.orders = [];
     state.expenses = [];
+    state.orders = [];
     state.users = [];
     state.cart = [];
     state.latestReceipt = null;
     renderAll();
     return;
   }
-
-  state.profile = await backend.getProfile(user.uid);
-  state.shop = state.profile ? await backend.getShop(state.profile.shopId) : null;
-  await refreshSubscriptions();
+  state.profile = await backend.getProfile(user.id || user.uid);
+  state.shop = state.profile ? await backend.getShop(state.profile.shop_id || state.profile.shopId) : null;
+  await loadDashboardData();
   renderAll();
 }
 
@@ -987,42 +756,12 @@ function resetOrderInputs() {
   elements.productPrice.value = "";
 }
 
-function closeReceipt() {
-  state.latestReceipt = null;
-  renderReceipt();
-}
-
-function makeDownload(data) {
-  if (data.base64) {
-    const link = document.createElement("a");
-    link.href = `data:${data.mimeType || "application/pdf"};base64,${data.base64}`;
-    link.download = data.fileName || "receipt.pdf";
-    link.click();
-    return;
-  }
-
-  if (data.html) {
-    const preview = window.open("", "_blank", "width=420,height=720");
-    if (!preview) {
-      window.alert("សូមអនុញ្ញាត popup ដើម្បី print receipt");
-      return;
-    }
-    preview.document.open();
-    preview.document.write(data.html);
-    preview.document.close();
-    preview.focus();
-    window.setTimeout(() => preview.print(), 400);
-  }
-}
-
 elements.showLoginTab.addEventListener("click", () => switchAuthTab("login"));
 elements.showRequestTab.addEventListener("click", () => switchAuthTab("request"));
 elements.openDashboardButton.addEventListener("click", () => openDrawer(true));
 elements.closeDashboardButton.addEventListener("click", () => openDrawer(false));
 elements.dashboardDrawer.addEventListener("click", (event) => {
-  if (event.target.id === "dashboardDrawer") {
-    openDrawer(false);
-  }
+  if (event.target.id === "dashboardDrawer") openDrawer(false);
 });
 elements.navButtons.forEach((button) => {
   button.addEventListener("click", () => {
@@ -1050,9 +789,7 @@ elements.buyerName.addEventListener("input", (event) => {
 
 elements.productSearch.addEventListener("input", () => {
   const product = currentProductByName(elements.productSearch.value);
-  if (!product) {
-    return;
-  }
+  if (!product) return;
   elements.productPrice.value = product.price;
   elements.productQty.value = 1;
 });
@@ -1064,32 +801,18 @@ elements.orderForm.addEventListener("submit", (event) => {
   const product = currentProductByName(elements.productSearch.value);
   const qty = Number(elements.productQty.value);
   const enteredPrice = Number(elements.productPrice.value);
-  const buyerName = elements.buyerName.value.trim();
-
   if (!product || !qty || qty <= 0 || enteredPrice < 0) {
     window.alert("សូមជ្រើសរើសទំនិញ និងបញ្ចូលតម្លៃអោយត្រឹមត្រូវ");
     return;
   }
-
   if (effectiveStock(product) < qty) {
     window.alert("ស្តុកមិនគ្រប់");
     return;
   }
-
   const existing = state.cart.find((item) => item.productId === product.id && item.price === enteredPrice);
-  if (existing) {
-    existing.qty += qty;
-  } else {
-    state.cart.push({
-      id: crypto.randomUUID(),
-      productId: product.id,
-      name: product.name,
-      qty,
-      price: enteredPrice
-    });
-  }
-
-  state.currentBuyer = buyerName;
+  if (existing) existing.qty += qty;
+  else state.cart.push({ id: crypto.randomUUID(), productId: product.id, name: product.name, qty, price: enteredPrice });
+  state.currentBuyer = elements.buyerName.value.trim();
   renderAll();
   resetOrderInputs();
 });
@@ -1107,27 +830,18 @@ elements.clearCartButton.addEventListener("click", () => {
 });
 
 elements.checkoutButton.addEventListener("click", async () => {
-  if (!state.cart.length || !state.profile) {
-    return;
-  }
-
+  if (!state.cart.length || !state.profile) return;
   const subtotal = state.cart.reduce((sum, item) => sum + item.qty * item.price, 0);
   const fee = Number(elements.orderFee.value || 0);
   const payload = {
     buyerName: elements.buyerName.value.trim() || "ភ្ញៀវ",
-    items: state.cart.map((item) => ({
-      productId: item.productId,
-      name: item.name,
-      qty: item.qty,
-      price: item.price
-    })),
+    items: state.cart.map((item) => ({ productId: item.productId, name: item.name, qty: item.qty, price: item.price })),
     subtotal,
     fee,
     total: subtotal + fee
   };
-
   try {
-    const order = await backend.checkout(state.profile.shopId, payload, state.profile);
+    const order = await backend.checkout(state.profile.shop_id || state.profile.shopId, payload, state.profile);
     state.latestReceipt = buildReceipt(order);
     state.cart = [];
     state.currentBuyer = "";
@@ -1148,7 +862,7 @@ elements.expenseForm.addEventListener("submit", async (event) => {
     window.alert("សូមបញ្ចូលចំណាយអោយត្រឹមត្រូវ");
     return;
   }
-  await backend.createExpense(state.profile.shopId, { note, amount }, state.profile);
+  await backend.createExpense(state.profile.shop_id || state.profile.shopId, { note, amount }, state.profile);
   elements.expenseForm.reset();
   await afterMutation();
 });
@@ -1156,7 +870,7 @@ elements.expenseForm.addEventListener("submit", async (event) => {
 elements.expenseList.addEventListener("click", async (event) => {
   const target = event.target.closest("[data-expense-id]");
   if (!target || !state.profile) return;
-  await backend.deleteExpense(state.profile.shopId, target.dataset.expenseId);
+  await backend.deleteExpense(state.profile.shop_id || state.profile.shopId, target.dataset.expenseId);
   await afterMutation();
 });
 
@@ -1165,30 +879,30 @@ elements.productForm.addEventListener("submit", async (event) => {
   if (!state.profile) return;
   const name = elements.productNameInput.value.trim();
   const price = Number(elements.productPriceInput.value);
-  const stockQty = Number(elements.productStockInput.value);
-  const lowStockAt = Number(elements.productLowStockInput.value);
-  if (!name || price < 0 || stockQty < 0 || lowStockAt < 0) {
+  const stock_qty = Number(elements.productStockInput.value);
+  const low_stock_at = Number(elements.productLowStockInput.value);
+  if (!name || price < 0 || stock_qty < 0 || low_stock_at < 0) {
     window.alert("សូមបំពេញព័ត៌មានទំនិញអោយត្រឹមត្រូវ");
     return;
   }
-  await backend.saveProduct(state.profile.shopId, { name, price, stockQty, lowStockAt, active: true });
+  await backend.saveProduct(state.profile.shop_id || state.profile.shopId, { name, price, stock_qty, low_stock_at, active: true });
   elements.productForm.reset();
-  elements.productLowStockInput.value = "5";
   elements.productStockInput.value = "0";
+  elements.productLowStockInput.value = "5";
   await afterMutation();
 });
 
 elements.productList.addEventListener("click", async (event) => {
   const target = event.target.closest("[data-product-id]");
   if (!target || !state.profile) return;
-  await backend.deleteProduct(state.profile.shopId, target.dataset.productId);
+  await backend.deleteProduct(state.profile.shop_id || state.profile.shopId, target.dataset.productId);
   await afterMutation();
 });
 
 elements.orderList.addEventListener("click", async (event) => {
   const target = event.target.closest("[data-order-id]");
   if (!target || !state.profile) return;
-  await backend.deleteOrder(state.profile.shopId, target.dataset.orderId);
+  await backend.deleteOrder(state.profile.shop_id || state.profile.shopId, target.dataset.orderId);
   await afterMutation();
 });
 
@@ -1196,15 +910,12 @@ elements.adminCreateUserForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (!state.profile) return;
   try {
-    await backend.createUser(
-      {
-        username: elements.newUsername.value.trim(),
-        password: elements.newPassword.value.trim(),
-        shopName: elements.newShopName.value.trim(),
-        role: elements.newUserRole.value
-      },
-      state.profile
-    );
+    await backend.createUser({
+      username: elements.newUsername.value.trim(),
+      password: elements.newPassword.value.trim(),
+      shopName: elements.newShopName.value.trim(),
+      role: elements.newUserRole.value
+    }, state.profile);
     elements.adminCreateUserForm.reset();
     await afterMutation();
   } catch (error) {
@@ -1214,13 +925,9 @@ elements.adminCreateUserForm.addEventListener("submit", async (event) => {
 
 elements.closeReceiptButton.addEventListener("click", closeReceipt);
 elements.receiptModal.addEventListener("click", (event) => {
-  if (event.target.id === "receiptModal") {
-    closeReceipt();
-  }
+  if (event.target.id === "receiptModal") closeReceipt();
 });
-
 elements.printReceiptButton.addEventListener("click", () => window.print());
-
 elements.downloadReceiptButton.addEventListener("click", async () => {
   if (!state.latestReceipt) return;
   try {

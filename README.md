@@ -1,6 +1,6 @@
 # nilaa-os
 
-Production-ready scaffold for a Khmer-first POS app using Firebase Hosting, Authentication, Firestore, and Cloud Functions.
+Production-ready scaffold for a Khmer-first POS app using Supabase Auth, Postgres, and Edge Functions.
 
 ## What is included
 
@@ -8,26 +8,27 @@ Production-ready scaffold for a Khmer-first POS app using Firebase Hosting, Auth
 - Dashboard drawer for Money, Stock, Reports, and Admin
 - Telegram request onboarding screen
 - Admin user creation flow
-- Firestore security rules and indexes
-- Cloud Functions scaffold for:
-  - admin account seeding
+- Supabase-ready backend adapter
+- SQL schema and RLS policy scaffold
+- Edge Function integration points for:
   - admin-only user creation
+  - order checkout / stock sync
+  - order deletion / stock restore
   - server-generated receipt PDF
-- Local preview mode when `firebase-config.js` is still empty
+- Local preview mode when `supabase-config.js` is still empty
 
 ## Before deploying
 
-1. Copy `.firebaserc.example` to `.firebaserc` and set your Firebase project id.
-2. Fill in `firebase-config.js` with your Firebase web app config.
-3. Place a Khmer-compatible font file at `functions/assets/Battambang-Regular.ttf`.
-4. Deploy Firestore rules, indexes, Hosting, and Functions with Firebase CLI.
+1. Create a Supabase project.
+2. Fill in `supabase-config.js` with your project URL and anon key.
+3. Run `supabase/schema.sql` in the Supabase SQL editor.
+4. Create the needed Edge Functions listed in `supabase/README.md`.
 
 ## Admin seed account
 
-The backend seed function is prepared to create:
+Create the first Supabase auth user as:
 
-- username: `nilaa-os0809$`
+- email: `nilaa-os0809$@nilaa-os.local`
 - password: `08090809`
-- role: `admin`
 
-For production, change these values through environment variables before seeding.
+Then add the matching row in table `users` with role `admin`.
