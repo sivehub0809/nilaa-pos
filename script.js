@@ -15,7 +15,9 @@ const defaultState = {
   ],
   orders: [],
   expenses: [],
-  cart: []
+  cart: [],
+  currentBuyer: "",
+  lastReceipt: null
 };
 
 const savedState = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
@@ -36,7 +38,9 @@ const state = savedState
         : normalizeProducts(defaultState.products),
       orders: Array.isArray(savedState.orders) ? savedState.orders : defaultState.orders,
       expenses: Array.isArray(savedState.expenses) ? savedState.expenses : defaultState.expenses,
-      cart: Array.isArray(savedState.cart) ? savedState.cart : defaultState.cart
+      cart: Array.isArray(savedState.cart) ? savedState.cart : defaultState.cart,
+      currentBuyer: savedState.currentBuyer || "",
+      lastReceipt: savedState.lastReceipt || null
     }
   : {
       ...structuredClone(defaultState),
@@ -113,7 +117,9 @@ function renderSummary() {
 
 function renderCart() {
   const cartList = document.getElementById("cartList");
-  const total = state.cart.reduce((sum, item) => sum + item.qty * item.price, 0);
+  const subtotal = state.cart.reduce((sum, item) => sum + item.qty * item.price, 0);
+  const fee = Number(document.getElementById("orderFee")?.value || 0);
+  const total = subtotal + fee;
 
   if (!state.cart.length) {
     cartList.innerHTML = '<p class="empty-state">មិនទាន់មានមុខទំនិញក្នុងកន្ត្រកទេ</p>';
@@ -137,6 +143,7 @@ function renderCart() {
   }
 
   document.getElementById("cartCount").textContent = `${state.cart.length} មុខ`;
+  document.getElementById("cartSubtotal").textContent = money(subtotal);
   document.getElementById("cartTotal").textContent = money(total);
 }
 
@@ -202,7 +209,7 @@ function renderReports() {
           <article class="record-row">
             <div>
               <div class="record-title">វិក្កយបត្រ ${safeText(order.invoice)}</div>
-              <div class="record-meta">${names}</div>
+              <div class="record-meta">${safeText(order.buyer || "ភ្ញៀវ")} • ${names} • ថ្លៃបន្ថែម ${money(order.fee || 0)}</div>
             </div>
             <div class="chip-row">
               <strong>${money(order.total)}</strong>
@@ -244,10 +251,12 @@ function renderApp() {
   if (!state.session.isLoggedIn) {
     return;
   }
+  document.getElementById("buyerName").value = state.currentBuyer || "";
   renderSummary();
   renderCart();
   renderProducts();
   renderReports();
+  renderReceipt();
 }
 
 function saveOrUpdateProduct({ name, price, stock }) {
@@ -288,6 +297,33 @@ function resetQuickForm() {
   document.getElementById("productPrice").value = "";
 }
 
+function renderReceipt() {
+  const receiptSheet = document.getElementById("receiptSheet");
+  if (!state.lastReceipt) {
+    receiptSheet.classList.add("hidden");
+    return;
+  }
+
+  receiptSheet.classList.remove("hidden");
+  document.getElementById("receiptBuyer").textContent = `អ្នកទិញ: ${state.lastReceipt.buyer}`;
+  document.getElementById("receiptDate").textContent = state.lastReceipt.dateTime;
+  document.getElementById("receiptInvoice").textContent = state.lastReceipt.invoice;
+  document.getElementById("receiptItems").innerHTML = state.lastReceipt.items
+    .map(
+      (item) => `
+        <div class="receipt-row">
+          <span>${item.qty}</span>
+          <span>${safeText(item.name)}</span>
+          <span>${money(item.qty * item.price)}</span>
+        </div>
+      `
+    )
+    .join("");
+  document.getElementById("receiptSubtotal").textContent = money(state.lastReceipt.subtotal);
+  document.getElementById("receiptFee").textContent = money(state.lastReceipt.fee);
+  document.getElementById("receiptGrandTotal").textContent = money(state.lastReceipt.total);
+}
+
 document.getElementById("loginForm").addEventListener("submit", (event) => {
   event.preventDefault();
   const username = document.getElementById("loginName").value.trim() || "ម្ចាស់ហាង";
@@ -319,8 +355,18 @@ document.getElementById("productSearch").addEventListener("input", (event) => {
   document.getElementById("productQty").value = 1;
 });
 
+document.getElementById("buyerName").addEventListener("input", (event) => {
+  state.currentBuyer = event.target.value.trim();
+  persistState();
+});
+
+document.getElementById("orderFee").addEventListener("input", () => {
+  renderCart();
+});
+
 document.getElementById("itemForm").addEventListener("submit", (event) => {
   event.preventDefault();
+  const buyer = document.getElementById("buyerName").value.trim();
   const name = document.getElementById("productSearch").value.trim();
   const qty = Number(document.getElementById("productQty").value);
   const enteredPrice = Number(document.getElementById("productPrice").value);
@@ -331,8 +377,16 @@ document.getElementById("itemForm").addEventListener("submit", (event) => {
 
   const matched = findProductByName(name);
   const product = matched || saveOrUpdateProduct({ name, price: enteredPrice, stock: 0 });
+  if (matched && matched.stock < qty) {
+    window.alert("ស្តុកមិនគ្រប់ទេ");
+    return;
+  }
   product.price = enteredPrice;
+  if (matched) {
+    product.stock -= qty;
+  }
   addToCart(product.name, qty, enteredPrice);
+  state.currentBuyer = buyer;
   persistState();
   renderApp();
   resetQuickForm();
@@ -379,6 +433,12 @@ document.getElementById("expenseForm").addEventListener("submit", (event) => {
 });
 
 document.getElementById("clearCartButton").addEventListener("click", () => {
+  state.cart.forEach((item) => {
+    const product = findProductByName(item.name);
+    if (product) {
+      product.stock += item.qty;
+    }
+  });
   state.cart = [];
   persistState();
   renderApp();
@@ -389,30 +449,56 @@ document.getElementById("checkoutButton").addEventListener("click", () => {
     return;
   }
 
+  const fee = Number(document.getElementById("orderFee").value || 0);
+  const buyer = document.getElementById("buyerName").value.trim() || "ភ្ញៀវ";
   const orderItems = state.cart.map((item) => ({ ...item }));
-  const total = orderItems.reduce((sum, item) => sum + item.qty * item.price, 0);
-
-  orderItems.forEach((item) => {
-    const product = findProductByName(item.name);
-    if (product) {
-      product.stock = Math.max(0, product.stock - item.qty);
-    }
-  });
+  const subtotal = orderItems.reduce((sum, item) => sum + item.qty * item.price, 0);
+  const total = subtotal + fee;
+  const now = new Date();
+  const invoice = `#${String(state.orders.length + 1).padStart(3, "0")}`;
 
   state.orders.push({
     id: crypto.randomUUID(),
-    invoice: `#${String(state.orders.length + 1).padStart(3, "0")}`,
+    invoice,
     items: orderItems,
+    buyer,
+    fee,
+    subtotal,
     total,
     date: todayKey()
   });
 
+  state.lastReceipt = {
+    invoice,
+    buyer,
+    items: orderItems,
+    subtotal,
+    fee,
+    total,
+    dateTime: now.toLocaleString("en-GB", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit"
+    })
+  };
   state.cart = [];
+  state.currentBuyer = "";
+  document.getElementById("buyerName").value = "";
+  document.getElementById("orderFee").value = "0";
   persistState();
   renderApp();
 });
 
 window.removeCartItem = (id) => {
+  const cartItem = state.cart.find((item) => item.id === id);
+  if (cartItem) {
+    const product = findProductByName(cartItem.name);
+    if (product) {
+      product.stock += cartItem.qty;
+    }
+  }
   state.cart = state.cart.filter((item) => item.id !== id);
   persistState();
   renderApp();
@@ -455,5 +541,18 @@ window.quickPickProduct = (id) => {
   document.getElementById("productQty").value = 1;
   window.scrollTo({ top: 0, behavior: "smooth" });
 };
+
+document.getElementById("printReceiptButton").addEventListener("click", () => {
+  window.print();
+});
+
+document.getElementById("receiptSheet").addEventListener("click", (event) => {
+  if (event.target.id !== "receiptSheet") {
+    return;
+  }
+  state.lastReceipt = null;
+  persistState();
+  renderReceipt();
+});
 
 renderApp();

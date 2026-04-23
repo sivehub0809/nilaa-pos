@@ -79,6 +79,10 @@
 
         <form id="itemForm" class="entry-grid">
           <label class="entry-grid__wide">
+            <span>ឈ្មោះអ្នកទិញ</span>
+            <input id="buyerName" type="text" placeholder="ឧទាហរណ៍: បងដារ៉ា">
+          </label>
+          <label class="entry-grid__wide">
             <span>ស្វែងរកមុខទំនិញ</span>
             <input id="productSearch" list="productSuggestions" type="text" placeholder="ស្វែងរកឈ្មោះទំនិញ">
             <datalist id="productSuggestions"></datalist>
@@ -101,12 +105,40 @@
           </div>
           <div class="stack-list" id="cartList"></div>
           <div class="cart-footer">
+            <div class="cart-footer__totals">
+              <label>
+                <span>ថ្លៃបន្ថែម</span>
+                <input id="orderFee" type="number" min="0" step="0.01" value="0">
+              </label>
+            </div>
+            <div>
+              <p>សរុបមុខទំនិញ</p>
+              <strong id="cartSubtotal">$0.00</strong>
+            </div>
             <div>
               <p>សរុបត្រូវទូទាត់</p>
               <strong id="cartTotal">$0.00</strong>
             </div>
             <button class="primary-button" id="checkoutButton" type="button">បិទការលក់</button>
           </div>
+        </div>
+
+        <div class="record-box expense-box">
+          <div class="list-head">
+            <h4>លុយចូល / ចេញ</h4>
+            <span>កត់ត្រាប្រចាំថ្ងៃ</span>
+          </div>
+          <form id="expenseForm" class="entry-grid">
+            <label class="entry-grid__wide">
+              <span>ចំណាំចំណាយ</span>
+              <input id="expenseNote" type="text" placeholder="ឧទាហរណ៍: ទិញកញ្ចប់ ឬ បង់ភ្លើង">
+            </label>
+            <label>
+              <span>ចំនួនទឹកប្រាក់</span>
+              <input id="expenseAmount" type="number" min="0" step="0.01" placeholder="0.00">
+            </label>
+            <button class="primary-button" type="submit">បន្ថែមចំណាយ</button>
+          </form>
         </div>
       </section>
 
@@ -149,18 +181,6 @@
           </div>
         </div>
 
-        <form id="expenseForm" class="entry-grid">
-          <label class="entry-grid__wide">
-            <span>ចំណាំចំណាយ</span>
-            <input id="expenseNote" type="text" placeholder="ឧទាហរណ៍: ទិញកញ្ចប់ ឬ បង់ភ្លើង">
-          </label>
-          <label>
-            <span>ចំនួនទឹកប្រាក់</span>
-            <input id="expenseAmount" type="number" min="0" step="0.01" placeholder="0.00">
-          </label>
-          <button class="primary-button" type="submit">បន្ថែមចំណាយ</button>
-        </form>
-
         <div class="report-grid">
           <article class="report-card">
             <p>វិក្កយបត្រថ្ងៃនេះ</p>
@@ -195,6 +215,45 @@
       </section>
     </main>
   </div>
+
+  <section class="receipt-sheet hidden" id="receiptSheet">
+    <div class="receipt-card" id="receiptCard">
+      <div class="receipt-brand">
+        <h1>nilaa-os</h1>
+        <p>វិក្កយបត្រលក់</p>
+        <p id="receiptBuyer">អ្នកទិញ:</p>
+      </div>
+      <div class="receipt-divider"></div>
+      <div class="receipt-meta">
+        <span id="receiptDate"></span>
+        <span id="receiptInvoice"></span>
+      </div>
+      <div class="receipt-table">
+        <div class="receipt-table__head">
+          <span>ចំនួន</span>
+          <span>មុខទំនិញ</span>
+          <span>តម្លៃ</span>
+        </div>
+        <div id="receiptItems"></div>
+      </div>
+      <div class="receipt-divider"></div>
+      <div class="receipt-total">
+        <span>សរុបមុខទំនិញ</span>
+        <strong id="receiptSubtotal"></strong>
+      </div>
+      <div class="receipt-total">
+        <span>ថ្លៃបន្ថែម</span>
+        <strong id="receiptFee"></strong>
+      </div>
+      <div class="receipt-total receipt-total--grand">
+        <span>សរុបចុងក្រោយ</span>
+        <strong id="receiptGrandTotal"></strong>
+      </div>
+      <div class="receipt-divider"></div>
+      <p class="receipt-thanks">Thanks you bong! please come again.</p>
+      <button class="primary-button receipt-print" id="printReceiptButton" type="button">Save PDF / Print</button>
+    </div>
+  </section>
 
   <script src="script.js"></script>
 </body>
