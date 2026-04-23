@@ -129,6 +129,11 @@ function usernameToEmail(username) {
   return `${String(username).trim().toLowerCase()}@nilaa-os.local`;
 }
 
+function normalizeLoginIdentifier(value) {
+  const input = String(value || "").trim();
+  return input.includes("@") ? input : usernameToEmail(input);
+}
+
 function currentReservedQty(productId) {
   return state.cart
     .filter((item) => item.productId === productId)
@@ -459,7 +464,13 @@ function createMockBackend() {
     },
     async signIn(username, password) {
       const store = load();
-      const user = store.users.find((item) => item.username === username && item.password === password && item.status !== "disabled");
+      const normalized = normalizeLoginIdentifier(username);
+      const user = store.users.find(
+        (item) =>
+          (item.username === username || normalizeLoginIdentifier(item.username) === normalized || item.email === normalized) &&
+          item.password === password &&
+          item.status !== "disabled"
+      );
       if (!user) throw new Error("ឈ្មោះអ្នកប្រើ ឬ ពាក្យសម្ងាត់មិនត្រឹមត្រូវ");
       store.sessionUserId = user.id;
       save(store);
@@ -600,7 +611,7 @@ function createSupabaseBackend() {
       return subscription.data.subscription;
     },
     async signIn(username, password) {
-      const { error } = await supabase.auth.signInWithPassword({ email: usernameToEmail(username), password });
+      const { error } = await supabase.auth.signInWithPassword({ email: normalizeLoginIdentifier(username), password });
       if (error) throw error;
     },
     async signOut() {

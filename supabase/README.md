@@ -22,11 +22,17 @@ Put your project values in `supabase-config.js`:
 
 ## Admin seed account
 
-Create the first admin in Supabase Auth using:
+Create the first admin in Supabase Auth using a real email, for example:
 
-- email: `nilaa-os0809$@nilaa-os.local`
+- email: `nilaademo@gmail.com`
 - password: `08090809`
 
-Then insert the matching row in `users` with role `admin`.
+Then insert the matching row in `users` with:
 
-The site login still uses username `nilaa-os0809$`. The frontend maps it to the internal email automatically.
+- `username = 'nilaa-os0809$'`
+- `role = 'admin'`
+
+The site can now log in with either:
+
+- the real email, such as `nilaademo@gmail.com`
+- or the app username when it follows the generated local-email pattern

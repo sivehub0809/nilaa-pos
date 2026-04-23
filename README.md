@@ -26,9 +26,9 @@ Production-ready scaffold for a Khmer-first POS app using Supabase Auth, Postgre
 
 ## Admin seed account
 
-Create the first Supabase auth user as:
+Create the first Supabase auth user as a real email, for example:
 
-- email: `nilaa-os0809$@nilaa-os.local`
+- email: `nilaademo@gmail.com`
 - password: `08090809`
 
-Then add the matching row in table `users` with role `admin`.
+Then add the matching row in table `users` with username `nilaa-os0809$` and role `admin`.
