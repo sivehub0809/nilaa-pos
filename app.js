@@ -7,6 +7,7 @@ const LANGUAGE_STORAGE_KEY = "nilaa-os-language";
 const state = {
   route: "orders",
   language: localStorage.getItem(LANGUAGE_STORAGE_KEY) || "km",
+  productFilter: "all",
   authUser: null,
   profile: null,
   shop: null,
@@ -43,6 +44,8 @@ const elements = {
   openDashboardButton: document.getElementById("openDashboardButton"),
   closeDashboardButton: document.getElementById("closeDashboardButton"),
   logoutButton: document.getElementById("logoutButton"),
+  sidebarLogoutButton: document.getElementById("sidebarLogoutButton"),
+  bottomMoreButton: document.getElementById("bottomMoreButton"),
   dashboardDrawer: document.getElementById("dashboardDrawer"),
   adminNavButton: document.getElementById("adminNavButton"),
   navButtons: [...document.querySelectorAll(".nav-button")],
@@ -52,6 +55,7 @@ const elements = {
   productSearch: document.getElementById("productSearch"),
   productSuggestions: document.getElementById("productSuggestions"),
   quickProductList: document.getElementById("quickProductList"),
+  categoryChips: [...document.querySelectorAll("[data-product-filter]")],
   productQty: document.getElementById("productQty"),
   productPrice: document.getElementById("productPrice"),
   clearCartButton: document.getElementById("clearCartButton"),
@@ -105,8 +109,13 @@ const elements = {
   paymentTotal: document.getElementById("paymentTotal"),
   paymentInvoice: document.getElementById("paymentInvoice"),
   paymentMethod: document.getElementById("paymentMethod"),
+  qrBox: document.getElementById("qrBox"),
+  payQrButton: document.getElementById("payQrButton"),
+  payManualButton: document.getElementById("payManualButton"),
+  paymentBackButton: document.getElementById("paymentBackButton"),
   betaQrGrid: document.getElementById("betaQrGrid"),
   closeReceiptButton: document.getElementById("closeReceiptButton"),
+  receiptBackButton: document.getElementById("receiptBackButton"),
   receiptBuyer: document.getElementById("receiptBuyer"),
   receiptPhone: document.getElementById("receiptPhone"),
   receiptDate: document.getElementById("receiptDate"),
@@ -139,7 +148,12 @@ const translations = {
     requestStep3: "រង់ចាំ admin បង្កើតគណនីអោយ",
     requestStep4: "ចូលប្រើម្តងហើយ app នឹងរក្សា session លើឧបករណ៍នេះ",
     dashboardButton: "Dashboard",
+    sidebarCaption: "ប្រព័ន្ធគ្រប់គ្រងហាង",
     logoutButton: "ចាកចេញ",
+    navPOS: "POS",
+    navDashboard: "Dashboard",
+    navOrdersShort: "Orders",
+    navMore: "More",
     navOrders: "ការបញ្ជាទិញ",
     navMoney: "លុយ",
     navStock: "ស្តុក",
@@ -156,6 +170,9 @@ const translations = {
     addButton: "បន្ថែម",
     quickProductsHeading: "ចុចជ្រើសទំនិញ",
     quickProductsHint: "POS quick menu",
+    filterAll: "ទាំងអស់",
+    filterPopular: "ពេញនិយម",
+    filterLowStock: "ជិតអស់",
     cartHeading: "កន្ត្រកលក់",
     feeLabel: "ថ្លៃបន្ថែម",
     subtotalLabel: "សរុបមុខទំនិញ",
@@ -184,7 +201,7 @@ const translations = {
     salesListHeading: "បញ្ជីការលក់",
     lowStockHeading: "ស្ថានភាពស្តុក",
     adminHeading: "បង្កើតអ្នកប្រើថ្មី",
-    newUsernameLabel: "ឈ្មោះអ្នកប្រើ",
+    newUsernameLabel: "អ៊ីមែលអ្នកប្រើ",
     shopNameLabel: "ឈ្មោះហាង",
     roleLabel: "តួនាទី",
     createAccountButton: "បង្កើតគណនី",
@@ -215,6 +232,9 @@ const translations = {
     paymentMethodLabel: "វិធីបង់ប្រាក់",
     paymentBank: "ផ្ទេរទៅធនាគារ",
     paymentCash: "ទទួលលុយផ្ទាល់",
+    payQrButton: "បង់តាម QR",
+    payManualButton: "បង់ផ្ទាល់",
+    backButton: "ត្រឡប់ក្រោយ",
     markPaidButton: "បានទូទាត់រួច",
     cancelButton: "បោះបង់",
     previewBanner: "Preview mode is active. Add Supabase URL and anon key, then run the SQL in supabase/schema.sql to move to real production.",
@@ -248,7 +268,12 @@ const translations = {
     requestStep3: "Wait for the admin to create your account",
     requestStep4: "After you sign in once, the app keeps your session on this device",
     dashboardButton: "Dashboard",
+    sidebarCaption: "Shop operating system",
     logoutButton: "Logout",
+    navPOS: "POS",
+    navDashboard: "Dashboard",
+    navOrdersShort: "Orders",
+    navMore: "More",
     navOrders: "Orders",
     navMoney: "Money",
     navStock: "Stock",
@@ -265,6 +290,9 @@ const translations = {
     addButton: "Add",
     quickProductsHeading: "Tap product",
     quickProductsHint: "POS quick menu",
+    filterAll: "All",
+    filterPopular: "Popular",
+    filterLowStock: "Low Stock",
     cartHeading: "Sale cart",
     feeLabel: "Extra fee",
     subtotalLabel: "Subtotal",
@@ -293,7 +321,7 @@ const translations = {
     salesListHeading: "Sales list",
     lowStockHeading: "Stock status",
     adminHeading: "Create new user",
-    newUsernameLabel: "Username",
+    newUsernameLabel: "User email",
     shopNameLabel: "Shop name",
     roleLabel: "Role",
     createAccountButton: "Create account",
@@ -324,6 +352,9 @@ const translations = {
     paymentMethodLabel: "Payment method",
     paymentBank: "Bank transfer",
     paymentCash: "Cash received",
+    payQrButton: "Pay with QR",
+    payManualButton: "Pay manual",
+    backButton: "Back",
     markPaidButton: "Payment received",
     cancelButton: "Cancel",
     previewBanner: "Preview mode is active. Add Supabase URL and anon key, then run the SQL in supabase/schema.sql to move to real production.",
@@ -504,7 +535,9 @@ function renderAuth() {
   elements.appShell.classList.toggle("hidden", !loggedIn);
   if (!loggedIn) return;
   elements.welcomeLabel.textContent = `${state.language === "en" ? "Hello" : "សួស្តី"} ${state.profile.username}`;
-  elements.adminNavButton.classList.toggle("hidden", state.profile.role !== "admin");
+  document.querySelectorAll("[data-admin-only]").forEach((node) => {
+    node.classList.toggle("hidden", state.profile.role !== "admin");
+  });
   if (state.profile.role !== "admin" && state.route === "admin") {
     setRoute("orders");
   }
@@ -563,8 +596,18 @@ function renderProducts() {
     .sort((a, b) => a.name.localeCompare(b.name, "km"))
     .map((product) => `<option value="${safeText(product.name)}"></option>`)
     .join("");
-  elements.quickProductList.innerHTML = state.products.length
-    ? state.products.map((product) => {
+  elements.categoryChips.forEach((button) => {
+    button.classList.toggle("category-chip--active", button.dataset.productFilter === state.productFilter);
+  });
+  const filteredProducts = state.products.filter((product, index) => {
+    const left = effectiveStock(product);
+    const lowAt = Number(product.low_stock_at ?? product.lowStockAt ?? 0);
+    if (state.productFilter === "popular") return Boolean(product.is_popular) || index < 8;
+    if (state.productFilter === "low") return left <= lowAt;
+    return true;
+  });
+  elements.quickProductList.innerHTML = filteredProducts.length
+    ? filteredProducts.map((product) => {
         const left = effectiveStock(product);
         return `
           <button class="quick-product" type="button" data-quick-product-id="${product.id}" ${left <= 0 ? "disabled" : ""}>
@@ -725,6 +768,9 @@ function openPayment(order) {
   elements.paymentTotal.textContent = money(order.total);
   elements.paymentInvoice.textContent = order.invoice_no || order.invoiceNo;
   renderBetaQr(`${order.invoice_no || order.invoiceNo}-${order.total}`);
+  elements.paymentMethod.value = "";
+  elements.qrBox.classList.add("hidden");
+  elements.markPaidButton.classList.add("hidden");
   elements.paymentModal.classList.remove("hidden");
 }
 
@@ -736,21 +782,45 @@ function closePayment() {
 async function completePayment() {
   if (!state.pendingPaymentOrder) return;
   const method = elements.paymentMethod.value;
-  const receiptOrder = {
-    ...state.pendingPaymentOrder,
-    payment_method: method,
-    paymentMethod: method
-  };
   try {
-    await backend.markPaid(state.pendingPaymentOrder.id, method);
-  } catch (_error) {
-    // Receipt can still be issued because the sale was already recorded.
+    const savedOrder = await backend.checkout(
+      state.pendingPaymentOrder.shopId,
+      { ...state.pendingPaymentOrder, paymentMethod: method },
+      state.profile
+    );
+    const receiptOrder = {
+      ...savedOrder,
+      buyer_phone: state.pendingPaymentOrder.buyerPhone,
+      payment_method: method,
+      paymentMethod: method
+    };
+    state.cart = [];
+    state.currentBuyer = "";
+    state.currentPhone = "";
+    elements.buyerName.value = "";
+    elements.buyerPhone.value = "";
+    elements.orderFee.value = "0";
+    state.latestReceipt = buildReceipt(receiptOrder);
+    await afterMutation();
+  } catch (error) {
+    window.alert(error.message || t("checkoutFailed"));
+    return;
   }
   state.pendingPaymentOrder = null;
   elements.paymentModal.classList.add("hidden");
-  state.latestReceipt = buildReceipt(receiptOrder);
-  await afterMutation();
   renderAll();
+}
+
+function choosePaymentMethod(method) {
+  elements.paymentMethod.value = method;
+  elements.qrBox.classList.toggle("hidden", method !== "bank");
+  elements.markPaidButton.classList.remove("hidden");
+}
+
+function backToPaymentChoice() {
+  elements.paymentMethod.value = "";
+  elements.qrBox.classList.add("hidden");
+  elements.markPaidButton.classList.add("hidden");
 }
 
 function makeDownload(data) {
@@ -884,9 +954,10 @@ function createMockBackend() {
       const order = {
         id: crypto.randomUUID(),
         shop_id: shopId,
-        invoice_no: `#${String(store.orders.length + 1).padStart(4, "0")}`,
+        invoice_no: payload.invoiceNo || `#${String(store.orders.length + 1).padStart(4, "0")}`,
         buyer_name: payload.buyerName,
         buyer_phone: payload.buyerPhone,
+        payment_method: payload.paymentMethod,
         items: payload.items,
         subtotal: payload.subtotal,
         fee: payload.fee,
@@ -1071,9 +1142,10 @@ function createSupabaseBackend() {
 
       const orderRecord = {
         shop_id: shopId,
-        invoice_no: nextInvoiceNumber(),
+        invoice_no: payload.invoiceNo || payload.invoice_no || nextInvoiceNumber(),
         buyer_name: payload.buyerName,
         buyer_phone: payload.buyerPhone,
+        payment_method: payload.paymentMethod,
         items: payload.items,
         subtotal: payload.subtotal,
         fee: payload.fee,
@@ -1092,6 +1164,22 @@ function createSupabaseBackend() {
         error = legacyResult.error;
       }
       if (error) throw error;
+      if (payload.buyerName || payload.buyerPhone) {
+        await supabase.from("customers").insert({
+          shop_id: shopId,
+          name: payload.buyerName,
+          phone: payload.buyerPhone,
+          last_order_at: new Date().toISOString()
+        });
+      }
+      await supabase.from("payments").insert({
+        order_id: data.id,
+        shop_id: shopId,
+        method: payload.paymentMethod || "cash",
+        amount: payload.total,
+        status: "paid",
+        paid_at: new Date().toISOString()
+      });
       return { ...data, buyer_phone: payload.buyerPhone };
     },
     async deleteOrder(shopId, orderId) {
@@ -1122,8 +1210,45 @@ function createSupabaseBackend() {
       const { error } = await supabase.from("orders").delete().eq("id", orderId).eq("shop_id", shopId);
       if (error) throw error;
     },
-    async createUser(payload) {
-      await callFunction("admin-create-user", payload);
+    async createUser(payload, profile) {
+      if (profile.role !== "admin") throw new Error("Admin only");
+      const email = normalizeLoginIdentifier(payload.username);
+      const authClient = createClient(supabaseConfig.url, supabaseConfig.anonKey, {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+          storageKey: `nilaa-create-user-${crypto.randomUUID()}`
+        }
+      });
+      const { data: authData, error: authError } = await authClient.auth.signUp({
+        email,
+        password: payload.password
+      });
+      if (authError) throw authError;
+      if (!authData.user?.id) {
+        throw new Error("Account created needs email confirmation before profile can be saved.");
+      }
+
+      let shopId = profile.shop_id || profile.shopId;
+      if (payload.shopName) {
+        const { data: shop, error: shopError } = await supabase
+          .from("shops")
+          .insert({ name: payload.shopName, status: "active" })
+          .select("*")
+          .single();
+        if (shopError) throw shopError;
+        shopId = shop.id;
+      }
+
+      const { error: profileError } = await supabase.from("users").insert({
+        id: authData.user.id,
+        username: payload.username,
+        role: payload.role,
+        shop_id: shopId,
+        status: "active",
+        created_at: new Date().toISOString()
+      });
+      if (profileError) throw profileError;
     },
     async markPaid(orderId, paymentMethod) {
       let { error } = await supabase
@@ -1229,6 +1354,7 @@ elements.dashboardDrawer.addEventListener("click", (event) => {
   if (event.target.id === "dashboardDrawer") openDrawer(false);
 });
 elements.navButtons.forEach((button) => {
+  if (!button.dataset.route) return;
   button.addEventListener("click", () => {
     setRoute(button.dataset.route);
     openDrawer(false);
@@ -1248,6 +1374,10 @@ elements.loginForm.addEventListener("submit", async (event) => {
 elements.logoutButton.addEventListener("click", async () => {
   await backend.signOut();
 });
+elements.sidebarLogoutButton?.addEventListener("click", async () => {
+  await backend.signOut();
+});
+elements.bottomMoreButton?.addEventListener("click", () => openDrawer(true));
 
 elements.buyerName.addEventListener("input", (event) => {
   state.currentBuyer = event.target.value.trim();
@@ -1262,6 +1392,13 @@ elements.productSearch.addEventListener("input", () => {
   if (!product) return;
   elements.productPrice.value = product.price;
   elements.productQty.value = 1;
+});
+
+elements.categoryChips.forEach((button) => {
+  button.addEventListener("click", () => {
+    state.productFilter = button.dataset.productFilter;
+    renderProducts();
+  });
 });
 
 elements.quickProductList.addEventListener("click", (event) => {
@@ -1314,6 +1451,8 @@ elements.checkoutButton.addEventListener("click", async () => {
   const subtotal = state.cart.reduce((sum, item) => sum + item.qty * item.price, 0);
   const fee = Number(elements.orderFee.value || 0);
   const payload = {
+    shopId: state.profile.shop_id || state.profile.shopId,
+    invoiceNo: nextInvoiceNumber(),
     buyerName: elements.buyerName.value.trim() || t("guestBuyer"),
     buyerPhone: elements.buyerPhone.value.trim(),
     items: state.cart.map((item) => ({ productId: item.productId, name: item.name, qty: item.qty, price: item.price })),
@@ -1321,19 +1460,7 @@ elements.checkoutButton.addEventListener("click", async () => {
     fee,
     total: subtotal + fee
   };
-  try {
-    const order = await backend.checkout(state.profile.shop_id || state.profile.shopId, payload, state.profile);
-    state.cart = [];
-    state.currentBuyer = "";
-    state.currentPhone = "";
-    elements.buyerName.value = "";
-    elements.buyerPhone.value = "";
-    elements.orderFee.value = "0";
-    await afterMutation();
-    openPayment(order);
-  } catch (error) {
-    window.alert(error.message || t("checkoutFailed"));
-  }
+  openPayment(payload);
 });
 
 elements.expenseForm.addEventListener("submit", async (event) => {
@@ -1425,7 +1552,11 @@ elements.cancelPaymentButton.addEventListener("click", closePayment);
 elements.paymentModal.addEventListener("click", (event) => {
   if (event.target.id === "paymentModal") closePayment();
 });
+elements.payQrButton.addEventListener("click", () => choosePaymentMethod("bank"));
+elements.payManualButton.addEventListener("click", () => choosePaymentMethod("cash"));
+elements.paymentBackButton.addEventListener("click", backToPaymentChoice);
 elements.markPaidButton.addEventListener("click", completePayment);
+elements.receiptBackButton.addEventListener("click", closeReceipt);
 elements.printReceiptButton.addEventListener("click", () => window.print());
 elements.downloadReceiptButton.addEventListener("click", async () => {
   if (!state.latestReceipt) return;

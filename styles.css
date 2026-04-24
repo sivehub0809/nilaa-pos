@@ -138,6 +138,22 @@ h1 {
   text-decoration: none;
 }
 
+.brand-lockup,
+.sidebar__brand {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.brand-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  background: var(--surface-strong);
+}
+
 .language-switch {
   display: inline-flex;
   gap: 8px;
@@ -250,7 +266,7 @@ button:focus {
 }
 
 .app-shell {
-  padding: 16px 0 40px;
+  padding: 16px 0 92px;
 }
 
 .topbar {
@@ -258,6 +274,25 @@ button:focus {
   gap: 14px;
   align-items: center;
   margin-bottom: 16px;
+}
+
+.app-layout {
+  display: grid;
+  gap: 16px;
+}
+
+.sidebar {
+  display: none;
+}
+
+.sidebar__brand {
+  padding: 8px 8px 16px;
+}
+
+.sidebar__brand span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.82rem;
 }
 
 .topbar__actions {
@@ -319,6 +354,27 @@ button:focus {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
   gap: 10px;
+}
+
+.category-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 10px 0 12px;
+}
+
+.category-chip {
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-strong);
+  color: var(--accent-deep);
+}
+
+.category-chip--active {
+  background: rgba(205, 116, 43, 0.18);
+  border-color: rgba(205, 116, 43, 0.28);
 }
 
 .quick-product {
@@ -446,6 +502,29 @@ button:focus {
   text-align: left;
 }
 
+.bottom-nav {
+  position: fixed;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  z-index: 18;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255, 251, 245, 0.96);
+  box-shadow: var(--shadow);
+}
+
+.bottom-nav .nav-button {
+  min-height: 44px;
+  padding: 0 6px;
+  text-align: center;
+  font-size: 0.8rem;
+}
+
 .modal {
   position: fixed;
   inset: 0;
@@ -513,6 +592,12 @@ button:focus {
 
 .payment-methods {
   margin-top: 12px;
+}
+
+.payment-choice-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .receipt-paper {
@@ -741,6 +826,39 @@ button:focus {
   .cart-footer {
     grid-template-columns: minmax(180px, 1.2fr) repeat(2, minmax(140px, 1fr)) minmax(180px, 1fr);
     align-items: end;
+  }
+}
+
+@media (min-width: 960px) {
+  .app-shell {
+    width: min(1240px, calc(100% - 28px));
+    padding-bottom: 40px;
+  }
+
+  .app-layout {
+    grid-template-columns: 220px minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .sidebar {
+    position: sticky;
+    top: 16px;
+    display: grid;
+    gap: 12px;
+    min-height: calc(100vh - 32px);
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+  }
+
+  .screen-stack {
+    min-width: 0;
+  }
+
+  .bottom-nav {
+    display: none;
   }
 }
 

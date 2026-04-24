@@ -20,7 +20,10 @@
       </div>
 
       <section class="auth-card auth-card--warm">
-        <p class="eyebrow">nilaa-os</p>
+        <div class="brand-lockup">
+          <img class="brand-logo" src="assets/nilaa-logo.jpg" alt="nilaa-os logo">
+          <p class="eyebrow">nilaa-os</p>
+        </div>
         <h1 data-i18n="authTitle">ប្រព័ន្ធ POS សម្រាប់ហាង និងភោជនីយដ្ឋាន</h1>
         <p class="auth-copy" data-i18n="authCopy">
           ស្នើសុំគណនីតាម Telegram មុនសិន។ បន្ទាប់ពី admin អនុម័ត អ្នកអាចចូលប្រើបាន ហើយប្រព័ន្ធនឹងរក្សា session លើឧបករណ៍នេះ។
@@ -66,9 +69,12 @@
 
   <div id="appShell" class="app-shell hidden">
     <header class="topbar">
-      <div>
-        <p class="eyebrow">nilaa-os</p>
-        <h2 id="shopName">ការបញ្ជាទិញ</h2>
+      <div class="brand-lockup">
+        <img class="brand-logo" src="assets/nilaa-logo.jpg" alt="nilaa-os logo">
+        <div>
+          <p class="eyebrow">nilaa-os</p>
+          <h2 id="shopName">ការបញ្ជាទិញ</h2>
+        </div>
       </div>
       <div class="topbar__actions">
         <div class="language-switch app-language-switch">
@@ -83,6 +89,26 @@
       </div>
     </header>
 
+    <div class="app-layout">
+      <aside class="sidebar">
+        <div class="sidebar__brand">
+          <img class="brand-logo" src="assets/nilaa-logo.jpg" alt="nilaa-os logo">
+          <div>
+            <strong>Nilaa POS</strong>
+            <span data-i18n="sidebarCaption">Shop operating system</span>
+          </div>
+        </div>
+        <nav class="drawer__nav">
+          <button class="nav-button nav-button--active" data-route="orders" type="button" data-i18n="navOrders">ការបញ្ជាទិញ</button>
+          <button class="nav-button" data-route="reports" type="button" data-i18n="navDashboard">Dashboard</button>
+          <button class="nav-button" data-route="stock" type="button" data-i18n="navStock">ស្តុក</button>
+          <button class="nav-button" data-route="money" type="button" data-i18n="navMoney">លុយ</button>
+          <button class="nav-button" data-route="reports" type="button" data-i18n="navReports">របាយការណ៍</button>
+          <button class="nav-button hidden" data-admin-only="true" data-route="admin" type="button">Admin</button>
+          <button class="nav-button" id="sidebarLogoutButton" type="button" data-i18n="logoutButton">ចាកចេញ</button>
+        </nav>
+      </aside>
+
     <aside id="dashboardDrawer" class="drawer hidden">
       <div class="drawer__card">
         <div class="drawer__head">
@@ -94,7 +120,7 @@
           <button class="nav-button" data-route="money" type="button" data-i18n="navMoney">លុយ</button>
           <button class="nav-button" data-route="stock" type="button" data-i18n="navStock">ស្តុក</button>
           <button class="nav-button" data-route="reports" type="button" data-i18n="navReports">របាយការណ៍</button>
-          <button class="nav-button hidden" id="adminNavButton" data-route="admin" type="button">Admin</button>
+          <button class="nav-button hidden" id="adminNavButton" data-admin-only="true" data-route="admin" type="button">Admin</button>
         </nav>
       </div>
     </aside>
@@ -139,6 +165,11 @@
             <div class="list-head">
               <h4 data-i18n="quickProductsHeading">ចុចជ្រើសទំនិញ</h4>
               <span data-i18n="quickProductsHint">POS quick menu</span>
+            </div>
+            <div class="category-chips">
+              <button class="category-chip category-chip--active" type="button" data-product-filter="all" data-i18n="filterAll">All</button>
+              <button class="category-chip" type="button" data-product-filter="popular" data-i18n="filterPopular">Popular</button>
+              <button class="category-chip" type="button" data-product-filter="low" data-i18n="filterLowStock">Low Stock</button>
             </div>
             <div id="quickProductList" class="quick-product-list"></div>
           </div>
@@ -303,8 +334,8 @@
           </div>
           <form id="adminCreateUserForm" class="grid-form">
             <label>
-              <span data-i18n="newUsernameLabel">ឈ្មោះអ្នកប្រើ</span>
-              <input id="newUsername" type="text" placeholder="new-shop-owner">
+              <span data-i18n="newUsernameLabel">អ៊ីមែលអ្នកប្រើ</span>
+              <input id="newUsername" type="email" placeholder="owner@example.com">
             </label>
             <label>
               <span data-i18n="passwordLabel">ពាក្យសម្ងាត់</span>
@@ -335,6 +366,15 @@
         </article>
       </section>
     </main>
+    </div>
+
+    <nav class="bottom-nav">
+      <button class="nav-button nav-button--active" data-route="orders" type="button" data-i18n="navPOS">POS</button>
+      <button class="nav-button" data-route="reports" type="button" data-i18n="navOrdersShort">Orders</button>
+      <button class="nav-button" data-route="stock" type="button" data-i18n="navStock">ស្តុក</button>
+      <button class="nav-button" data-route="money" type="button" data-i18n="navMoney">លុយ</button>
+      <button class="nav-button" type="button" id="bottomMoreButton" data-i18n="navMore">More</button>
+    </nav>
   </div>
 
   <section id="paymentModal" class="modal hidden">
@@ -352,24 +392,24 @@
         <strong id="paymentTotal">$0.00</strong>
       </div>
 
-      <div class="qr-box" aria-label="Beta QR">
+      <div class="qr-box hidden" id="qrBox" aria-label="Beta QR">
         <div class="qr-grid" id="betaQrGrid"></div>
         <strong>Beta QR</strong>
         <span id="paymentInvoice">#00000000</span>
       </div>
 
       <div class="payment-methods">
-        <label>
-          <span data-i18n="paymentMethodLabel">វិធីបង់ប្រាក់</span>
-          <select id="paymentMethod">
-            <option value="bank" data-i18n="paymentBank">ផ្ទេរទៅធនាគារ</option>
-            <option value="cash" data-i18n="paymentCash">ទទួលលុយផ្ទាល់</option>
-          </select>
-        </label>
+        <p class="eyebrow" data-i18n="paymentMethodLabel">វិធីបង់ប្រាក់</p>
+        <div class="payment-choice-grid">
+          <button id="payQrButton" class="primary-button" type="button" data-i18n="payQrButton">Pay with QR</button>
+          <button id="payManualButton" class="secondary-button" type="button" data-i18n="payManualButton">Pay manual</button>
+        </div>
+        <input id="paymentMethod" type="hidden" value="bank">
       </div>
 
       <div class="receipt-actions">
-        <button id="markPaidButton" class="primary-button" type="button" data-i18n="markPaidButton">បានទូទាត់រួច</button>
+        <button id="paymentBackButton" class="secondary-button" type="button" data-i18n="backButton">Back</button>
+        <button id="markPaidButton" class="primary-button hidden" type="button" data-i18n="markPaidButton">បានទូទាត់រួច</button>
         <button id="cancelPaymentButton" class="secondary-button" type="button" data-i18n="cancelButton">បោះបង់</button>
       </div>
     </div>
@@ -412,6 +452,7 @@
         <p class="receipt-thanks" data-i18n="receiptThanks">Thanks you bong! please come again.</p>
       </div>
       <div class="receipt-actions">
+        <button id="receiptBackButton" class="secondary-button" type="button" data-i18n="backButton">Back</button>
         <button id="downloadReceiptButton" class="primary-button" type="button" data-i18n="downloadPdfButton">Download PDF</button>
         <button id="printReceiptButton" class="secondary-button" type="button" data-i18n="printButton">Print</button>
       </div>

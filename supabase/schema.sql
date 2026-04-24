@@ -29,6 +29,20 @@ create table if not exists products (
 
 create unique index if not exists products_shop_name_idx on products (shop_id, lower(name));
 
+create table if not exists categories (
+  id uuid primary key default gen_random_uuid(),
+  shop_id uuid not null references shops(id) on delete cascade,
+  name text not null,
+  sort_order integer not null default 0,
+  active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+
+alter table products add column if not exists category_id uuid references categories(id) on delete set null;
+alter table products add column if not exists image_url text;
+alter table products add column if not exists sort_order integer not null default 0;
+alter table products add column if not exists is_popular boolean not null default false;
+
 create table if not exists expenses (
   id uuid primary key default gen_random_uuid(),
   shop_id uuid not null references shops(id) on delete cascade,
@@ -58,12 +72,64 @@ create table if not exists orders (
 
 alter table orders add column if not exists buyer_phone text;
 alter table orders add column if not exists payment_method text;
+alter table orders add column if not exists customer_id uuid;
+alter table orders add column if not exists payment_status text not null default 'paid';
+alter table orders add column if not exists order_status text not null default 'completed';
+alter table orders add column if not exists void_reason text;
+alter table orders add column if not exists paid_at timestamptz;
+
+create table if not exists customers (
+  id uuid primary key default gen_random_uuid(),
+  shop_id uuid not null references shops(id) on delete cascade,
+  name text,
+  phone text,
+  created_at timestamptz not null default now(),
+  last_order_at timestamptz
+);
+
+create table if not exists payments (
+  id uuid primary key default gen_random_uuid(),
+  order_id uuid references orders(id) on delete cascade,
+  shop_id uuid not null references shops(id) on delete cascade,
+  method text not null,
+  amount numeric(12,2) not null default 0,
+  status text not null default 'paid',
+  paid_at timestamptz not null default now()
+);
+
+create table if not exists shifts (
+  id uuid primary key default gen_random_uuid(),
+  shop_id uuid not null references shops(id) on delete cascade,
+  cashier_id uuid references users(id) on delete set null,
+  opening_cash numeric(12,2) not null default 0,
+  closing_cash numeric(12,2),
+  status text not null default 'open',
+  opened_at timestamptz not null default now(),
+  closed_at timestamptz
+);
+
+create table if not exists settings (
+  id uuid primary key default gen_random_uuid(),
+  shop_id uuid not null unique references shops(id) on delete cascade,
+  receipt_name text,
+  receipt_footer text,
+  qr_image_url text,
+  currency text not null default 'USD',
+  printer_mode text not null default 'browser',
+  shop_logo_url text,
+  updated_at timestamptz not null default now()
+);
 
 alter table shops enable row level security;
 alter table users enable row level security;
 alter table products enable row level security;
+alter table categories enable row level security;
 alter table expenses enable row level security;
 alter table orders enable row level security;
+alter table customers enable row level security;
+alter table payments enable row level security;
+alter table shifts enable row level security;
+alter table settings enable row level security;
 
 create or replace function public.current_user_role()
 returns text
@@ -104,6 +170,11 @@ on products for all
 using (shop_id = public.current_user_shop_id() or public.current_user_role() = 'admin')
 with check (shop_id = public.current_user_shop_id() or public.current_user_role() = 'admin');
 
+create policy "shop members manage categories"
+on categories for all
+using (shop_id = public.current_user_shop_id() or public.current_user_role() = 'admin')
+with check (shop_id = public.current_user_shop_id() or public.current_user_role() = 'admin');
+
 create policy "shop members manage expenses"
 on expenses for all
 using (shop_id = public.current_user_shop_id() or public.current_user_role() = 'admin')
@@ -111,5 +182,25 @@ with check (shop_id = public.current_user_shop_id() or public.current_user_role(
 
 create policy "shop members manage orders"
 on orders for all
+using (shop_id = public.current_user_shop_id() or public.current_user_role() = 'admin')
+with check (shop_id = public.current_user_shop_id() or public.current_user_role() = 'admin');
+
+create policy "shop members manage customers"
+on customers for all
+using (shop_id = public.current_user_shop_id() or public.current_user_role() = 'admin')
+with check (shop_id = public.current_user_shop_id() or public.current_user_role() = 'admin');
+
+create policy "shop members manage payments"
+on payments for all
+using (shop_id = public.current_user_shop_id() or public.current_user_role() = 'admin')
+with check (shop_id = public.current_user_shop_id() or public.current_user_role() = 'admin');
+
+create policy "shop members manage shifts"
+on shifts for all
+using (shop_id = public.current_user_shop_id() or public.current_user_role() = 'admin')
+with check (shop_id = public.current_user_shop_id() or public.current_user_role() = 'admin');
+
+create policy "shop members manage settings"
+on settings for all
 using (shop_id = public.current_user_shop_id() or public.current_user_role() = 'admin')
 with check (shop_id = public.current_user_shop_id() or public.current_user_role() = 'admin');
