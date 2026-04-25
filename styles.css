@@ -30,7 +30,8 @@ body {
 body,
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
@@ -161,7 +162,7 @@ h1 {
 }
 
 .auth-language-switch {
-  justify-content: flex-end;
+  justify-content: center;
 }
 
 .auth-note {
@@ -220,7 +221,8 @@ label {
 }
 
 input,
-select {
+select,
+textarea {
   width: 100%;
   min-height: 52px;
   border-radius: 16px;
@@ -228,6 +230,12 @@ select {
   background: var(--surface-strong);
   padding: 0 14px;
   color: var(--text);
+}
+
+textarea {
+  min-height: 132px;
+  padding: 14px;
+  resize: vertical;
 }
 
 input:focus,
@@ -467,6 +475,50 @@ button:focus {
   padding: 12px 14px;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.72);
+}
+
+.settings-layout,
+.settings-stack {
+  display: grid;
+  gap: 16px;
+}
+
+.settings-media {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.settings-preview {
+  width: 100%;
+  max-width: 220px;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 20px;
+  border: 1px dashed var(--line);
+  background: var(--surface-strong);
+}
+
+.settings-preview--logo {
+  max-width: 120px;
+}
+
+.payment-qr-image {
+  width: min(100%, 240px);
+  aspect-ratio: 1;
+  object-fit: contain;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+
+.receipt-brand__logo {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 8px;
+  border-radius: 14px;
+  object-fit: cover;
 }
 
 .drawer {
@@ -804,10 +856,18 @@ button:focus {
 }
 
 @media (min-width: 720px) {
-  .auth-shell__inner,
   .summary-grid,
   .two-column {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .auth-shell__inner {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  .auth-language-switch {
+    grid-column: 1 / -1;
   }
 
   .topbar {
@@ -826,6 +886,15 @@ button:focus {
   .cart-footer {
     grid-template-columns: minmax(180px, 1.2fr) repeat(2, minmax(140px, 1fr)) minmax(180px, 1fr);
     align-items: end;
+  }
+
+  .settings-layout {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  .settings-layout > .primary-button {
+    grid-column: 1 / -1;
   }
 }
 

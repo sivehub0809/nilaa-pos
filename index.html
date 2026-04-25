@@ -56,8 +56,8 @@
           <h2 data-i18n="loginHeading">ចូលប្រើគណនី</h2>
           <form id="loginForm" class="form-stack">
             <label>
-              <span data-i18n="emailLabel">អ៊ីមែលគណនី</span>
-              <input id="loginUsername" type="email" autocomplete="username" data-i18n-placeholder="loginEmailPlaceholder" placeholder="ឧទាហរណ៍: nilaademo@gmail.com">
+              <span data-i18n="emailLabel">អ៊ីមែល ឬ លេខទូរស័ព្ទ</span>
+              <input id="loginUsername" type="text" autocomplete="username" inputmode="email" data-i18n-placeholder="loginEmailPlaceholder" placeholder="ឧទាហរណ៍: nilaademo@gmail.com ឬ 012345678">
             </label>
             <label>
               <span data-i18n="passwordLabel">ពាក្យសម្ងាត់</span>
@@ -116,6 +116,7 @@
           <button class="nav-button" data-route="reports" type="button" data-i18n="navDashboard">Dashboard</button>
           <button class="nav-button" data-route="stock" type="button" data-i18n="navStock">ស្តុក</button>
           <button class="nav-button" data-route="money" type="button" data-i18n="navMoney">លុយ</button>
+          <button class="nav-button" data-route="settings" type="button" data-i18n="navSettings">ការកំណត់</button>
           <button class="nav-button" data-route="reports" type="button" data-i18n="navReports">របាយការណ៍</button>
           <button class="nav-button hidden" data-admin-only="true" data-route="admin" type="button">Admin</button>
           <button class="nav-button" id="sidebarLogoutButton" type="button" data-i18n="logoutButton">ចាកចេញ</button>
@@ -132,6 +133,7 @@
           <button class="nav-button nav-button--active" data-route="orders" type="button" data-i18n="navOrders">ការបញ្ជាទិញ</button>
           <button class="nav-button" data-route="money" type="button" data-i18n="navMoney">លុយ</button>
           <button class="nav-button" data-route="stock" type="button" data-i18n="navStock">ស្តុក</button>
+          <button class="nav-button" data-route="settings" type="button" data-i18n="navSettings">ការកំណត់</button>
           <button class="nav-button" data-route="reports" type="button" data-i18n="navReports">របាយការណ៍</button>
           <button class="nav-button hidden" id="adminNavButton" data-admin-only="true" data-route="admin" type="button">Admin</button>
         </nav>
@@ -337,6 +339,83 @@
         </article>
       </section>
 
+      <section id="settingsScreen" class="screen hidden">
+        <article class="panel">
+          <div class="panel__head">
+            <div>
+              <p class="eyebrow">Settings</p>
+              <h3 data-i18n="settingsHeading">ការកំណត់ហាង</h3>
+            </div>
+          </div>
+
+          <form id="settingsForm" class="settings-layout">
+            <section class="record-box">
+              <div class="list-head">
+                <h4 data-i18n="profileSettingsHeading">រូបភាព និងព័ត៌មានអាជីវកម្ម</h4>
+              </div>
+              <div class="settings-stack">
+                <div class="settings-media">
+                  <img id="settingsProfilePreview" class="settings-preview settings-preview--logo" src="assets/nilaa-logo.jpg" alt="Shop profile preview">
+                  <label>
+                    <span data-i18n="profileImageLabel">រូបភាពប្រូហ្វាល់ហាង</span>
+                    <input id="settingsProfileImage" type="file" accept="image/*">
+                  </label>
+                </div>
+                <label>
+                  <span data-i18n="businessNameLabel">ឈ្មោះហាង</span>
+                  <input id="settingsBusinessName" type="text" placeholder="Nilaa Coffee">
+                </label>
+                <label>
+                  <span data-i18n="businessDescriptionLabel">ពិពណ៌នាអាជីវកម្ម</span>
+                  <textarea id="settingsBusinessDescription" rows="4" data-i18n-placeholder="businessDescriptionPlaceholder" placeholder="ណែនាំខ្លីៗអំពីហាង និងអ្វីដែលអ្នកលក់"></textarea>
+                </label>
+              </div>
+            </section>
+
+            <section class="record-box">
+              <div class="list-head">
+                <h4 data-i18n="paymentSettingsHeading">ការទូទាត់ និង QR</h4>
+              </div>
+              <div class="settings-stack">
+                <label>
+                  <span data-i18n="paymentMethodSettingLabel">វិធីទូទាត់ដើម</span>
+                  <select id="settingsPaymentMethod">
+                    <option value="both" data-i18n="paymentOptionBoth">QR និង បង់ផ្ទាល់</option>
+                    <option value="bank" data-i18n="paymentBank">ផ្ទេរទៅធនាគារ</option>
+                    <option value="cash" data-i18n="paymentCash">ទទួលលុយផ្ទាល់</option>
+                  </select>
+                </label>
+                <div class="settings-media">
+                  <img id="settingsQrPreview" class="settings-preview" alt="QR preview">
+                  <label>
+                    <span data-i18n="bankQrLabel">រូប QR ធនាគារ</span>
+                    <input id="settingsQrUpload" type="file" accept="image/*">
+                  </label>
+                </div>
+              </div>
+            </section>
+
+            <section class="record-box">
+              <div class="list-head">
+                <h4 data-i18n="receiptSettingsHeading">ការកំណត់វិក្កយបត្រ</h4>
+              </div>
+              <div class="settings-stack">
+                <label>
+                  <span data-i18n="receiptNameLabel">ចំណងជើងវិក្កយបត្រ</span>
+                  <input id="settingsReceiptTitle" type="text" placeholder="nilaa-os">
+                </label>
+                <label>
+                  <span data-i18n="receiptFooterLabel">សារខាងក្រោមវិក្កយបត្រ</span>
+                  <textarea id="settingsReceiptFooter" rows="3" data-i18n-placeholder="receiptFooterPlaceholder" placeholder="Thanks you bong! please come again."></textarea>
+                </label>
+              </div>
+            </section>
+
+            <button class="primary-button primary-button--full" type="submit" data-i18n="saveSettingsButton">រក្សាទុកការកំណត់</button>
+          </form>
+        </article>
+      </section>
+
       <section id="adminScreen" class="screen hidden">
         <article class="panel">
           <div class="panel__head">
@@ -349,6 +428,10 @@
             <label>
               <span data-i18n="newUsernameLabel">អ៊ីមែលអ្នកប្រើ</span>
               <input id="newUsername" type="email" placeholder="owner@example.com">
+            </label>
+            <label>
+              <span data-i18n="newPhoneLabel">លេខទូរស័ព្ទអ្នកប្រើ</span>
+              <input id="newPhone" type="tel" inputmode="tel" placeholder="012 345 678">
             </label>
             <label>
               <span data-i18n="passwordLabel">ពាក្យសម្ងាត់</span>
@@ -386,7 +469,7 @@
       <button class="nav-button" data-route="reports" type="button" data-i18n="navOrdersShort">Orders</button>
       <button class="nav-button" data-route="stock" type="button" data-i18n="navStock">ស្តុក</button>
       <button class="nav-button" data-route="money" type="button" data-i18n="navMoney">លុយ</button>
-      <button class="nav-button" type="button" id="bottomMoreButton" data-i18n="navMore">More</button>
+      <button class="nav-button" data-route="settings" type="button" id="bottomMoreButton" data-i18n="navSettingsShort">Settings</button>
     </nav>
   </div>
 
@@ -406,6 +489,7 @@
       </div>
 
       <div class="qr-box hidden" id="qrBox" aria-label="Beta QR">
+        <img id="paymentQrImage" class="payment-qr-image hidden" alt="Bank QR code">
         <div class="qr-grid" id="betaQrGrid"></div>
         <strong>Beta QR</strong>
         <span id="paymentInvoice">#00000000</span>
@@ -432,17 +516,19 @@
     <div class="receipt-card">
       <div class="receipt-card__top">
         <div>
-          <h3>nilaa-os</h3>
+          <h3 id="receiptHeaderTitle">nilaa-os</h3>
           <p data-i18n="receiptTitle">វិក្កយបត្រលក់</p>
         </div>
         <button id="closeReceiptButton" class="icon-button" type="button">&times;</button>
       </div>
       <div class="receipt-paper" id="receiptPaper">
         <div class="receipt-brand">
-          <h1>nilaa-os</h1>
+          <img id="receiptBrandLogo" class="receipt-brand__logo hidden" src="assets/nilaa-logo.jpg" alt="Receipt logo">
+          <h1 id="receiptBrandName">nilaa-os</h1>
           <p data-i18n="receiptTitle">វិក្កយបត្រលក់</p>
           <p id="receiptBuyer">អ្នកទិញ:</p>
           <p id="receiptPhone"></p>
+          <p id="receiptBusinessDescription"></p>
         </div>
         <div class="receipt-divider"></div>
         <div class="receipt-meta">
@@ -462,7 +548,7 @@
         <div class="receipt-total"><span data-i18n="feeLabel">ថ្លៃបន្ថែម</span><strong id="receiptFee"></strong></div>
         <div class="receipt-total receipt-total--grand"><span data-i18n="totalLabel">សរុបត្រូវបង់</span><strong id="receiptTotal"></strong></div>
         <div class="receipt-divider"></div>
-        <p class="receipt-thanks" data-i18n="receiptThanks">Thanks you bong! please come again.</p>
+        <p id="receiptFooterText" class="receipt-thanks" data-i18n="receiptThanks">Thanks you bong! please come again.</p>
       </div>
       <div class="receipt-actions">
         <button id="receiptBackButton" class="secondary-button" type="button" data-i18n="backButton">Back</button>

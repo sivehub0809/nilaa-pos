@@ -10,10 +10,23 @@ create table if not exists shops (
 create table if not exists users (
   id uuid primary key references auth.users(id) on delete cascade,
   username text not null unique,
+  email text,
+  phone text,
   role text not null check (role in ('admin', 'owner', 'staff')),
   shop_id uuid not null references shops(id) on delete cascade,
   status text not null default 'active',
   created_at timestamptz not null default now()
+);
+
+alter table users add column if not exists email text;
+alter table users add column if not exists phone text;
+
+create table if not exists login_aliases (
+  alias text primary key,
+  login_email text not null,
+  user_id uuid references auth.users(id) on delete cascade,
+  shop_id uuid references shops(id) on delete cascade,
+  updated_at timestamptz not null default now()
 );
 
 create table if not exists products (
@@ -111,6 +124,9 @@ create table if not exists shifts (
 create table if not exists settings (
   id uuid primary key default gen_random_uuid(),
   shop_id uuid not null unique references shops(id) on delete cascade,
+  business_name text,
+  business_description text,
+  payment_method text not null default 'both',
   receipt_name text,
   receipt_footer text,
   qr_image_url text,
@@ -120,8 +136,13 @@ create table if not exists settings (
   updated_at timestamptz not null default now()
 );
 
+alter table settings add column if not exists business_name text;
+alter table settings add column if not exists business_description text;
+alter table settings add column if not exists payment_method text not null default 'both';
+
 alter table shops enable row level security;
 alter table users enable row level security;
+alter table login_aliases enable row level security;
 alter table products enable row level security;
 alter table categories enable row level security;
 alter table expenses enable row level security;
@@ -153,6 +174,15 @@ using (id = auth.uid() or public.current_user_role() = 'admin');
 
 create policy "admin can manage users"
 on users for all
+using (public.current_user_role() = 'admin')
+with check (public.current_user_role() = 'admin');
+
+create policy "public can resolve login aliases"
+on login_aliases for select
+using (true);
+
+create policy "admin can manage login aliases"
+on login_aliases for all
 using (public.current_user_role() = 'admin')
 with check (public.current_user_role() = 'admin');
 

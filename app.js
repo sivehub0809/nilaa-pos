@@ -11,6 +11,7 @@ const state = {
   authUser: null,
   profile: null,
   shop: null,
+  settings: null,
   products: [],
   expenses: [],
   orders: [],
@@ -89,16 +90,34 @@ const elements = {
   lowStockList: document.getElementById("lowStockList"),
   adminCreateUserForm: document.getElementById("adminCreateUserForm"),
   newUsername: document.getElementById("newUsername"),
+  newPhone: document.getElementById("newPhone"),
   newPassword: document.getElementById("newPassword"),
   newShopName: document.getElementById("newShopName"),
   newUserRole: document.getElementById("newUserRole"),
   userList: document.getElementById("userList"),
   userCount: document.getElementById("userCount"),
+  settingsForm: document.getElementById("settingsForm"),
+  settingsProfileImage: document.getElementById("settingsProfileImage"),
+  settingsProfilePreview: document.getElementById("settingsProfilePreview"),
+  settingsBusinessName: document.getElementById("settingsBusinessName"),
+  settingsBusinessDescription: document.getElementById("settingsBusinessDescription"),
+  settingsPaymentMethod: document.getElementById("settingsPaymentMethod"),
+  settingsQrUpload: document.getElementById("settingsQrUpload"),
+  settingsQrPreview: document.getElementById("settingsQrPreview"),
+  settingsReceiptTitle: document.getElementById("settingsReceiptTitle"),
+  settingsReceiptFooter: document.getElementById("settingsReceiptFooter"),
+  paymentQrImage: document.getElementById("paymentQrImage"),
+  receiptHeaderTitle: document.getElementById("receiptHeaderTitle"),
+  receiptBrandLogo: document.getElementById("receiptBrandLogo"),
+  receiptBrandName: document.getElementById("receiptBrandName"),
+  receiptBusinessDescription: document.getElementById("receiptBusinessDescription"),
+  receiptFooterText: document.getElementById("receiptFooterText"),
   screens: {
     orders: document.getElementById("ordersScreen"),
     money: document.getElementById("moneyScreen"),
     stock: document.getElementById("stockScreen"),
     reports: document.getElementById("reportsScreen"),
+    settings: document.getElementById("settingsScreen"),
     admin: document.getElementById("adminScreen")
   },
   receiptModal: document.getElementById("receiptModal"),
@@ -138,8 +157,8 @@ const translations = {
     loginTab: "ចូលប្រើ",
     requestTab: "របៀបស្នើសុំគណនី",
     loginHeading: "ចូលប្រើគណនី",
-    emailLabel: "អ៊ីមែលគណនី",
-    loginEmailPlaceholder: "ឧទាហរណ៍: nilaademo@gmail.com",
+    emailLabel: "អ៊ីមែល ឬ លេខទូរស័ព្ទ",
+    loginEmailPlaceholder: "ឧទាហរណ៍: nilaademo@gmail.com ឬ 012345678",
     passwordLabel: "ពាក្យសម្ងាត់",
     loginButton: "ចូលប្រើ",
     requestHeading: "ស្នើសុំគណនី",
@@ -157,6 +176,8 @@ const translations = {
     navOrders: "ការបញ្ជាទិញ",
     navMoney: "លុយ",
     navStock: "ស្តុក",
+    navSettings: "ការកំណត់",
+    navSettingsShort: "កំណត់",
     navReports: "របាយការណ៍",
     clearCart: "សម្អាតកន្ត្រក",
     buyerNameLabel: "ឈ្មោះអ្នកទិញ",
@@ -202,10 +223,26 @@ const translations = {
     lowStockHeading: "ស្ថានភាពស្តុក",
     adminHeading: "បង្កើតអ្នកប្រើថ្មី",
     newUsernameLabel: "អ៊ីមែលអ្នកប្រើ",
+    newPhoneLabel: "លេខទូរស័ព្ទអ្នកប្រើ",
     shopNameLabel: "ឈ្មោះហាង",
     roleLabel: "តួនាទី",
     createAccountButton: "បង្កើតគណនី",
     userListHeading: "អ្នកប្រើក្នុងហាងនេះ",
+    settingsHeading: "ការកំណត់ហាង",
+    profileSettingsHeading: "រូបភាព និងព័ត៌មានអាជីវកម្ម",
+    profileImageLabel: "រូបភាពប្រូហ្វាល់ហាង",
+    businessNameLabel: "ឈ្មោះហាង",
+    businessDescriptionLabel: "ពិពណ៌នាអាជីវកម្ម",
+    businessDescriptionPlaceholder: "ណែនាំខ្លីៗអំពីហាង និងអ្វីដែលអ្នកលក់",
+    paymentSettingsHeading: "ការទូទាត់ និង QR",
+    paymentMethodSettingLabel: "វិធីទូទាត់ដើម",
+    paymentOptionBoth: "QR និង បង់ផ្ទាល់",
+    bankQrLabel: "រូប QR ធនាគារ",
+    receiptSettingsHeading: "ការកំណត់វិក្កយបត្រ",
+    receiptNameLabel: "ចំណងជើងវិក្កយបត្រ",
+    receiptFooterLabel: "សារខាងក្រោមវិក្កយបត្រ",
+    receiptFooterPlaceholder: "Thanks you bong! please come again.",
+    saveSettingsButton: "រក្សាទុកការកំណត់",
     receiptTitle: "វិក្កយបត្រលក់",
     receiptThanks: "Thanks you bong! please come again.",
     downloadPdfButton: "Download PDF",
@@ -239,8 +276,8 @@ const translations = {
     cancelButton: "បោះបង់",
     previewBanner: "Preview mode is active. Add Supabase URL and anon key, then run the SQL in supabase/schema.sql to move to real production.",
     popupAlert: "សូមអនុញ្ញាត popup ដើម្បី print receipt",
-    loginFailed: "មិនអាចចូលប្រើបានទេ។ សូមពិនិត្យអ៊ីមែល និងពាក្យសម្ងាត់ម្តងទៀត។",
-    loginEmailOnly: "សូមប្រើអ៊ីមែលដែលបានបង្កើតក្នុងគណនីរបស់អ្នក មិនមែនឈ្មោះខ្លីទេ។",
+    loginFailed: "មិនអាចចូលប្រើបានទេ។ សូមពិនិត្យអ៊ីមែល/លេខទូរស័ព្ទ និងពាក្យសម្ងាត់ម្តងទៀត។",
+    loginEmailOnly: "សូមប្រើអ៊ីមែល ឬលេខទូរស័ព្ទដែល admin បានបង្កើតអោយ។",
     invalidProduct: "សូមជ្រើសរើសទំនិញ និងបញ្ចូលតម្លៃអោយត្រឹមត្រូវ",
     insufficientStock: "ស្តុកមិនគ្រប់",
     checkoutFailed: "បិទការលក់មិនបាន",
@@ -249,7 +286,8 @@ const translations = {
     createUserFailed: "បង្កើតអ្នកប្រើមិនបាន",
     createPdfFailed: "មិនអាចបង្កើត PDF បាន",
     saveExpenseFailed: "រក្សាទុកចំណាយមិនបាន",
-    saveProductFailed: "រក្សាទុកទំនិញមិនបាន"
+    saveProductFailed: "រក្សាទុកទំនិញមិនបាន",
+    saveSettingsFailed: "រក្សាទុកការកំណត់មិនបាន"
   },
   en: {
     authTitle: "POS system for shops and restaurants",
@@ -258,8 +296,8 @@ const translations = {
     loginTab: "Login",
     requestTab: "How to request an account",
     loginHeading: "Sign in",
-    emailLabel: "Account email",
-    loginEmailPlaceholder: "Example: nilaademo@gmail.com",
+    emailLabel: "Email or phone",
+    loginEmailPlaceholder: "Example: nilaademo@gmail.com or 012345678",
     passwordLabel: "Password",
     loginButton: "Login",
     requestHeading: "Request account",
@@ -277,6 +315,8 @@ const translations = {
     navOrders: "Orders",
     navMoney: "Money",
     navStock: "Stock",
+    navSettings: "Settings",
+    navSettingsShort: "Settings",
     navReports: "Reports",
     clearCart: "Clear cart",
     buyerNameLabel: "Buyer name",
@@ -322,10 +362,26 @@ const translations = {
     lowStockHeading: "Stock status",
     adminHeading: "Create new user",
     newUsernameLabel: "User email",
+    newPhoneLabel: "User phone",
     shopNameLabel: "Shop name",
     roleLabel: "Role",
     createAccountButton: "Create account",
     userListHeading: "Users in this shop",
+    settingsHeading: "Shop settings",
+    profileSettingsHeading: "Profile and business details",
+    profileImageLabel: "Shop profile image",
+    businessNameLabel: "Business name",
+    businessDescriptionLabel: "Business description",
+    businessDescriptionPlaceholder: "Add a short description about the shop and what you sell",
+    paymentSettingsHeading: "Payment and QR",
+    paymentMethodSettingLabel: "Default payment option",
+    paymentOptionBoth: "QR and manual",
+    bankQrLabel: "Bank account QR image",
+    receiptSettingsHeading: "Receipt settings",
+    receiptNameLabel: "Receipt title",
+    receiptFooterLabel: "Receipt footer",
+    receiptFooterPlaceholder: "Thanks you bong! please come again.",
+    saveSettingsButton: "Save settings",
     receiptTitle: "Sales receipt",
     receiptThanks: "Thanks you bong! please come again.",
     downloadPdfButton: "Download PDF",
@@ -359,8 +415,8 @@ const translations = {
     cancelButton: "Cancel",
     previewBanner: "Preview mode is active. Add Supabase URL and anon key, then run the SQL in supabase/schema.sql to move to real production.",
     popupAlert: "Please allow popups to print the receipt.",
-    loginFailed: "Could not sign in. Please check your email and password.",
-    loginEmailOnly: "Please use your approved account email, not the short username.",
+    loginFailed: "Could not sign in. Please check your email/phone and password.",
+    loginEmailOnly: "Please use the email or phone number created by the admin.",
     invalidProduct: "Please choose a product and enter a valid price.",
     insufficientStock: "Not enough stock.",
     checkoutFailed: "Could not close the sale.",
@@ -369,7 +425,8 @@ const translations = {
     createUserFailed: "Could not create the user.",
     createPdfFailed: "Could not generate the PDF.",
     saveExpenseFailed: "Could not save the expense.",
-    saveProductFailed: "Could not save the product."
+    saveProductFailed: "Could not save the product.",
+    saveSettingsFailed: "Could not save the settings."
   }
 };
 
@@ -430,8 +487,23 @@ function usernameToEmail(username) {
   return `${String(username).trim().toLowerCase()}@nilaa-os.local`;
 }
 
+function normalizePhone(value) {
+  return String(value || "").replace(/[^\d+]/g, "");
+}
+
+function isPhoneLogin(value) {
+  const input = String(value || "").trim();
+  return !input.includes("@") && normalizePhone(input).replace(/^\+/, "").length >= 6;
+}
+
+function phoneAliasToEmail(value) {
+  const digits = normalizePhone(value).replace(/^\+/, "");
+  return `${digits}@phone.nilaa-os.local`;
+}
+
 function normalizeLoginIdentifier(value) {
   const input = String(value || "").trim();
+  if (isPhoneLogin(input)) return phoneAliasToEmail(input);
   return input.includes("@") ? input : usernameToEmail(input);
 }
 
@@ -496,6 +568,70 @@ function hideSetupBanner() {
   elements.setupBanner.classList.add("hidden");
 }
 
+function defaultSettings() {
+  return {
+    business_name: state.shop?.name || "nilaa-os",
+    business_description: "",
+    payment_method: "both",
+    qr_image_url: "",
+    receipt_name: "nilaa-os",
+    receipt_footer: t("receiptThanks"),
+    shop_logo_url: ""
+  };
+}
+
+function currentSettings() {
+  return { ...defaultSettings(), ...(state.settings || {}) };
+}
+
+function syncBrandVisuals() {
+  const settings = currentSettings();
+  const logoUrl = settings.shop_logo_url || "assets/nilaa-logo.jpg";
+  document.querySelectorAll(".brand-logo").forEach((node) => {
+    node.src = logoUrl;
+  });
+  if (elements.settingsProfilePreview) elements.settingsProfilePreview.src = logoUrl;
+  if (elements.receiptBrandLogo) {
+    elements.receiptBrandLogo.src = logoUrl;
+    elements.receiptBrandLogo.classList.toggle("hidden", !settings.shop_logo_url);
+  }
+  if (elements.receiptBrandName) elements.receiptBrandName.textContent = settings.receipt_name || settings.business_name || "nilaa-os";
+  if (elements.receiptHeaderTitle) elements.receiptHeaderTitle.textContent = settings.receipt_name || settings.business_name || "nilaa-os";
+  if (elements.receiptBusinessDescription) {
+    elements.receiptBusinessDescription.textContent = settings.business_description || "";
+    elements.receiptBusinessDescription.classList.toggle("hidden", !settings.business_description);
+  }
+  if (elements.receiptFooterText) elements.receiptFooterText.textContent = settings.receipt_footer || t("receiptThanks");
+  if (elements.shopName && state.route === "orders") {
+    elements.shopName.textContent = t("navOrders");
+  }
+}
+
+function renderSettings() {
+  const settings = currentSettings();
+  if (elements.settingsBusinessName) elements.settingsBusinessName.value = settings.business_name || state.shop?.name || "";
+  if (elements.settingsBusinessDescription) elements.settingsBusinessDescription.value = settings.business_description || "";
+  if (elements.settingsPaymentMethod) elements.settingsPaymentMethod.value = settings.payment_method || "both";
+  if (elements.settingsReceiptTitle) elements.settingsReceiptTitle.value = settings.receipt_name || "";
+  if (elements.settingsReceiptFooter) elements.settingsReceiptFooter.value = settings.receipt_footer || t("receiptThanks");
+  if (elements.settingsQrPreview) {
+    const qrUrl = settings.qr_image_url || "";
+    elements.settingsQrPreview.src = qrUrl || "assets/nilaa-logo.jpg";
+    elements.settingsQrPreview.classList.toggle("hidden", !qrUrl);
+  }
+  syncBrandVisuals();
+}
+
+async function readFileAsDataUrl(file) {
+  if (!file) return "";
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("Could not read image."));
+    reader.readAsDataURL(file);
+  });
+}
+
 function switchAuthTab(mode) {
   const showLogin = mode === "login";
   elements.loginPanel.classList.toggle("hidden", !showLogin);
@@ -509,6 +645,7 @@ function buttonLabel(route) {
     orders: t("navOrders"),
     money: t("navMoney"),
     stock: t("navStock"),
+    settings: t("navSettings"),
     reports: t("navReports"),
     admin: "Admin"
   }[route] || "nilaa-os";
@@ -686,7 +823,7 @@ function renderUsers() {
         <article class="record-row">
           <div>
             <strong>${safeText(user.username)}</strong>
-            <div class="meta-line">${safeText(user.role)} • ${safeText(user.status || "active")}</div>
+            <div class="meta-line">${safeText([user.role, user.phone, user.status || "active"].filter(Boolean).join(" • "))}</div>
           </div>
         </article>
       `).join("")
@@ -708,6 +845,7 @@ function formatDateTime(value) {
 }
 
 function buildReceipt(order) {
+  const settings = currentSettings();
   return {
     invoiceNo: order.invoice_no || order.invoiceNo,
     buyerName: order.buyer_name || order.buyerName,
@@ -717,7 +855,11 @@ function buildReceipt(order) {
     subtotal: Number(order.subtotal || 0),
     fee: Number(order.fee || 0),
     total: Number(order.total || 0),
-    createdAtText: formatDateTime(order.created_at || order.createdAt)
+    createdAtText: formatDateTime(order.created_at || order.createdAt),
+    receiptName: settings.receipt_name || settings.business_name || "nilaa-os",
+    receiptFooter: settings.receipt_footer || t("receiptThanks"),
+    businessDescription: settings.business_description || "",
+    logoUrl: settings.shop_logo_url || ""
   };
 }
 
@@ -727,8 +869,14 @@ function renderReceipt() {
     return;
   }
   elements.receiptModal.classList.remove("hidden");
+  elements.receiptHeaderTitle.textContent = state.latestReceipt.receiptName || "nilaa-os";
+  elements.receiptBrandName.textContent = state.latestReceipt.receiptName || "nilaa-os";
+  elements.receiptBrandLogo.src = state.latestReceipt.logoUrl || "assets/nilaa-logo.jpg";
+  elements.receiptBrandLogo.classList.toggle("hidden", !state.latestReceipt.logoUrl);
   elements.receiptBuyer.textContent = t("buyerLine", { buyer: state.latestReceipt.buyerName || t("guestBuyer") });
   elements.receiptPhone.textContent = state.latestReceipt.buyerPhone ? t("phoneLine", { phone: state.latestReceipt.buyerPhone }) : "";
+  elements.receiptBusinessDescription.textContent = state.latestReceipt.businessDescription || "";
+  elements.receiptBusinessDescription.classList.toggle("hidden", !state.latestReceipt.businessDescription);
   elements.receiptDate.textContent = state.latestReceipt.createdAtText;
   elements.receiptInvoice.textContent = state.latestReceipt.invoiceNo;
   elements.receiptItems.innerHTML = state.latestReceipt.items.map((item) => `
@@ -741,6 +889,7 @@ function renderReceipt() {
   elements.receiptSubtotal.textContent = money(state.latestReceipt.subtotal);
   elements.receiptFee.textContent = money(state.latestReceipt.fee);
   elements.receiptTotal.textContent = money(state.latestReceipt.total);
+  elements.receiptFooterText.textContent = state.latestReceipt.receiptFooter || t("receiptThanks");
 }
 
 function renderAll() {
@@ -754,6 +903,7 @@ function renderAll() {
   renderProducts();
   renderReports();
   renderUsers();
+  renderSettings();
   renderReceipt();
   setRoute(state.route);
 }
@@ -764,6 +914,7 @@ function closeReceipt() {
 }
 
 function openPayment(order) {
+  const settings = currentSettings();
   state.pendingPaymentOrder = order;
   elements.paymentTotal.textContent = money(order.total);
   elements.paymentInvoice.textContent = order.invoice_no || order.invoiceNo;
@@ -771,6 +922,22 @@ function openPayment(order) {
   elements.paymentMethod.value = "";
   elements.qrBox.classList.add("hidden");
   elements.markPaidButton.classList.add("hidden");
+  if (elements.paymentQrImage) {
+    elements.paymentQrImage.src = settings.qr_image_url || "";
+    elements.paymentQrImage.classList.toggle("hidden", !settings.qr_image_url);
+  }
+  elements.qrBox.querySelector("strong").textContent = settings.qr_image_url ? "Bank QR" : "Beta QR";
+  elements.betaQrGrid.classList.toggle("hidden", Boolean(settings.qr_image_url));
+  if (settings.payment_method === "bank") {
+    elements.payManualButton.classList.add("hidden");
+  } else {
+    elements.payManualButton.classList.remove("hidden");
+  }
+  if (settings.payment_method === "cash") {
+    elements.payQrButton.classList.add("hidden");
+  } else {
+    elements.payQrButton.classList.remove("hidden");
+  }
   elements.paymentModal.classList.remove("hidden");
 }
 
@@ -823,6 +990,17 @@ function backToPaymentChoice() {
   elements.markPaidButton.classList.add("hidden");
 }
 
+function previewImage(input, target) {
+  const [file] = input.files || [];
+  if (!file || !target) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    target.src = String(reader.result || "");
+    target.classList.remove("hidden");
+  };
+  reader.readAsDataURL(file);
+}
+
 function makeDownload(data) {
   if (data.html) {
     const preview = window.open("", "_blank", "width=420,height=720");
@@ -851,6 +1029,17 @@ function createMockBackend() {
   const seed = () => ({
     sessionUserId: null,
     shops: [{ id: "shop-admin", name: "Nilaa Main Shop", status: "active", created_at: new Date().toISOString() }],
+    settings: [{
+      id: crypto.randomUUID(),
+      shop_id: "shop-admin",
+      business_name: "Nilaa Main Shop",
+      business_description: "",
+      payment_method: "both",
+      qr_image_url: "",
+      receipt_name: "nilaa-os",
+      receipt_footer: "Thanks you bong! please come again.",
+      shop_logo_url: ""
+    }],
     users: [],
     products: [
       { id: crypto.randomUUID(), shop_id: "shop-admin", name: "កាហ្វេទឹកកក", price: 1.5, stock_qty: 20, low_stock_at: 5 },
@@ -884,9 +1073,13 @@ function createMockBackend() {
     async signIn(username, password) {
       const store = load();
       const normalized = normalizeLoginIdentifier(username);
+      const phone = normalizePhone(username);
       const user = store.users.find(
         (item) =>
-          (item.username === username || normalizeLoginIdentifier(item.username) === normalized || item.email === normalized) &&
+          (item.username === username ||
+            normalizeLoginIdentifier(item.username) === normalized ||
+            item.email === normalized ||
+            normalizePhone(item.phone) === phone) &&
           item.password === password &&
           item.status !== "disabled"
       );
@@ -916,7 +1109,8 @@ function createMockBackend() {
         products: store.products.filter((item) => item.shop_id === shopId),
         expenses: store.expenses.filter((item) => item.shop_id === shopId && item.date === todayKey()).reverse(),
         orders: store.orders.filter((item) => item.shop_id === shopId && item.date === todayKey()).reverse(),
-        users: role === "admin" ? store.users : store.users.filter((item) => item.shop_id === shopId)
+        users: role === "admin" ? store.users : store.users.filter((item) => item.shop_id === shopId),
+        settings: store.settings.find((item) => item.shop_id === shopId) || null
       };
     },
     async saveProduct(shopId, payload) {
@@ -988,7 +1182,27 @@ function createMockBackend() {
       const store = load();
       const shopId = crypto.randomUUID();
       store.shops.push({ id: shopId, name: payload.shopName, status: "active", created_at: new Date().toISOString() });
-      store.users.push({ id: crypto.randomUUID(), username: payload.username, password: payload.password, role: payload.role, shop_id: shopId, status: "active", created_at: new Date().toISOString() });
+      store.settings.push({
+        id: crypto.randomUUID(),
+        shop_id: shopId,
+        business_name: payload.shopName,
+        business_description: "",
+        payment_method: "both",
+        qr_image_url: "",
+        receipt_name: payload.shopName || "nilaa-os",
+        receipt_footer: "Thanks you bong! please come again.",
+        shop_logo_url: ""
+      });
+      store.users.push({ id: crypto.randomUUID(), username: payload.username, email: payload.username, phone: payload.phone, password: payload.password, role: payload.role, shop_id: shopId, status: "active", created_at: new Date().toISOString() });
+      save(store);
+    },
+    async saveSettings(shopId, payload) {
+      const store = load();
+      const existing = store.settings.find((item) => item.shop_id === shopId);
+      if (existing) Object.assign(existing, payload);
+      else store.settings.push({ id: crypto.randomUUID(), shop_id: shopId, ...defaultSettings(), ...payload });
+      const shop = store.shops.find((item) => item.id === shopId);
+      if (shop && payload.business_name) shop.name = payload.business_name;
       save(store);
     },
     async markPaid(orderId, paymentMethod) {
@@ -1026,6 +1240,18 @@ function createSupabaseBackend() {
   };
 
   const columnMissing = (error) => String(error?.message || "").toLowerCase().includes("column");
+  const resolveLoginEmail = async (identifier) => {
+    const input = String(identifier || "").trim();
+    if (!isPhoneLogin(input)) return normalizeLoginIdentifier(input);
+    const alias = normalizePhone(input);
+    const { data, error } = await supabase
+      .from("login_aliases")
+      .select("login_email")
+      .eq("alias", alias)
+      .maybeSingle();
+    if (!error && data?.login_email) return data.login_email;
+    return phoneAliasToEmail(input);
+  };
 
   return {
     mode: "supabase",
@@ -1040,7 +1266,8 @@ function createSupabaseBackend() {
       return subscription.data.subscription;
     },
     async signIn(username, password) {
-      const { error } = await supabase.auth.signInWithPassword({ email: normalizeLoginIdentifier(username), password });
+      const email = await resolveLoginEmail(username);
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
     },
     async signOut() {
@@ -1058,13 +1285,14 @@ function createSupabaseBackend() {
       return data;
     },
     async fetchDashboard(shopId, role) {
-      const [productsRes, expensesRes, ordersRes, usersRes] = await Promise.all([
+      const [productsRes, expensesRes, ordersRes, usersRes, settingsRes] = await Promise.all([
         supabase.from("products").select("*").eq("shop_id", shopId).order("name"),
         supabase.from("expenses").select("*").eq("shop_id", shopId).eq("date", todayKey()).order("created_at", { ascending: false }),
         supabase.from("orders").select("*").eq("shop_id", shopId).eq("date", todayKey()).order("created_at", { ascending: false }),
         role === "admin"
           ? supabase.from("users").select("*").order("created_at", { ascending: false })
-          : supabase.from("users").select("*").eq("shop_id", shopId).order("created_at", { ascending: false })
+          : supabase.from("users").select("*").eq("shop_id", shopId).order("created_at", { ascending: false }),
+        supabase.from("settings").select("*").eq("shop_id", shopId).maybeSingle()
       ]);
 
       for (const result of [productsRes, expensesRes, ordersRes, usersRes]) {
@@ -1075,7 +1303,8 @@ function createSupabaseBackend() {
         products: productsRes.data || [],
         expenses: expensesRes.data || [],
         orders: (ordersRes.data || []).map((row) => ({ ...row, items: row.items || [] })),
-        users: usersRes.data || []
+        users: usersRes.data || [],
+        settings: settingsRes.error ? null : settingsRes.data || null
       };
     },
     async saveProduct(shopId, payload) {
@@ -1170,9 +1399,9 @@ function createSupabaseBackend() {
           name: payload.buyerName,
           phone: payload.buyerPhone,
           last_order_at: new Date().toISOString()
-        });
+        }).then(() => null).catch(() => null);
       }
-      await supabase.from("payments").insert({
+      const paymentInsert = await supabase.from("payments").insert({
         order_id: data.id,
         shop_id: shopId,
         method: payload.paymentMethod || "cash",
@@ -1180,6 +1409,9 @@ function createSupabaseBackend() {
         status: "paid",
         paid_at: new Date().toISOString()
       });
+      if (paymentInsert.error && !String(paymentInsert.error.message || "").toLowerCase().includes("relation")) {
+        console.warn(paymentInsert.error);
+      }
       return { ...data, buyer_phone: payload.buyerPhone };
     },
     async deleteOrder(shopId, orderId) {
@@ -1213,6 +1445,7 @@ function createSupabaseBackend() {
     async createUser(payload, profile) {
       if (profile.role !== "admin") throw new Error("Admin only");
       const email = normalizeLoginIdentifier(payload.username);
+      const phone = normalizePhone(payload.phone);
       const authClient = createClient(supabaseConfig.url, supabaseConfig.anonKey, {
         auth: {
           persistSession: false,
@@ -1240,15 +1473,63 @@ function createSupabaseBackend() {
         shopId = shop.id;
       }
 
-      const { error: profileError } = await supabase.from("users").insert({
+      const profileRecord = {
         id: authData.user.id,
         username: payload.username,
+        email,
+        phone,
         role: payload.role,
         shop_id: shopId,
         status: "active",
         created_at: new Date().toISOString()
-      });
+      };
+      let { error: profileError } = await supabase.from("users").insert(profileRecord);
+      if (profileError && columnMissing(profileError)) {
+        const { email: _email, phone: _phone, ...legacyProfileRecord } = profileRecord;
+        const legacyResult = await supabase.from("users").insert(legacyProfileRecord);
+        profileError = legacyResult.error;
+      }
       if (profileError) throw profileError;
+      if (phone) {
+        await supabase.from("login_aliases").upsert({
+          alias: phone,
+          login_email: email,
+          user_id: authData.user.id,
+          shop_id: shopId,
+          updated_at: new Date().toISOString()
+        });
+      }
+    },
+    async saveSettings(shopId, payload) {
+      const settingsRecord = {
+        shop_id: shopId,
+        business_name: payload.business_name,
+        business_description: payload.business_description,
+        payment_method: payload.payment_method,
+        qr_image_url: payload.qr_image_url,
+        receipt_name: payload.receipt_name,
+        receipt_footer: payload.receipt_footer,
+        shop_logo_url: payload.shop_logo_url,
+        updated_at: new Date().toISOString()
+      };
+      let { error } = await supabase.from("settings").upsert(settingsRecord, { onConflict: "shop_id" });
+      if (error && columnMissing(error)) {
+        const legacySettings = {
+          shop_id: shopId,
+          receipt_name: payload.receipt_name,
+          receipt_footer: payload.receipt_footer,
+          qr_image_url: payload.qr_image_url,
+          shop_logo_url: payload.shop_logo_url,
+          updated_at: new Date().toISOString()
+        };
+        const fallback = await supabase.from("settings").upsert(legacySettings, { onConflict: "shop_id" });
+        error = fallback.error;
+      }
+      if (error) throw error;
+      if (payload.business_name) {
+        const shopUpdate = await supabase.from("shops").update({ name: payload.business_name }).eq("id", shopId);
+        if (shopUpdate.error) throw shopUpdate.error;
+      }
     },
     async markPaid(orderId, paymentMethod) {
       let { error } = await supabase
@@ -1303,6 +1584,7 @@ async function loadDashboardData() {
     total: Number(row.total || 0)
   }));
   state.users = data.users;
+  state.settings = data.settings ? { ...defaultSettings(), ...data.settings } : defaultSettings();
 }
 
 async function afterMutation() {
@@ -1315,6 +1597,7 @@ async function loadSignedInUser(user) {
   if (!user) {
     state.profile = null;
     state.shop = null;
+    state.settings = null;
     state.products = [];
     state.expenses = [];
     state.orders = [];
@@ -1377,8 +1660,6 @@ elements.logoutButton.addEventListener("click", async () => {
 elements.sidebarLogoutButton?.addEventListener("click", async () => {
   await backend.signOut();
 });
-elements.bottomMoreButton?.addEventListener("click", () => openDrawer(true));
-
 elements.buyerName.addEventListener("input", (event) => {
   state.currentBuyer = event.target.value.trim();
 });
@@ -1532,6 +1813,7 @@ elements.adminCreateUserForm.addEventListener("submit", async (event) => {
   try {
     await backend.createUser({
       username: elements.newUsername.value.trim(),
+      phone: elements.newPhone.value.trim(),
       password: elements.newPassword.value.trim(),
       shopName: elements.newShopName.value.trim(),
       role: elements.newUserRole.value
@@ -1540,6 +1822,45 @@ elements.adminCreateUserForm.addEventListener("submit", async (event) => {
     await afterMutation();
   } catch (error) {
     window.alert(error.message || t("createUserFailed"));
+  }
+});
+
+elements.settingsProfileImage?.addEventListener("change", () => {
+  previewImage(elements.settingsProfileImage, elements.settingsProfilePreview);
+});
+
+elements.settingsQrUpload?.addEventListener("change", () => {
+  previewImage(elements.settingsQrUpload, elements.settingsQrPreview);
+});
+
+elements.settingsForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!state.profile) return;
+  try {
+    const current = currentSettings();
+    const profileImage = elements.settingsProfileImage.files?.[0]
+      ? await readFileAsDataUrl(elements.settingsProfileImage.files[0])
+      : current.shop_logo_url || "";
+    const qrImage = elements.settingsQrUpload.files?.[0]
+      ? await readFileAsDataUrl(elements.settingsQrUpload.files[0])
+      : current.qr_image_url || "";
+    const payload = {
+      business_name: elements.settingsBusinessName.value.trim() || state.shop?.name || "nilaa-os",
+      business_description: elements.settingsBusinessDescription.value.trim(),
+      payment_method: elements.settingsPaymentMethod.value,
+      qr_image_url: qrImage,
+      receipt_name: elements.settingsReceiptTitle.value.trim() || "nilaa-os",
+      receipt_footer: elements.settingsReceiptFooter.value.trim() || t("receiptThanks"),
+      shop_logo_url: profileImage
+    };
+    await backend.saveSettings(state.profile.shop_id || state.profile.shopId, payload, state.profile);
+    state.shop = { ...(state.shop || {}), name: payload.business_name };
+    state.settings = { ...current, ...payload };
+    elements.settingsProfileImage.value = "";
+    elements.settingsQrUpload.value = "";
+    await afterMutation();
+  } catch (error) {
+    window.alert(error.message || t("saveSettingsFailed"));
   }
 });
 
