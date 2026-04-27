@@ -129,12 +129,21 @@ const elements = {
   settingsQrPreview: document.getElementById("settingsQrPreview"),
   settingsReceiptTitle: document.getElementById("settingsReceiptTitle"),
   settingsReceiptFooter: document.getElementById("settingsReceiptFooter"),
+  settingsReceiptAddress: document.getElementById("settingsReceiptAddress"),
+  settingsReceiptContact: document.getElementById("settingsReceiptContact"),
+  settingsReceiptManager: document.getElementById("settingsReceiptManager"),
+  settingsReceiptNote: document.getElementById("settingsReceiptNote"),
   nonStaffFields: [...document.querySelectorAll("[data-non-staff='true']")],
   paymentQrImage: document.getElementById("paymentQrImage"),
   receiptHeaderTitle: document.getElementById("receiptHeaderTitle"),
   receiptBrandLogo: document.getElementById("receiptBrandLogo"),
   receiptBrandName: document.getElementById("receiptBrandName"),
   receiptBusinessDescription: document.getElementById("receiptBusinessDescription"),
+  receiptAddress: document.getElementById("receiptAddress"),
+  receiptContact: document.getElementById("receiptContact"),
+  receiptManager: document.getElementById("receiptManager"),
+  receiptNote: document.getElementById("receiptNote"),
+  receiptBarcodeValue: document.getElementById("receiptBarcodeValue"),
   receiptFooterText: document.getElementById("receiptFooterText"),
   screens: {
     pos: document.getElementById("posScreen"),
@@ -478,7 +487,20 @@ Object.assign(translations.km, {
   authCopy: "Request your account on Telegram first. After the owner approves it, you can sign in and stay signed in on this device.",
   requestStep1: "Send a Telegram message to the owner",
   requestStep3: "Wait for the owner to create your account",
-  adminHeading: "Create shop members"
+  adminHeading: "Create shop members",
+  receiptDesignHeading: "រចនាវិក្កយបត្រ",
+  receiptAddressLabel: "អាសយដ្ឋានអាជីវកម្ម",
+  receiptAddressPlaceholder: "ផ្លូវ ទីក្រុង ឬទីតាំងសម្គាល់",
+  receiptContactLabel: "លេខទំនាក់ទំនងលើវិក្កយបត្រ",
+  receiptContactPlaceholder: "ទូរស័ព្ទ Telegram ឬ Facebook",
+  receiptManagerLabel: "បន្ទាត់អ្នកគ្រប់គ្រង / អ្នកលក់",
+  receiptManagerPlaceholder: "អ្នកគ្រប់គ្រង: Srey Leak",
+  receiptExtraNoteLabel: "កំណត់សម្គាល់បន្ថែម",
+  receiptExtraNotePlaceholder: "ច្បាប់ប្តូរ ឬសារអរគុណ",
+  savePdfButton: "រក្សាទុក PDF",
+  buyerLabel: "អ្នកទិញ",
+  dateLabel: "កាលបរិច្ឆេទ",
+  invoiceLabel: "លេខវិក្កយបត្រ"
 });
 
 Object.assign(translations.en, {
@@ -496,7 +518,20 @@ Object.assign(translations.en, {
   authCopy: "Request your account on Telegram first. After the owner approves it, you can sign in and stay signed in on this device.",
   requestStep1: "Send a Telegram message to the owner",
   requestStep3: "Wait for the owner to create your account",
-  adminHeading: "Create shop members"
+  adminHeading: "Create shop members",
+  receiptDesignHeading: "Receipt designing",
+  receiptAddressLabel: "Business address",
+  receiptAddressPlaceholder: "Street, city, landmark",
+  receiptContactLabel: "Receipt contact",
+  receiptContactPlaceholder: "Phone / Telegram / social",
+  receiptManagerLabel: "Manager / cashier line",
+  receiptManagerPlaceholder: "Manager: Srey Leak",
+  receiptExtraNoteLabel: "Extra note",
+  receiptExtraNotePlaceholder: "Return policy or thank-you note",
+  savePdfButton: "Save PDF",
+  buyerLabel: "Buyer",
+  dateLabel: "Date",
+  invoiceLabel: "Invoice"
 });
 
 function t(key, vars = {}) {
@@ -712,7 +747,11 @@ function defaultSettings() {
     qr_image_url: "",
     receipt_name: "nilaa-os",
     receipt_footer: t("receiptThanks"),
-    shop_logo_url: ""
+    shop_logo_url: "",
+    receipt_address: "",
+    receipt_contact: "",
+    receipt_manager: "",
+    receipt_note: ""
   };
 }
 
@@ -737,6 +776,22 @@ function syncBrandVisuals() {
     elements.receiptBusinessDescription.textContent = settings.business_description || "";
     elements.receiptBusinessDescription.classList.toggle("hidden", !settings.business_description);
   }
+  if (elements.receiptAddress) {
+    elements.receiptAddress.textContent = settings.receipt_address || "";
+    elements.receiptAddress.classList.toggle("hidden", !settings.receipt_address);
+  }
+  if (elements.receiptContact) {
+    elements.receiptContact.textContent = settings.receipt_contact || "";
+    elements.receiptContact.classList.toggle("hidden", !settings.receipt_contact);
+  }
+  if (elements.receiptManager) {
+    elements.receiptManager.textContent = settings.receipt_manager || "";
+    elements.receiptManager.classList.toggle("hidden", !settings.receipt_manager);
+  }
+  if (elements.receiptNote) {
+    elements.receiptNote.textContent = settings.receipt_note || "";
+    elements.receiptNote.classList.toggle("hidden", !settings.receipt_note);
+  }
   if (elements.receiptFooterText) elements.receiptFooterText.textContent = settings.receipt_footer || t("receiptThanks");
   if (elements.shopName && state.route === "pos") {
     elements.shopName.textContent = t("navPOS");
@@ -750,6 +805,10 @@ function renderSettings() {
   if (elements.settingsPaymentMethod) elements.settingsPaymentMethod.value = settings.payment_method || "both";
   if (elements.settingsReceiptTitle) elements.settingsReceiptTitle.value = settings.receipt_name || "";
   if (elements.settingsReceiptFooter) elements.settingsReceiptFooter.value = settings.receipt_footer || t("receiptThanks");
+  if (elements.settingsReceiptAddress) elements.settingsReceiptAddress.value = settings.receipt_address || "";
+  if (elements.settingsReceiptContact) elements.settingsReceiptContact.value = settings.receipt_contact || "";
+  if (elements.settingsReceiptManager) elements.settingsReceiptManager.value = settings.receipt_manager || "";
+  if (elements.settingsReceiptNote) elements.settingsReceiptNote.value = settings.receipt_note || "";
   if (elements.settingsQrPreview) {
     const qrUrl = settings.qr_image_url || "";
     elements.settingsQrPreview.src = qrUrl || "assets/nilaa-logo.png";
@@ -1077,8 +1136,9 @@ function formatDateTime(value) {
 
 function buildReceipt(order) {
   const settings = currentSettings();
+  const invoiceNo = order.invoice_no || order.invoiceNo;
   return {
-    invoiceNo: order.invoice_no || order.invoiceNo,
+    invoiceNo,
     buyerName: order.buyer_name || order.buyerName,
     buyerPhone: order.buyer_phone || order.buyerPhone,
     paymentMethod: order.payment_method || order.paymentMethod,
@@ -1090,7 +1150,12 @@ function buildReceipt(order) {
     receiptName: settings.receipt_name || settings.business_name || "nilaa-os",
     receiptFooter: settings.receipt_footer || t("receiptThanks"),
     businessDescription: settings.business_description || "",
-    logoUrl: settings.shop_logo_url || ""
+    logoUrl: settings.shop_logo_url || "",
+    address: settings.receipt_address || "",
+    contact: settings.receipt_contact || "",
+    manager: settings.receipt_manager || "",
+    note: settings.receipt_note || "",
+    barcodeValue: `#${String(invoiceNo || "").replace(/[^0-9A-Za-z]/g, "").slice(-16) || "NILAAOS"}#`
   };
 }
 
@@ -1104,22 +1169,32 @@ function renderReceipt() {
   elements.receiptBrandName.textContent = state.latestReceipt.receiptName || "nilaa-os";
   elements.receiptBrandLogo.src = state.latestReceipt.logoUrl || "assets/nilaa-logo.png";
   elements.receiptBrandLogo.classList.toggle("hidden", !state.latestReceipt.logoUrl);
-  elements.receiptBuyer.textContent = t("buyerLine", { buyer: state.latestReceipt.buyerName || t("guestBuyer") });
-  elements.receiptPhone.textContent = state.latestReceipt.buyerPhone ? t("phoneLine", { phone: state.latestReceipt.buyerPhone }) : "";
+  elements.receiptBuyer.textContent = state.latestReceipt.buyerName || t("guestBuyer");
+  elements.receiptPhone.textContent = state.latestReceipt.buyerPhone || "-";
   elements.receiptBusinessDescription.textContent = state.latestReceipt.businessDescription || "";
   elements.receiptBusinessDescription.classList.toggle("hidden", !state.latestReceipt.businessDescription);
+  elements.receiptAddress.textContent = state.latestReceipt.address || "";
+  elements.receiptAddress.classList.toggle("hidden", !state.latestReceipt.address);
+  elements.receiptContact.textContent = state.latestReceipt.contact || "";
+  elements.receiptContact.classList.toggle("hidden", !state.latestReceipt.contact);
+  elements.receiptManager.textContent = state.latestReceipt.manager || "";
+  elements.receiptManager.classList.toggle("hidden", !state.latestReceipt.manager);
   elements.receiptDate.textContent = state.latestReceipt.createdAtText;
   elements.receiptInvoice.textContent = state.latestReceipt.invoiceNo;
   elements.receiptItems.innerHTML = state.latestReceipt.items.map((item) => `
       <div class="receipt-row">
         <span>${item.qty}</span>
-        <span>${safeText(item.name)}</span>
+        <span>${safeText(item.name)}<small>${money(item.price)} x ${item.qty}</small></span>
         <span>${money(item.qty * item.price)}</span>
       </div>
     `).join("");
   elements.receiptSubtotal.textContent = money(state.latestReceipt.subtotal);
   elements.receiptFee.textContent = money(state.latestReceipt.fee);
   elements.receiptTotal.textContent = money(state.latestReceipt.total);
+  elements.receiptNote.textContent = state.latestReceipt.note || "";
+  elements.receiptNote.classList.toggle("hidden", !state.latestReceipt.note);
+  elements.receiptBarcodeValue.textContent = state.latestReceipt.barcodeValue || "";
+  elements.receiptBarcodeValue.classList.toggle("hidden", !state.latestReceipt.barcodeValue);
   elements.receiptFooterText.textContent = state.latestReceipt.receiptFooter || t("receiptThanks");
 }
 
@@ -1816,6 +1891,10 @@ function createSupabaseBackend() {
         receipt_name: payload.receipt_name,
         receipt_footer: payload.receipt_footer,
         shop_logo_url: payload.shop_logo_url,
+        receipt_address: payload.receipt_address,
+        receipt_contact: payload.receipt_contact,
+        receipt_manager: payload.receipt_manager,
+        receipt_note: payload.receipt_note,
         updated_at: new Date().toISOString()
       };
       let { error } = await supabase.from("settings").upsert(settingsRecord, { onConflict: "shop_id" });
@@ -1826,6 +1905,10 @@ function createSupabaseBackend() {
           receipt_footer: payload.receipt_footer,
           qr_image_url: payload.qr_image_url,
           shop_logo_url: payload.shop_logo_url,
+          receipt_address: payload.receipt_address,
+          receipt_contact: payload.receipt_contact,
+          receipt_manager: payload.receipt_manager,
+          receipt_note: payload.receipt_note,
           updated_at: new Date().toISOString()
         };
         const fallback = await supabase.from("settings").upsert(legacySettings, { onConflict: "shop_id" });
@@ -2256,7 +2339,11 @@ elements.settingsForm?.addEventListener("submit", async (event) => {
       qr_image_url: qrImage,
       receipt_name: elements.settingsReceiptTitle.value.trim() || "nilaa-os",
       receipt_footer: elements.settingsReceiptFooter.value.trim() || t("receiptThanks"),
-      shop_logo_url: profileImage
+      shop_logo_url: profileImage,
+      receipt_address: elements.settingsReceiptAddress.value.trim(),
+      receipt_contact: elements.settingsReceiptContact.value.trim(),
+      receipt_manager: elements.settingsReceiptManager.value.trim(),
+      receipt_note: elements.settingsReceiptNote.value.trim()
     };
     await runWithStatus({
       title: state.language === "en" ? "Saving settings" : "កំពុងរក្សាទុកការកំណត់",

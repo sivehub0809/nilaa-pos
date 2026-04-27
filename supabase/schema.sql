@@ -129,6 +129,10 @@ create table if not exists settings (
   payment_method text not null default 'both',
   receipt_name text,
   receipt_footer text,
+  receipt_address text,
+  receipt_contact text,
+  receipt_manager text,
+  receipt_note text,
   qr_image_url text,
   currency text not null default 'USD',
   printer_mode text not null default 'browser',
@@ -139,6 +143,17 @@ create table if not exists settings (
 alter table settings add column if not exists business_name text;
 alter table settings add column if not exists business_description text;
 alter table settings add column if not exists payment_method text not null default 'both';
+alter table settings add column if not exists receipt_name text;
+alter table settings add column if not exists receipt_footer text;
+alter table settings add column if not exists receipt_address text;
+alter table settings add column if not exists receipt_contact text;
+alter table settings add column if not exists receipt_manager text;
+alter table settings add column if not exists receipt_note text;
+alter table settings add column if not exists qr_image_url text;
+alter table settings add column if not exists currency text not null default 'USD';
+alter table settings add column if not exists printer_mode text not null default 'browser';
+alter table settings add column if not exists shop_logo_url text;
+alter table settings add column if not exists updated_at timestamptz not null default now();
 
 alter table shops enable row level security;
 alter table users enable row level security;

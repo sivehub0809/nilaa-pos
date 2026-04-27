@@ -512,6 +512,30 @@
                 </div>
               </section>
 
+              <section class="record-box">
+                <div class="list-head">
+                  <h4 data-i18n="receiptDesignHeading">Receipt designing</h4>
+                </div>
+                <div class="settings-stack">
+                  <label>
+                    <span data-i18n="receiptAddressLabel">Business address</span>
+                    <textarea id="settingsReceiptAddress" rows="2" data-i18n-placeholder="receiptAddressPlaceholder" placeholder="Street, city, landmark"></textarea>
+                  </label>
+                  <label>
+                    <span data-i18n="receiptContactLabel">Receipt contact</span>
+                    <input id="settingsReceiptContact" type="text" data-i18n-placeholder="receiptContactPlaceholder" placeholder="Phone / Telegram / social">
+                  </label>
+                  <label>
+                    <span data-i18n="receiptManagerLabel">Manager / cashier line</span>
+                    <input id="settingsReceiptManager" type="text" data-i18n-placeholder="receiptManagerPlaceholder" placeholder="Manager: Srey Leak">
+                  </label>
+                  <label>
+                    <span data-i18n="receiptExtraNoteLabel">Extra note</span>
+                    <textarea id="settingsReceiptNote" rows="2" data-i18n-placeholder="receiptExtraNotePlaceholder" placeholder="Return policy or thank-you note"></textarea>
+                  </label>
+                </div>
+              </section>
+
               <button class="primary-button primary-button--full" type="submit" data-i18n="saveSettingsButton">Save settings</button>
             </form>
           </article>
@@ -644,15 +668,20 @@
         <div class="receipt-brand">
           <img id="receiptBrandLogo" class="receipt-brand__logo hidden" src="assets/nilaa-logo.png" alt="Receipt logo">
           <h1 id="receiptBrandName">nilaa-os</h1>
-          <p data-i18n="receiptTitle">Receipt</p>
-          <p id="receiptBuyer">Buyer:</p>
-          <p id="receiptPhone"></p>
+          <p class="receipt-brand__eyebrow" data-i18n="receiptTitle">Receipt</p>
           <p id="receiptBusinessDescription"></p>
+          <p id="receiptAddress" class="receipt-support hidden"></p>
+          <p id="receiptContact" class="receipt-support hidden"></p>
+          <p id="receiptManager" class="receipt-support hidden"></p>
         </div>
         <div class="receipt-divider"></div>
         <div class="receipt-meta">
-          <span id="receiptDate"></span>
-          <span id="receiptInvoice"></span>
+          <div><span data-i18n="dateLabel">Date</span><strong id="receiptDate"></strong></div>
+          <div><span data-i18n="invoiceLabel">Invoice</span><strong id="receiptInvoice"></strong></div>
+        </div>
+        <div class="receipt-meta">
+          <div><span data-i18n="buyerLabel">Buyer</span><strong id="receiptBuyer"></strong></div>
+          <div><span data-i18n="phoneLabel">Phone</span><strong id="receiptPhone"></strong></div>
         </div>
         <div class="receipt-table">
           <div class="receipt-row receipt-row--head">
@@ -667,11 +696,14 @@
         <div class="receipt-total"><span data-i18n="feeLabel">Fee</span><strong id="receiptFee"></strong></div>
         <div class="receipt-total receipt-total--grand"><span data-i18n="totalLabel">Total</span><strong id="receiptTotal"></strong></div>
         <div class="receipt-divider"></div>
+        <div id="receiptNote" class="receipt-note hidden"></div>
+        <div id="receiptBarcodeValue" class="receipt-barcode hidden"></div>
+        <div class="receipt-divider"></div>
         <p id="receiptFooterText" class="receipt-thanks" data-i18n="receiptThanks">Thanks you bong! please come again.</p>
       </div>
       <div class="receipt-actions">
         <button id="receiptBackButton" class="secondary-button" type="button" data-i18n="backButton">Back</button>
-        <button id="downloadReceiptButton" class="primary-button" type="button" data-i18n="downloadPdfButton">Download PDF</button>
+        <button id="downloadReceiptButton" class="primary-button" type="button" data-i18n="savePdfButton">Save PDF</button>
         <button id="printReceiptButton" class="secondary-button" type="button" data-i18n="printButton">Print</button>
       </div>
     </div>
