@@ -36,6 +36,11 @@ create table if not exists products (
   price numeric(12,2) not null default 0,
   stock_qty integer not null default 0,
   low_stock_at integer not null default 5,
+  enable_size boolean not null default true,
+  enable_sugar boolean not null default true,
+  enable_ice boolean not null default true,
+  enable_coffee boolean not null default true,
+  enable_toppings boolean not null default false,
   active boolean not null default true,
   created_at timestamptz not null default now()
 );
@@ -55,6 +60,11 @@ alter table products add column if not exists category_id uuid references catego
 alter table products add column if not exists image_url text;
 alter table products add column if not exists sort_order integer not null default 0;
 alter table products add column if not exists is_popular boolean not null default false;
+alter table products add column if not exists enable_size boolean not null default true;
+alter table products add column if not exists enable_sugar boolean not null default true;
+alter table products add column if not exists enable_ice boolean not null default true;
+alter table products add column if not exists enable_coffee boolean not null default true;
+alter table products add column if not exists enable_toppings boolean not null default false;
 
 create table if not exists expenses (
   id uuid primary key default gen_random_uuid(),

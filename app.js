@@ -30,6 +30,7 @@ const state = {
   splashDone: false,
   customerExpanded: false,
   productSearchQuery: "",
+  ordersSearchQuery: "",
   pendingCustomizerProduct: null,
   platformData: { shops: [], users: [] }
 };
@@ -105,11 +106,22 @@ const elements = {
   productPriceInput: document.getElementById("productPriceInput"),
   productStockInput: document.getElementById("productStockInput"),
   productLowStockInput: document.getElementById("productLowStockInput"),
+  productEnableSize: document.getElementById("productEnableSize"),
+  productEnableSugar: document.getElementById("productEnableSugar"),
+  productEnableIce: document.getElementById("productEnableIce"),
+  productEnableCoffee: document.getElementById("productEnableCoffee"),
+  productEnableToppings: document.getElementById("productEnableToppings"),
   productList: document.getElementById("productList"),
   productCount: document.getElementById("productCount"),
+  mobileCheckoutButton: document.getElementById("mobileCheckoutButton"),
+  ordersSearchInput: document.getElementById("ordersSearchInput"),
+  ordersPageCountSummary: document.getElementById("ordersPageCountSummary"),
+  ordersSalesTotal: document.getElementById("ordersSalesTotal"),
+  ordersCustomerCount: document.getElementById("ordersCustomerCount"),
   reportOrderCount: document.getElementById("reportOrderCount"),
   reportItemCount: document.getElementById("reportItemCount"),
   reportLowStockCount: document.getElementById("reportLowStockCount"),
+  reportSalesTotal: document.getElementById("reportSalesTotal"),
   lowStockLabel: document.getElementById("lowStockLabel"),
   orderList: document.getElementById("orderList"),
   orderCount: document.getElementById("orderCount"),
@@ -553,6 +565,21 @@ Object.assign(translations.km, {
   businessControlsHeading: "ការគ្រប់គ្រងអាជីវកម្ម",
   orderCounterLabel: "លេខកូដវិក្កយបត្របន្ទាប់",
   resetOrderCounterButton: "កំណត់ទៅ 1",
+  orderHistoryHeading: "ប្រវត្តិវិក្កយបត្រ",
+  orderLookupHeading: "ស្វែងរកវិក្កយបត្រ",
+  ordersSearchPlaceholder: "ស្វែងរកតាមលេខកូដ អ្នកទិញ លេខទូរស័ព្ទ ឬទំនិញ",
+  reportRecentHeading: "វិក្កយបត្រថ្មីៗ",
+  todaySalesShort: "ទឹកប្រាក់លក់",
+  customerCountLabel: "ចំនួនអតិថិជន",
+  scrollToCheckoutButton: "ទៅកាន់កន្ត្រក",
+  tapToAdd: "ចុចដើម្បីបន្ថែម",
+  optionsCountLabel: "{count} ជម្រើស",
+  productOptionEnableHeading: "បើកជម្រើសសម្រាប់ទំនិញនេះ",
+  productEnableSize: "ទំហំ",
+  productEnableSugar: "ស្ករ",
+  productEnableIce: "ទឹកកក",
+  productEnableCoffee: "កាហ្វេ",
+  productEnableToppings: "Topping",
   createOwnerButton: "បង្កើតហាងម្ចាស់",
   adminShopCountLabel: "ចំនួនហាង",
   adminUserCountLabel: "ចំនួនអ្នកប្រើ",
@@ -569,7 +596,10 @@ Object.assign(translations.km, {
   fixedPriceTag: "តម្លៃថេរ",
   customerToggle: "បន្ថែមព័ត៌មានអតិថិជន",
   adminOnlyUsers: "មានសិទ្ធិម្ចាស់ហាងប៉ុណ្ណោះ",
-  adminHeading: "បង្កើតសមាជិកហាង"
+  adminHeading: "បង្កើតសមាជិកហាង",
+  stockOnlyWarning: "បុគ្គលិកអាចកែបានតែចំនួនស្តុកសម្រាប់ទំនិញដែលមានរួចប៉ុណ្ណោះ។",
+  noShops: "មិនទាន់មានហាងទេ",
+  noPlatformUsers: "មិនទាន់មានអ្នកប្រើទេ"
 });
 
 Object.assign(translations.en, {
@@ -619,6 +649,21 @@ Object.assign(translations.en, {
   businessControlsHeading: "Business controls",
   orderCounterLabel: "Next invoice code",
   resetOrderCounterButton: "Reset to 1",
+  orderHistoryHeading: "Order history",
+  orderLookupHeading: "Order lookup",
+  ordersSearchPlaceholder: "Search invoice, buyer, phone, or item",
+  reportRecentHeading: "Recent receipts",
+  todaySalesShort: "Sales total",
+  customerCountLabel: "Customers",
+  scrollToCheckoutButton: "View checkout",
+  tapToAdd: "Tap to add",
+  optionsCountLabel: "{count} options",
+  productOptionEnableHeading: "Enable options for this product",
+  productEnableSize: "Size",
+  productEnableSugar: "Sugar",
+  productEnableIce: "Ice",
+  productEnableCoffee: "Coffee",
+  productEnableToppings: "Toppings",
   createOwnerButton: "Create owner shop",
   adminShopCountLabel: "Shops",
   adminUserCountLabel: "Users",
@@ -627,7 +672,10 @@ Object.assign(translations.en, {
   adminUserListHeading: "All users"
   ,
   adminOnlyUsers: "Only owners can see this section.",
-  adminHeading: "Create shop members"
+  adminHeading: "Create shop members",
+  stockOnlyWarning: "Staff can update stock only for existing products.",
+  noShops: "No shops",
+  noPlatformUsers: "No users"
 });
 
 function t(key, vars = {}) {
@@ -752,6 +800,16 @@ function currentOptionConfig() {
     ice: parseOptionList(settings.option_ice_levels, ["Normal"]),
     coffee: parseOptionList(settings.option_coffee_levels, ["Normal"]),
     toppings: parseOptionList(settings.option_toppings, [])
+  };
+}
+
+function productOptionState(product = {}) {
+  return {
+    size: product.enable_size !== false,
+    sugar: product.enable_sugar !== false,
+    ice: product.enable_ice !== false,
+    coffee: product.enable_coffee !== false,
+    toppings: product.enable_toppings === true
   };
 }
 
@@ -1085,9 +1143,14 @@ function renderAuth() {
 function renderCart() {
   const subtotal = state.cart.reduce((sum, item) => sum + item.qty * item.price, 0);
   const fee = Number(elements.orderFee.value || 0);
-  elements.cartCount.textContent = `${state.cart.reduce((sum, item) => sum + item.qty, 0)} ${t("itemUnit")}`;
+  const itemCount = state.cart.reduce((sum, item) => sum + item.qty, 0);
+  elements.cartCount.textContent = `${itemCount} ${t("itemUnit")}`;
   elements.cartSubtotal.textContent = money(subtotal);
   elements.cartTotal.textContent = money(subtotal + fee);
+  if (elements.mobileCheckoutButton) {
+    elements.mobileCheckoutButton.textContent = `${t("scrollToCheckoutButton")} • ${itemCount} • ${money(subtotal + fee)}`;
+    elements.mobileCheckoutButton.classList.toggle("hidden", state.cart.length === 0);
+  }
 
   elements.cartList.innerHTML = state.cart.length
     ? state.cart.map((item) => `
@@ -1170,21 +1233,32 @@ function renderProducts() {
   elements.quickProductList.innerHTML = filteredProducts.length
     ? filteredProducts.map((product) => {
         const left = effectiveStock(product);
+        const options = productOptionState(product);
+        const optionCount = Object.values(options).filter(Boolean).length;
         return `
           <button class="quick-product" type="button" data-quick-product-id="${product.id}" ${left <= 0 ? "disabled" : ""}>
               ${productImageMarkup(product)}
               <strong>${safeText(product.name)}</strong>
             <span>${money(product.price)} • ${left}</span>
+            <span class="quick-product__hint">${safeText(optionCount ? t("optionsCountLabel", { count: optionCount }) : t("tapToAdd"))}</span>
           </button>
         `;
       }).join("")
     : blankState(t("noProducts"));
 
-  elements.productList.innerHTML = state.products.length
-    ? state.products.map((product) => {
+  elements.productList.innerHTML = filteredProducts.length
+    ? filteredProducts.map((product) => {
         const left = effectiveStock(product);
         const lowAt = Number(product.low_stock_at ?? product.lowStockAt ?? 0);
         const isLow = left <= lowAt;
+        const options = productOptionState(product);
+        const enabledList = [
+          options.size ? t("productEnableSize") : "",
+          options.sugar ? t("productEnableSugar") : "",
+          options.ice ? t("productEnableIce") : "",
+          options.coffee ? t("productEnableCoffee") : "",
+          options.toppings ? t("productEnableToppings") : ""
+        ].filter(Boolean);
         return `
           <article class="product-row">
             <div class="product-row__media">
@@ -1192,6 +1266,7 @@ function renderProducts() {
               <div>
                 <strong>${safeText(product.name)}</strong>
                 <div class="meta-line">${t("productMeta", { price: money(product.price), left })}</div>
+                ${enabledList.length ? `<div class="meta-line">${safeText(enabledList.join(" • "))}</div>` : ""}
               </div>
             </div>
             <div>
@@ -1206,14 +1281,34 @@ function renderProducts() {
 
 function renderOrdersHistory() {
   if (!elements.ordersHistoryList) return;
-  elements.ordersPageCount.textContent = state.orders.length;
-  elements.ordersHistoryList.innerHTML = state.orders.length
-    ? state.orders.map((order) => `
+  const query = state.ordersSearchQuery.trim().toLowerCase();
+  const filteredOrders = state.orders
+    .slice()
+    .sort((a, b) => new Date(b.created_at || b.createdAt || 0) - new Date(a.created_at || a.createdAt || 0))
+    .filter((order) => {
+      if (!query) return true;
+      const haystack = [
+        order.invoice_no || order.invoiceNo,
+        order.buyer_name || order.buyerName,
+        order.buyer_phone || order.buyerPhone,
+        orderSummary(order)
+      ].join(" ").toLowerCase();
+      return haystack.includes(query);
+    });
+  const buyerCount = new Set(filteredOrders.map((order) => (order.buyer_phone || order.buyerPhone || order.buyer_name || order.buyerName || order.id))).size;
+  const salesTotal = filteredOrders.reduce((sum, order) => sum + Number(order.total || 0), 0);
+  elements.ordersPageCount.textContent = filteredOrders.length;
+  if (elements.ordersPageCountSummary) elements.ordersPageCountSummary.textContent = filteredOrders.length;
+  if (elements.ordersSalesTotal) elements.ordersSalesTotal.textContent = money(salesTotal);
+  if (elements.ordersCustomerCount) elements.ordersCustomerCount.textContent = buyerCount;
+  elements.ordersHistoryList.innerHTML = filteredOrders.length
+    ? filteredOrders.map((order) => `
         <article class="record-row">
           <div>
             <strong>${safeText(order.invoice_no || order.invoiceNo)}</strong>
             <div class="meta-line">${safeText(order.buyer_name || order.buyerName || t("guestBuyer"))}</div>
             <div class="meta-line">${safeText(order.payment_method || "cash")} • ${safeText(formatDateTime(order.created_at || order.createdAt))}</div>
+            <div class="meta-line">${safeText(orderSummary(order))}</div>
           </div>
           <div class="record-actions">
             <strong>${money(order.total)}</strong>
@@ -1230,13 +1325,19 @@ function renderOrdersHistory() {
 function renderReports() {
   const itemCount = state.orders.reduce((sum, order) => sum + (order.items || []).reduce((s, item) => s + item.qty, 0), 0);
   const lowStock = state.products.filter((product) => effectiveStock(product) <= Number(product.low_stock_at ?? product.lowStockAt ?? 0));
+  const recentOrders = state.orders
+    .slice()
+    .sort((a, b) => new Date(b.created_at || b.createdAt || 0) - new Date(a.created_at || a.createdAt || 0))
+    .slice(0, 6);
+  const salesTotal = state.orders.reduce((sum, order) => sum + Number(order.total || 0), 0);
   elements.reportOrderCount.textContent = state.orders.length;
   elements.reportItemCount.textContent = itemCount;
   elements.reportLowStockCount.textContent = lowStock.length;
-  elements.orderCount.textContent = state.orders.length;
+  if (elements.reportSalesTotal) elements.reportSalesTotal.textContent = money(salesTotal);
+  elements.orderCount.textContent = recentOrders.length;
   elements.lowStockLabel.textContent = lowStock.length;
-  elements.orderList.innerHTML = state.orders.length
-    ? state.orders.map((order) => {
+  elements.orderList.innerHTML = recentOrders.length
+    ? recentOrders.map((order) => {
         const firstItem = order.items?.[0];
         const previewProduct = firstItem ? state.products.find((item) => item.id === firstItem.productId) : null;
         return `
@@ -1246,13 +1347,13 @@ function renderReports() {
             <div>
               <strong>${safeText(order.invoice_no || order.invoiceNo)}</strong>
               <div class="meta-line">${safeText(t("orderMeta", { buyer: order.buyer_name || order.buyerName || t("guestBuyer"), summary: orderSummary(order) }))}</div>
+              <div class="meta-line">${safeText(order.payment_method || "cash")} • ${safeText(formatDateTime(order.created_at || order.createdAt))}</div>
             </div>
           </div>
           <div class="record-actions">
             <strong>${money(order.total)}</strong>
             <div class="record-actions__buttons">
               <button class="secondary-button" type="button" data-open-receipt-id="${order.id}">${t("receiptTitle")}</button>
-              <button class="delete-button" type="button" data-order-id="${order.id}">${t("deleteButton")}</button>
             </div>
           </div>
         </article>
@@ -1331,7 +1432,7 @@ function renderAdminScreen() {
           <div><span class="tag">${safeText(shop.status || "active")}</span></div>
         </article>
       `).join("")
-    : blankState("No shops");
+    : blankState(t("noShops"));
   elements.adminUserList.innerHTML = state.platformData.users.length
     ? state.platformData.users.map((user) => `
         <article class="record-row">
@@ -1341,7 +1442,7 @@ function renderAdminScreen() {
           </div>
         </article>
       `).join("")
-    : blankState("No users");
+    : blankState(t("noPlatformUsers"));
 }
 
 function formatDateTime(value) {
@@ -1571,12 +1672,17 @@ function renderItemCustomizer() {
     return;
   }
   const config = currentOptionConfig();
+  const enabled = productOptionState(product);
   elements.itemModalTitle.textContent = product.name;
   elements.itemModalPrice.textContent = money(product.price);
   fillSelectOptions(elements.itemSize, config.sizes);
   fillSelectOptions(elements.itemSugar, config.sugar);
   fillSelectOptions(elements.itemIce, config.ice);
   fillSelectOptions(elements.itemCoffee, config.coffee);
+  elements.itemSize.closest("label")?.classList.toggle("hidden", !enabled.size);
+  elements.itemSugar.closest("label")?.classList.toggle("hidden", !enabled.sugar);
+  elements.itemIce.closest("label")?.classList.toggle("hidden", !enabled.ice);
+  elements.itemCoffee.closest("label")?.classList.toggle("hidden", !enabled.coffee);
   elements.itemToppings.innerHTML = config.toppings.length
     ? config.toppings.map((topping, index) => `
         <label class="option-check">
@@ -1585,6 +1691,7 @@ function renderItemCustomizer() {
         </label>
       `).join("")
     : `<p class="meta-line">${safeText(state.language === "en" ? "No toppings configured yet." : "មិនទាន់មាន topping ទេ។")}</p>`;
+  elements.itemToppings.closest("fieldset")?.classList.toggle("hidden", !enabled.toppings);
   elements.itemNote.value = "";
   elements.itemModal.classList.remove("hidden");
 }
@@ -1603,12 +1710,13 @@ function addCustomizedItemToCart() {
   const product = state.pendingCustomizerProduct;
   if (!product) return;
   const selectedToppings = [...elements.itemToppings.querySelectorAll("input:checked")].map((node) => node.value);
+  const enabled = productOptionState(product);
   const options = {
-    size: elements.itemSize.value,
-    sugar: elements.itemSugar.value,
-    ice: elements.itemIce.value,
-    coffee: elements.itemCoffee.value,
-    toppings: selectedToppings,
+    size: enabled.size ? elements.itemSize.value : "",
+    sugar: enabled.sugar ? elements.itemSugar.value : "",
+    ice: enabled.ice ? elements.itemIce.value : "",
+    coffee: enabled.coffee ? elements.itemCoffee.value : "",
+    toppings: enabled.toppings ? selectedToppings : [],
     note: elements.itemNote.value.trim()
   };
   state.cart.push({
@@ -2000,7 +2108,18 @@ function createSupabaseBackend() {
       if (existing) {
         let { error } = await supabase.from("products").update(payload).eq("id", existing.id);
         if (error && columnMissing(error)) {
-          const { image_url: _imageUrl, category_id: _categoryId, sort_order: _sortOrder, is_popular: _isPopular, ...legacyPayload } = payload;
+          const {
+            image_url: _imageUrl,
+            category_id: _categoryId,
+            sort_order: _sortOrder,
+            is_popular: _isPopular,
+            enable_size: _enableSize,
+            enable_sugar: _enableSugar,
+            enable_ice: _enableIce,
+            enable_coffee: _enableCoffee,
+            enable_toppings: _enableToppings,
+            ...legacyPayload
+          } = payload;
           const fallback = await supabase.from("products").update(legacyPayload).eq("id", existing.id);
           error = fallback.error;
         }
@@ -2008,7 +2127,18 @@ function createSupabaseBackend() {
       } else {
         let { error } = await supabase.from("products").insert({ shop_id: shopId, ...payload });
         if (error && columnMissing(error)) {
-          const { image_url: _imageUrl, category_id: _categoryId, sort_order: _sortOrder, is_popular: _isPopular, ...legacyPayload } = payload;
+          const {
+            image_url: _imageUrl,
+            category_id: _categoryId,
+            sort_order: _sortOrder,
+            is_popular: _isPopular,
+            enable_size: _enableSize,
+            enable_sugar: _enableSugar,
+            enable_ice: _enableIce,
+            enable_coffee: _enableCoffee,
+            enable_toppings: _enableToppings,
+            ...legacyPayload
+          } = payload;
           const fallback = await supabase.from("products").insert({ shop_id: shopId, ...legacyPayload });
           error = fallback.error;
         }
@@ -2368,6 +2498,12 @@ function syncProductFormPreview(product = null) {
   const imageUrl = product?.image_url || "";
   elements.productImagePreview.src = imageUrl || "";
   elements.productImagePreview.classList.toggle("hidden", !imageUrl);
+  const options = productOptionState(product || {});
+  if (elements.productEnableSize) elements.productEnableSize.checked = options.size;
+  if (elements.productEnableSugar) elements.productEnableSugar.checked = options.sugar;
+  if (elements.productEnableIce) elements.productEnableIce.checked = options.ice;
+  if (elements.productEnableCoffee) elements.productEnableCoffee.checked = options.coffee;
+  if (elements.productEnableToppings) elements.productEnableToppings.checked = options.toppings;
 }
 
 elements.langKmButton?.addEventListener("click", () => setLanguage("km"));
@@ -2431,6 +2567,11 @@ elements.productSearch.addEventListener("input", () => {
   renderProducts();
 });
 
+elements.ordersSearchInput?.addEventListener("input", () => {
+  state.ordersSearchQuery = elements.ordersSearchInput.value.trim();
+  renderOrdersHistory();
+});
+
 elements.productSearch.addEventListener("keydown", (event) => {
   if (event.key !== "Enter") return;
   const product = currentProductByName(elements.productSearch.value);
@@ -2441,7 +2582,15 @@ elements.productSearch.addEventListener("keydown", (event) => {
 
 elements.productNameInput?.addEventListener("input", () => {
   const existing = currentProductByName(elements.productNameInput.value);
-  if (!existing) return;
+  if (!existing) {
+    if (canEditProductMeta()) {
+      elements.productPriceInput.value = "";
+      elements.productLowStockInput.value = "5";
+    }
+    elements.productStockInput.value = "0";
+    syncProductFormPreview();
+    return;
+  }
   elements.productPriceInput.value = existing.price ?? "";
   elements.productStockInput.value = existing.stock_qty ?? 0;
   elements.productLowStockInput.value = existing.low_stock_at ?? 5;
@@ -2465,6 +2614,10 @@ elements.quickProductList.addEventListener("click", (event) => {
   const product = state.products.find((item) => item.id === target.dataset.quickProductId);
   if (!product || effectiveStock(product) <= 0) return;
   openItemCustomizer(product);
+});
+
+elements.mobileCheckoutButton?.addEventListener("click", () => {
+  document.querySelector(".panel--checkout")?.scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
 elements.orderFee.addEventListener("input", renderCart);
@@ -2579,18 +2732,33 @@ elements.productForm.addEventListener("submit", async (event) => {
     return;
   }
   if (!canEditProductMeta() && !existing) {
-    window.alert("Staff can update stock only for existing products.");
+    window.alert(t("stockOnlyWarning"));
     return;
   }
   try {
     const image_url = elements.productImageInput.files?.[0]
       ? await readFileAsDataUrl(elements.productImageInput.files[0])
       : existing?.image_url || "";
+    const optionPayload = canEditProductMeta()
+      ? {
+          enable_size: elements.productEnableSize?.checked ?? true,
+          enable_sugar: elements.productEnableSugar?.checked ?? true,
+          enable_ice: elements.productEnableIce?.checked ?? true,
+          enable_coffee: elements.productEnableCoffee?.checked ?? true,
+          enable_toppings: elements.productEnableToppings?.checked ?? false
+        }
+      : {
+          enable_size: existing?.enable_size ?? true,
+          enable_sugar: existing?.enable_sugar ?? true,
+          enable_ice: existing?.enable_ice ?? true,
+          enable_coffee: existing?.enable_coffee ?? true,
+          enable_toppings: existing?.enable_toppings ?? false
+        };
     await runWithStatus({
       title: state.language === "en" ? "Saving product" : "កំពុងរក្សាទុកទំនិញ",
       message: state.language === "en" ? "Please wait..." : "សូមរង់ចាំ...",
       successTitle: state.language === "en" ? "Product saved" : "រក្សាទុកបាន"
-    }, () => backend.saveProduct(state.profile.shop_id || state.profile.shopId, { name, image_url, price, stock_qty, low_stock_at, active: true }));
+    }, () => backend.saveProduct(state.profile.shop_id || state.profile.shopId, { name, image_url, price, stock_qty, low_stock_at, active: true, ...optionPayload }));
   } catch (error) {
     window.alert(error.message || t("saveProductFailed"));
     return;

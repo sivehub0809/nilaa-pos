@@ -203,6 +203,7 @@
               </div>
 
               <div id="quickProductList" class="quick-product-list quick-product-list--desktop"></div>
+              <button id="mobileCheckoutButton" class="primary-button mobile-checkout-button" type="button" data-i18n="scrollToCheckoutButton">View checkout</button>
 
               <form id="orderForm" class="hidden">
                 <input id="productQty" type="number" min="1" value="1">
@@ -273,9 +274,32 @@
                 <h3 data-i18n="navOrdersShort">Orders</h3>
               </div>
             </div>
+            <div class="summary-grid">
+              <article class="summary-card">
+                <p data-i18n="orderCountLabel">Invoices</p>
+                <strong id="ordersPageCountSummary">0</strong>
+              </article>
+              <article class="summary-card">
+                <p data-i18n="todaySalesShort">Sales total</p>
+                <strong id="ordersSalesTotal">$0.00</strong>
+              </article>
+              <article class="summary-card">
+                <p data-i18n="customerCountLabel">Customers</p>
+                <strong id="ordersCustomerCount">0</strong>
+              </article>
+            </div>
             <div class="record-box">
               <div class="list-head">
-                <h4 data-i18n="salesListHeading">Today orders</h4>
+                <h4 data-i18n="orderLookupHeading">Order lookup</h4>
+              </div>
+              <label class="search-field">
+                <span class="hidden" data-i18n="orderLookupHeading">Order lookup</span>
+                <input id="ordersSearchInput" type="text" data-i18n-placeholder="ordersSearchPlaceholder" placeholder="Search invoice, buyer, phone, or item">
+              </label>
+            </div>
+            <div class="record-box">
+              <div class="list-head">
+                <h4 data-i18n="orderHistoryHeading">Order history</h4>
                 <span id="ordersPageCount">0</span>
               </div>
               <div id="ordersHistoryList" class="stack-list"></div>
@@ -370,6 +394,31 @@
                 <span data-i18n="lowStockLabelText">Low stock warning</span>
                 <input id="productLowStockInput" type="number" min="0" value="5">
               </label>
+              <fieldset class="option-fieldset grid-form__wide" data-non-staff="true">
+                <legend data-i18n="productOptionEnableHeading">Enable item options</legend>
+                <div class="option-toggle-grid">
+                  <label class="option-check">
+                    <input id="productEnableSize" type="checkbox" checked>
+                    <span data-i18n="productEnableSize">Size</span>
+                  </label>
+                  <label class="option-check">
+                    <input id="productEnableSugar" type="checkbox" checked>
+                    <span data-i18n="productEnableSugar">Sugar</span>
+                  </label>
+                  <label class="option-check">
+                    <input id="productEnableIce" type="checkbox" checked>
+                    <span data-i18n="productEnableIce">Ice</span>
+                  </label>
+                  <label class="option-check">
+                    <input id="productEnableCoffee" type="checkbox" checked>
+                    <span data-i18n="productEnableCoffee">Coffee</span>
+                  </label>
+                  <label class="option-check">
+                    <input id="productEnableToppings" type="checkbox">
+                    <span data-i18n="productEnableToppings">Toppings</span>
+                  </label>
+                </div>
+              </fieldset>
               <button class="primary-button primary-button--full" type="submit" data-i18n="saveProductButton">Save product</button>
             </form>
 
@@ -422,11 +471,15 @@
                 <p data-i18n="lowStockSummaryLabel">Low stock</p>
                 <strong id="reportLowStockCount">0</strong>
               </article>
+              <article class="summary-card">
+                <p data-i18n="todaySalesShort">Sales total</p>
+                <strong id="reportSalesTotal">$0.00</strong>
+              </article>
             </div>
             <div class="two-column">
               <div class="record-box">
                 <div class="list-head">
-                  <h4 data-i18n="salesListHeading">Order detail</h4>
+                  <h4 data-i18n="reportRecentHeading">Recent receipts</h4>
                   <span id="orderCount">0</span>
                 </div>
                 <div id="orderList" class="stack-list"></div>
