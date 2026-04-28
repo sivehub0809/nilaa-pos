@@ -12,7 +12,7 @@ create table if not exists users (
   username text not null unique,
   email text,
   phone text,
-  role text not null check (role in ('owner', 'staff', 'cashier')),
+  role text not null check (role in ('admin', 'owner', 'business_owner', 'staff', 'cashier')),
   shop_id uuid not null references shops(id) on delete cascade,
   status text not null default 'active',
   created_at timestamptz not null default now()
@@ -133,6 +133,12 @@ create table if not exists settings (
   receipt_contact text,
   receipt_manager text,
   receipt_note text,
+  option_sizes text,
+  option_sugar_levels text,
+  option_ice_levels text,
+  option_coffee_levels text,
+  option_toppings text,
+  order_counter integer not null default 1,
   qr_image_url text,
   currency text not null default 'USD',
   printer_mode text not null default 'browser',
@@ -149,6 +155,12 @@ alter table settings add column if not exists receipt_address text;
 alter table settings add column if not exists receipt_contact text;
 alter table settings add column if not exists receipt_manager text;
 alter table settings add column if not exists receipt_note text;
+alter table settings add column if not exists option_sizes text;
+alter table settings add column if not exists option_sugar_levels text;
+alter table settings add column if not exists option_ice_levels text;
+alter table settings add column if not exists option_coffee_levels text;
+alter table settings add column if not exists option_toppings text;
+alter table settings add column if not exists order_counter integer not null default 1;
 alter table settings add column if not exists qr_image_url text;
 alter table settings add column if not exists currency text not null default 'USD';
 alter table settings add column if not exists printer_mode text not null default 'browser';
@@ -183,74 +195,87 @@ as $$
   select shop_id from public.users where id = auth.uid()
 $$;
 
+drop policy if exists "users can read own profile or admin all" on users;
 create policy "users can read own profile or admin all"
 on users for select
 using (id = auth.uid() or public.current_user_role() = 'admin');
 
+drop policy if exists "admin can manage users" on users;
 create policy "admin can manage users"
 on users for all
 using (public.current_user_role() = 'admin')
 with check (public.current_user_role() = 'admin');
 
+drop policy if exists "public can resolve login aliases" on login_aliases;
 create policy "public can resolve login aliases"
 on login_aliases for select
 using (true);
 
+drop policy if exists "admin can manage login aliases" on login_aliases;
 create policy "admin can manage login aliases"
 on login_aliases for all
 using (public.current_user_role() = 'admin')
 with check (public.current_user_role() = 'admin');
 
+drop policy if exists "shop members can read their shop" on shops;
 create policy "shop members can read their shop"
 on shops for select
 using (id = public.current_user_shop_id() or public.current_user_role() = 'admin');
 
+drop policy if exists "admin manage shops" on shops;
 create policy "admin manage shops"
 on shops for all
 using (public.current_user_role() = 'admin')
 with check (public.current_user_role() = 'admin');
 
+drop policy if exists "shop members manage products" on products;
 create policy "shop members manage products"
 on products for all
 using (shop_id = public.current_user_shop_id() or public.current_user_role() = 'admin')
 with check (shop_id = public.current_user_shop_id() or public.current_user_role() = 'admin');
 
+drop policy if exists "shop members manage categories" on categories;
 create policy "shop members manage categories"
 on categories for all
 using (shop_id = public.current_user_shop_id() or public.current_user_role() = 'admin')
 with check (shop_id = public.current_user_shop_id() or public.current_user_role() = 'admin');
 
+drop policy if exists "shop members manage expenses" on expenses;
 create policy "shop members manage expenses"
 on expenses for all
 using (shop_id = public.current_user_shop_id() or public.current_user_role() = 'admin')
 with check (shop_id = public.current_user_shop_id() or public.current_user_role() = 'admin');
 
+drop policy if exists "shop members manage orders" on orders;
 create policy "shop members manage orders"
 on orders for all
 using (shop_id = public.current_user_shop_id() or public.current_user_role() = 'admin')
 with check (shop_id = public.current_user_shop_id() or public.current_user_role() = 'admin');
 
+drop policy if exists "shop members manage customers" on customers;
 create policy "shop members manage customers"
 on customers for all
 using (shop_id = public.current_user_shop_id() or public.current_user_role() = 'admin')
 with check (shop_id = public.current_user_shop_id() or public.current_user_role() = 'admin');
 
+drop policy if exists "shop members manage payments" on payments;
 create policy "shop members manage payments"
 on payments for all
 using (shop_id = public.current_user_shop_id() or public.current_user_role() = 'admin')
 with check (shop_id = public.current_user_shop_id() or public.current_user_role() = 'admin');
 
+drop policy if exists "shop members manage shifts" on shifts;
 create policy "shop members manage shifts"
 on shifts for all
 using (shop_id = public.current_user_shop_id() or public.current_user_role() = 'admin')
 with check (shop_id = public.current_user_shop_id() or public.current_user_role() = 'admin');
 
+drop policy if exists "shop members manage settings" on settings;
 create policy "shop members manage settings"
 on settings for all
 using (shop_id = public.current_user_shop_id() or public.current_user_role() = 'admin')
 with check (shop_id = public.current_user_shop_id() or public.current_user_role() = 'admin');
 
--- Existing production projects should also run this migration block once:
--- update users set role = 'owner' where role = 'admin';
+-- Existing production projects should also run this migration block once if needed:
 -- alter table users drop constraint if exists users_role_check;
--- alter table users add constraint users_role_check check (role in ('owner', 'staff', 'cashier'));
+-- alter table users add constraint users_role_check check (role in ('admin', 'owner', 'business_owner', 'staff', 'cashier'));

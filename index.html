@@ -145,6 +145,7 @@
           <button class="nav-button" data-route="settings" type="button" data-i18n="navSettings">Settings</button>
           <button class="nav-button" data-route="reports" type="button" data-i18n="navReports">Reports</button>
           <button class="nav-button hidden" data-owner-only="true" data-route="users" type="button" data-i18n="navUsers">Users &amp; Staff</button>
+          <button class="nav-button hidden" data-platform-admin="true" data-route="admin" type="button" data-i18n="navAdmin">Admin index</button>
           <button class="nav-button" data-route="help" type="button" data-i18n="navHelp">Help &amp; Support</button>
           <button class="nav-button" id="sidebarLogoutButton" type="button" data-i18n="logoutButton">Logout</button>
         </nav>
@@ -166,6 +167,7 @@
             <button class="nav-button" data-route="customers" type="button" data-i18n="navCustomers">Customers</button>
             <button class="nav-button" data-route="settings" type="button" data-i18n="navSettings">Settings</button>
             <button class="nav-button hidden" id="adminNavButton" data-owner-only="true" data-route="users" type="button" data-i18n="navUsers">Users &amp; Staff</button>
+            <button class="nav-button hidden" data-platform-admin="true" data-route="admin" type="button" data-i18n="navAdmin">Admin index</button>
             <button class="nav-button" data-route="help" type="button" data-i18n="navHelp">Help &amp; Support</button>
           </nav>
         </div>
@@ -536,6 +538,47 @@
                 </div>
               </section>
 
+              <section class="record-box">
+                <div class="list-head">
+                  <h4 data-i18n="productOptionHeading">Product option designing</h4>
+                </div>
+                <div class="settings-stack">
+                  <label>
+                    <span data-i18n="productOptionSizesLabel">Sizes (one per line)</span>
+                    <textarea id="settingsOptionSizes" rows="3" placeholder="Small&#10;Medium&#10;Large"></textarea>
+                  </label>
+                  <label>
+                    <span data-i18n="productOptionSugarLabel">Sugar levels</span>
+                    <textarea id="settingsOptionSugar" rows="3" placeholder="0%&#10;50%&#10;100%"></textarea>
+                  </label>
+                  <label>
+                    <span data-i18n="productOptionIceLabel">Ice levels</span>
+                    <textarea id="settingsOptionIce" rows="3" placeholder="No ice&#10;Less ice&#10;Normal ice"></textarea>
+                  </label>
+                  <label>
+                    <span data-i18n="productOptionCoffeeLabel">Coffee levels</span>
+                    <textarea id="settingsOptionCoffee" rows="3" placeholder="Light&#10;Normal&#10;Strong"></textarea>
+                  </label>
+                  <label>
+                    <span data-i18n="productOptionToppingsLabel">Toppings</span>
+                    <textarea id="settingsOptionToppings" rows="3" placeholder="Pearl&#10;Jelly&#10;Cream"></textarea>
+                  </label>
+                </div>
+              </section>
+
+              <section class="record-box">
+                <div class="list-head">
+                  <h4 data-i18n="businessControlsHeading">Business controls</h4>
+                </div>
+                <div class="settings-stack">
+                  <label>
+                    <span data-i18n="orderCounterLabel">Next invoice code</span>
+                    <input id="settingsOrderCounter" type="number" min="1" value="1">
+                  </label>
+                  <button id="resetOrderCounterButton" class="secondary-button" type="button" data-i18n="resetOrderCounterButton">Reset to 1</button>
+                </div>
+              </section>
+
               <button class="primary-button primary-button--full" type="submit" data-i18n="saveSettingsButton">Save settings</button>
             </form>
           </article>
@@ -563,10 +606,6 @@
                 <input id="newPassword" type="password" placeholder="********">
               </label>
               <label>
-                <span data-i18n="shopNameLabel">Shop name</span>
-                <input id="newShopName" type="text" placeholder="Nilaa Coffee">
-              </label>
-              <label>
                 <span data-i18n="roleLabel">Role</span>
                 <select id="newUserRole">
                   <option value="owner">owner</option>
@@ -583,6 +622,68 @@
                 <span id="userCount">0</span>
               </div>
               <div id="userList" class="stack-list"></div>
+            </div>
+          </article>
+        </section>
+
+        <section id="adminScreen" class="screen hidden">
+          <article class="panel">
+            <div class="panel__head">
+              <div>
+                <p class="eyebrow">Admin index</p>
+                <h3 data-i18n="navAdmin">Admin index</h3>
+              </div>
+            </div>
+            <div class="summary-grid">
+              <article class="summary-card">
+                <p data-i18n="adminShopCountLabel">Shops</p>
+                <strong id="adminShopCount">0</strong>
+              </article>
+              <article class="summary-card">
+                <p data-i18n="adminUserCountLabel">Users</p>
+                <strong id="adminUserCount">0</strong>
+              </article>
+              <article class="summary-card">
+                <p data-i18n="adminSchemaLabel">Schema</p>
+                <strong id="adminSchemaStatus">OK</strong>
+              </article>
+            </div>
+
+            <form id="adminPlatformForm" class="grid-form">
+              <label>
+                <span data-i18n="shopNameLabel">Shop name</span>
+                <input id="adminShopName" type="text" placeholder="Nilaa Coffee">
+              </label>
+              <label>
+                <span data-i18n="newUsernameLabel">User email</span>
+                <input id="adminUsername" type="email" placeholder="owner@example.com">
+              </label>
+              <label>
+                <span data-i18n="newPhoneLabel">User phone</span>
+                <input id="adminPhone" type="tel" inputmode="tel" placeholder="012 345 678">
+              </label>
+              <label>
+                <span data-i18n="passwordLabel">Password</span>
+                <input id="adminPassword" type="password" placeholder="********">
+              </label>
+              <button class="primary-button primary-button--full" type="submit" data-i18n="createOwnerButton">Create owner shop</button>
+            </form>
+
+            <div class="two-column">
+              <div class="record-box">
+                <div class="list-head">
+                  <h4 data-i18n="adminShopListHeading">All shops</h4>
+                  <span id="adminShopListCount">0</span>
+                </div>
+                <div id="adminShopList" class="stack-list"></div>
+              </div>
+              <div class="record-box">
+                <div class="list-head">
+                  <h4 data-i18n="adminUserListHeading">All users</h4>
+                  <span id="adminUserListCount">0</span>
+                </div>
+                <div id="adminUserList" class="stack-list"></div>
+              </div>
             </div>
           </article>
         </section>
@@ -651,6 +752,48 @@
         <button id="paymentBackButton" class="secondary-button" type="button" data-i18n="backButton">Back</button>
         <button id="markPaidButton" class="primary-button hidden" type="button" data-i18n="markPaidButton">Payment received</button>
         <button id="cancelPaymentButton" class="secondary-button" type="button" data-i18n="cancelButton">Cancel</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="itemModal" class="modal hidden">
+    <div class="payment-card item-modal-card">
+      <div class="receipt-card__top">
+        <div>
+          <h3 id="itemModalTitle">Customize item</h3>
+          <p id="itemModalPrice">$0.00</p>
+        </div>
+        <button id="closeItemButton" class="icon-button" type="button">&times;</button>
+      </div>
+      <div class="settings-stack">
+        <label>
+          <span data-i18n="sizeLabel">Size</span>
+          <select id="itemSize"></select>
+        </label>
+        <label>
+          <span data-i18n="sugarLabel">Sugar level</span>
+          <select id="itemSugar"></select>
+        </label>
+        <label>
+          <span data-i18n="iceLabel">Ice level</span>
+          <select id="itemIce"></select>
+        </label>
+        <label>
+          <span data-i18n="coffeeLabel">Coffee level</span>
+          <select id="itemCoffee"></select>
+        </label>
+        <fieldset class="option-fieldset">
+          <legend data-i18n="toppingLabel">Toppings</legend>
+          <div id="itemToppings" class="option-checklist"></div>
+        </fieldset>
+        <label>
+          <span data-i18n="noteLabel">Note</span>
+          <textarea id="itemNote" rows="2" data-i18n-placeholder="notePlaceholder" placeholder="Less sweet, no straw"></textarea>
+        </label>
+      </div>
+      <div class="receipt-actions">
+        <button id="cancelItemButton" class="secondary-button" type="button" data-i18n="cancelButton">Cancel</button>
+        <button id="addItemToCartButton" class="primary-button" type="button" data-i18n="addToCheckoutButton">Add to checkout</button>
       </div>
     </div>
   </section>

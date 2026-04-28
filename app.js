@@ -28,7 +28,10 @@ const state = {
   latestReceipt: null,
   backendMode: "setup",
   splashDone: false,
-  customerExpanded: false
+  customerExpanded: false,
+  productSearchQuery: "",
+  pendingCustomizerProduct: null,
+  platformData: { shops: [], users: [] }
 };
 
 const elements = {
@@ -115,10 +118,21 @@ const elements = {
   newUsername: document.getElementById("newUsername"),
   newPhone: document.getElementById("newPhone"),
   newPassword: document.getElementById("newPassword"),
-  newShopName: document.getElementById("newShopName"),
   newUserRole: document.getElementById("newUserRole"),
   userList: document.getElementById("userList"),
   userCount: document.getElementById("userCount"),
+  adminPlatformForm: document.getElementById("adminPlatformForm"),
+  adminShopName: document.getElementById("adminShopName"),
+  adminUsername: document.getElementById("adminUsername"),
+  adminPhone: document.getElementById("adminPhone"),
+  adminPassword: document.getElementById("adminPassword"),
+  adminShopCount: document.getElementById("adminShopCount"),
+  adminUserCount: document.getElementById("adminUserCount"),
+  adminSchemaStatus: document.getElementById("adminSchemaStatus"),
+  adminShopList: document.getElementById("adminShopList"),
+  adminUserList: document.getElementById("adminUserList"),
+  adminShopListCount: document.getElementById("adminShopListCount"),
+  adminUserListCount: document.getElementById("adminUserListCount"),
   settingsForm: document.getElementById("settingsForm"),
   settingsProfileImage: document.getElementById("settingsProfileImage"),
   settingsProfilePreview: document.getElementById("settingsProfilePreview"),
@@ -133,6 +147,13 @@ const elements = {
   settingsReceiptContact: document.getElementById("settingsReceiptContact"),
   settingsReceiptManager: document.getElementById("settingsReceiptManager"),
   settingsReceiptNote: document.getElementById("settingsReceiptNote"),
+  settingsOptionSizes: document.getElementById("settingsOptionSizes"),
+  settingsOptionSugar: document.getElementById("settingsOptionSugar"),
+  settingsOptionIce: document.getElementById("settingsOptionIce"),
+  settingsOptionCoffee: document.getElementById("settingsOptionCoffee"),
+  settingsOptionToppings: document.getElementById("settingsOptionToppings"),
+  settingsOrderCounter: document.getElementById("settingsOrderCounter"),
+  resetOrderCounterButton: document.getElementById("resetOrderCounterButton"),
   nonStaffFields: [...document.querySelectorAll("[data-non-staff='true']")],
   paymentQrImage: document.getElementById("paymentQrImage"),
   receiptHeaderTitle: document.getElementById("receiptHeaderTitle"),
@@ -155,8 +176,21 @@ const elements = {
     reports: document.getElementById("reportsScreen"),
     settings: document.getElementById("settingsScreen"),
     users: document.getElementById("usersScreen"),
+    admin: document.getElementById("adminScreen"),
     help: document.getElementById("helpScreen")
   },
+  itemModal: document.getElementById("itemModal"),
+  closeItemButton: document.getElementById("closeItemButton"),
+  cancelItemButton: document.getElementById("cancelItemButton"),
+  addItemToCartButton: document.getElementById("addItemToCartButton"),
+  itemModalTitle: document.getElementById("itemModalTitle"),
+  itemModalPrice: document.getElementById("itemModalPrice"),
+  itemSize: document.getElementById("itemSize"),
+  itemSugar: document.getElementById("itemSugar"),
+  itemIce: document.getElementById("itemIce"),
+  itemCoffee: document.getElementById("itemCoffee"),
+  itemToppings: document.getElementById("itemToppings"),
+  itemNote: document.getElementById("itemNote"),
   receiptModal: document.getElementById("receiptModal"),
   paymentModal: document.getElementById("paymentModal"),
   closePaymentButton: document.getElementById("closePaymentButton"),
@@ -317,7 +351,7 @@ const translations = {
     schemaBanner: "ការកំណត់ database មិនទាន់ពេញលេញទេ។ សូម run SQL ចុងក្រោយនៅ supabase/schema.sql ដើម្បីអោយ Settings, Payments និង Customers ដំណើរការ។",
     popupAlert: "សូមអនុញ្ញាត popup ដើម្បី print receipt",
     loginFailed: "មិនអាចចូលប្រើបានទេ។ សូមពិនិត្យអ៊ីមែល/លេខទូរស័ព្ទ និងពាក្យសម្ងាត់ម្តងទៀត។",
-    loginEmailOnly: "សូមប្រើអ៊ីមែល ឬលេខទូរស័ព្ទដែល admin បានបង្កើតអោយ។",
+    loginEmailOnly: "សូមប្រើអ៊ីមែល ឬលេខទូរស័ព្ទដែលក្រុមគាំទ្រ ឬម្ចាស់ហាងបានបង្កើតអោយ។",
     invalidProduct: "សូមជ្រើសរើសទំនិញ និងបញ្ចូលតម្លៃអោយត្រឹមត្រូវ",
     insufficientStock: "ស្តុកមិនគ្រប់",
     checkoutFailed: "បិទការលក់មិនបាន",
@@ -458,7 +492,7 @@ const translations = {
     schemaBanner: "Database setup is incomplete. Please run the latest SQL in supabase/schema.sql so Settings, Payments, and Customers work correctly.",
     popupAlert: "Please allow popups to print the receipt.",
     loginFailed: "Could not sign in. Please check your email/phone and password.",
-    loginEmailOnly: "Please use the email or phone number created by the admin.",
+    loginEmailOnly: "Please use the email or phone number created by support or your shop owner.",
     invalidProduct: "Please choose a product and enter a valid price.",
     insufficientStock: "Not enough stock.",
     checkoutFailed: "Could not close the sale.",
@@ -476,6 +510,7 @@ Object.assign(translations.km, {
   navExpenses: "Expenses",
   navCustomers: "Customers",
   navUsers: "Users & Staff",
+  navAdmin: "Admin index",
   navHelp: "Help & Support",
   fixedPriceTag: "Fixed prices",
   customerToggle: "Add customer info",
@@ -500,13 +535,48 @@ Object.assign(translations.km, {
   savePdfButton: "រក្សាទុក PDF",
   buyerLabel: "អ្នកទិញ",
   dateLabel: "កាលបរិច្ឆេទ",
-  invoiceLabel: "លេខវិក្កយបត្រ"
+  invoiceLabel: "លេខវិក្កយបត្រ",
+  sizeLabel: "ទំហំ",
+  sugarLabel: "កម្រិតស្ករ",
+  iceLabel: "កម្រិតទឹកកក",
+  coffeeLabel: "កម្រិតកាហ្វេ",
+  toppingLabel: "Topping",
+  noteLabel: "ចំណាំ",
+  notePlaceholder: "ផ្អែមតិច ឬមិនដាក់ចំបើង",
+  addToCheckoutButton: "បន្ថែមទៅកន្ត្រក",
+  productOptionHeading: "រចនាជម្រើសទំនិញ",
+  productOptionSizesLabel: "ទំហំ (បន្ទាត់មួយមួយ)",
+  productOptionSugarLabel: "កម្រិតស្ករ",
+  productOptionIceLabel: "កម្រិតទឹកកក",
+  productOptionCoffeeLabel: "កម្រិតកាហ្វេ",
+  productOptionToppingsLabel: "Topping",
+  businessControlsHeading: "ការគ្រប់គ្រងអាជីវកម្ម",
+  orderCounterLabel: "លេខកូដវិក្កយបត្របន្ទាប់",
+  resetOrderCounterButton: "កំណត់ទៅ 1",
+  createOwnerButton: "បង្កើតហាងម្ចាស់",
+  adminShopCountLabel: "ចំនួនហាង",
+  adminUserCountLabel: "ចំនួនអ្នកប្រើ",
+  adminSchemaLabel: "Schema",
+  adminShopListHeading: "បញ្ជីហាងទាំងអស់",
+  adminUserListHeading: "បញ្ជីអ្នកប្រើទាំងអស់",
+  loginEmailOnly: "សូមប្រើអ៊ីមែល ឬលេខទូរស័ព្ទដែលក្រុមគាំទ្រ ឬម្ចាស់ហាងបានអនុម័ត",
+  paymentBank: "បង់តាមធនាគារ",
+  paymentCash: "បង់សាច់ប្រាក់",
+  navExpenses: "ចំណាយ",
+  navCustomers: "អតិថិជន",
+  navUsers: "អ្នកប្រើ និងបុគ្គលិក",
+  navHelp: "ជំនួយ",
+  fixedPriceTag: "តម្លៃថេរ",
+  customerToggle: "បន្ថែមព័ត៌មានអតិថិជន",
+  adminOnlyUsers: "មានសិទ្ធិម្ចាស់ហាងប៉ុណ្ណោះ",
+  adminHeading: "បង្កើតសមាជិកហាង"
 });
 
 Object.assign(translations.en, {
   navExpenses: "Expenses",
   navCustomers: "Customers",
   navUsers: "Users & Staff",
+  navAdmin: "Admin index",
   navHelp: "Help & Support",
   fixedPriceTag: "Fixed prices",
   customerToggle: "Add customer info",
@@ -531,7 +601,33 @@ Object.assign(translations.en, {
   savePdfButton: "Save PDF",
   buyerLabel: "Buyer",
   dateLabel: "Date",
-  invoiceLabel: "Invoice"
+  invoiceLabel: "Invoice",
+  sizeLabel: "Size",
+  sugarLabel: "Sugar level",
+  iceLabel: "Ice level",
+  coffeeLabel: "Coffee level",
+  toppingLabel: "Toppings",
+  noteLabel: "Note",
+  notePlaceholder: "Less sweet, no straw",
+  addToCheckoutButton: "Add to checkout",
+  productOptionHeading: "Product option designing",
+  productOptionSizesLabel: "Sizes (one per line)",
+  productOptionSugarLabel: "Sugar levels",
+  productOptionIceLabel: "Ice levels",
+  productOptionCoffeeLabel: "Coffee levels",
+  productOptionToppingsLabel: "Toppings",
+  businessControlsHeading: "Business controls",
+  orderCounterLabel: "Next invoice code",
+  resetOrderCounterButton: "Reset to 1",
+  createOwnerButton: "Create owner shop",
+  adminShopCountLabel: "Shops",
+  adminUserCountLabel: "Users",
+  adminSchemaLabel: "Schema",
+  adminShopListHeading: "All shops",
+  adminUserListHeading: "All users"
+  ,
+  adminOnlyUsers: "Only owners can see this section.",
+  adminHeading: "Create shop members"
 });
 
 function t(key, vars = {}) {
@@ -611,6 +707,11 @@ function normalizeLoginIdentifier(value) {
   return input.includes("@") ? input : usernameToEmail(input);
 }
 
+function isPlatformAdminProfile(profile = state.profile) {
+  const identifier = String(profile?.email || profile?.username || "").trim().toLowerCase();
+  return identifier === "nilaademo@gmail.com";
+}
+
 function loginErrorMessage(error, attemptedIdentifier) {
   const fallback = t("loginFailed");
   const message = String(error?.message || "").trim();
@@ -634,8 +735,49 @@ function effectiveStock(product) {
   return Number(product.stock_qty || product.stockQty || 0) - currentReservedQty(product.id);
 }
 
+function parseOptionList(value, fallback = []) {
+  const input = Array.isArray(value) ? value.join("\n") : String(value || "");
+  const items = input
+    .split(/\r?\n|,/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+  return items.length ? items : fallback;
+}
+
+function currentOptionConfig() {
+  const settings = currentSettings();
+  return {
+    sizes: parseOptionList(settings.option_sizes, ["Regular"]),
+    sugar: parseOptionList(settings.option_sugar_levels, ["100%"]),
+    ice: parseOptionList(settings.option_ice_levels, ["Normal"]),
+    coffee: parseOptionList(settings.option_coffee_levels, ["Normal"]),
+    toppings: parseOptionList(settings.option_toppings, [])
+  };
+}
+
+function itemOptionParts(item) {
+  const options = item?.options || {};
+  const parts = [options.size, options.sugar, options.ice, options.coffee].filter(Boolean);
+  if (Array.isArray(options.toppings) && options.toppings.length) parts.push(options.toppings.join(", "));
+  if (options.note) parts.push(options.note);
+  return parts;
+}
+
+function itemOptionsMarkup(item) {
+  const parts = itemOptionParts(item);
+  return parts.length ? `<div class="meta-line">${safeText(parts.join(" • "))}</div>` : "";
+}
+
+function itemOptionsInlineText(item) {
+  const parts = itemOptionParts(item);
+  return parts.length ? ` (${parts.join(" / ")})` : "";
+}
+
 function orderSummary(order) {
-  return (order.items || []).map((item) => `${item.name} x${item.qty}`).join(", ");
+  return (order.items || []).map((item) => {
+    const parts = itemOptionParts(item);
+    return `${item.name} x${item.qty}${parts.length ? ` (${parts.join("/")})` : ""}`;
+  }).join(", ");
 }
 
 function qrSeed(value) {
@@ -751,8 +893,18 @@ function defaultSettings() {
     receipt_address: "",
     receipt_contact: "",
     receipt_manager: "",
-    receipt_note: ""
+    receipt_note: "",
+    option_sizes: "Small\nMedium\nLarge",
+    option_sugar_levels: "0%\n50%\n100%",
+    option_ice_levels: "No ice\nLess ice\nNormal ice",
+    option_coffee_levels: "Light\nNormal\nStrong",
+    option_toppings: "",
+    order_counter: 1
   };
+}
+
+function nextInvoiceNumber() {
+  return `#${Number(currentSettings().order_counter || 1)}`;
 }
 
 function currentSettings() {
@@ -809,6 +961,12 @@ function renderSettings() {
   if (elements.settingsReceiptContact) elements.settingsReceiptContact.value = settings.receipt_contact || "";
   if (elements.settingsReceiptManager) elements.settingsReceiptManager.value = settings.receipt_manager || "";
   if (elements.settingsReceiptNote) elements.settingsReceiptNote.value = settings.receipt_note || "";
+  if (elements.settingsOptionSizes) elements.settingsOptionSizes.value = settings.option_sizes || "Small\nMedium\nLarge";
+  if (elements.settingsOptionSugar) elements.settingsOptionSugar.value = settings.option_sugar_levels || "0%\n50%\n100%";
+  if (elements.settingsOptionIce) elements.settingsOptionIce.value = settings.option_ice_levels || "No ice\nLess ice\nNormal ice";
+  if (elements.settingsOptionCoffee) elements.settingsOptionCoffee.value = settings.option_coffee_levels || "Light\nNormal\nStrong";
+  if (elements.settingsOptionToppings) elements.settingsOptionToppings.value = settings.option_toppings || "";
+  if (elements.settingsOrderCounter) elements.settingsOrderCounter.value = Number(settings.order_counter || 1);
   if (elements.settingsQrPreview) {
     const qrUrl = settings.qr_image_url || "";
     elements.settingsQrPreview.src = qrUrl || "assets/nilaa-logo.png";
@@ -852,6 +1010,21 @@ function canEditProductMeta() {
   return currentRole() === "owner";
 }
 
+function defaultRouteForCurrentUser() {
+  if (isPlatformAdminProfile()) return "admin";
+  if (currentRole() === "staff") return "stock";
+  return "pos";
+}
+
+function canAccessRoute(route) {
+  if (isPlatformAdminProfile() && route === "admin") return true;
+  const role = currentRole();
+  if (role === "owner") return ["pos", "orders", "money", "expenses", "stock", "customers", "reports", "settings", "users", "help"].includes(route);
+  if (role === "staff") return ["stock", "help", "pos"].includes(route);
+  if (role === "cashier") return ["pos", "orders", "help"].includes(route);
+  return ["pos", "help"].includes(route);
+}
+
 function buttonLabel(route) {
   return {
     pos: t("navPOS"),
@@ -863,11 +1036,13 @@ function buttonLabel(route) {
     settings: t("navSettings"),
     reports: t("navReports"),
     users: t("navUsers"),
+    admin: t("navAdmin"),
     help: t("navHelp")
   }[route] || "nilaa-os";
 }
 
 function setRoute(route) {
+  if (!canAccessRoute(route)) route = defaultRouteForCurrentUser();
   state.route = route;
   Object.entries(elements.screens).forEach(([key, screen]) => {
     screen.classList.toggle("hidden", key !== route);
@@ -897,9 +1072,14 @@ function renderAuth() {
   document.querySelectorAll("[data-route='settings']").forEach((node) => {
     node.classList.toggle("hidden", !canManageSettings());
   });
-  if (!canManageUsers() && state.route === "users") {
-    setRoute("pos");
-  }
+  document.querySelectorAll("[data-platform-admin='true']").forEach((node) => {
+    node.classList.toggle("hidden", !isPlatformAdminProfile());
+  });
+  elements.navButtons.forEach((node) => {
+    if (!node.dataset.route) return;
+    node.classList.toggle("hidden", !canAccessRoute(node.dataset.route));
+  });
+  if (!canAccessRoute(state.route)) setRoute(defaultRouteForCurrentUser());
 }
 
 function renderCart() {
@@ -916,6 +1096,7 @@ function renderCart() {
             ${productImageMarkup(item, "small")}
             <div>
               <strong>${safeText(item.name)}</strong>
+              ${itemOptionsMarkup(item)}
               <div class="meta-line">${money(item.price)}</div>
             </div>
           </div>
@@ -966,13 +1147,26 @@ function renderProducts() {
   elements.categoryChips.forEach((button) => {
     button.classList.toggle("category-chip--active", button.dataset.productFilter === state.productFilter);
   });
-  const filteredProducts = state.products.filter((product, index) => {
-    const left = effectiveStock(product);
-    const lowAt = Number(product.low_stock_at ?? product.lowStockAt ?? 0);
-    if (state.productFilter === "popular") return Boolean(product.is_popular) || index < 8;
-    if (state.productFilter === "low") return left <= lowAt;
-    return true;
-  });
+  const query = state.productSearchQuery.trim().toLowerCase();
+  const filteredProducts = state.products
+    .filter((product, index) => {
+      const left = effectiveStock(product);
+      const lowAt = Number(product.low_stock_at ?? product.lowStockAt ?? 0);
+      if (state.productFilter === "popular" && !(Boolean(product.is_popular) || index < 8)) return false;
+      if (state.productFilter === "low" && !(left <= lowAt)) return false;
+      if (!query) return true;
+      return product.name.toLowerCase().includes(query);
+    })
+    .sort((a, b) => {
+      if (!query) return a.name.localeCompare(b.name, "km");
+      const aExact = a.name.toLowerCase() === query ? 1 : 0;
+      const bExact = b.name.toLowerCase() === query ? 1 : 0;
+      if (aExact !== bExact) return bExact - aExact;
+      const aStarts = a.name.toLowerCase().startsWith(query) ? 1 : 0;
+      const bStarts = b.name.toLowerCase().startsWith(query) ? 1 : 0;
+      if (aStarts !== bStarts) return bStarts - aStarts;
+      return a.name.localeCompare(b.name, "km");
+    });
   elements.quickProductList.innerHTML = filteredProducts.length
     ? filteredProducts.map((product) => {
         const left = effectiveStock(product);
@@ -1120,6 +1314,36 @@ function renderUsers() {
     : blankState(t("noUsers"));
 }
 
+function renderAdminScreen() {
+  if (!isPlatformAdminProfile()) return;
+  elements.adminShopCount.textContent = state.platformData.shops.length;
+  elements.adminUserCount.textContent = state.platformData.users.length;
+  elements.adminSchemaStatus.textContent = Object.values(state.capabilities || {}).every(Boolean) ? "Ready" : "Setup";
+  elements.adminShopListCount.textContent = state.platformData.shops.length;
+  elements.adminUserListCount.textContent = state.platformData.users.length;
+  elements.adminShopList.innerHTML = state.platformData.shops.length
+    ? state.platformData.shops.map((shop) => `
+        <article class="record-row">
+          <div>
+            <strong>${safeText(shop.name)}</strong>
+            <div class="meta-line">${safeText(shop.id)}</div>
+          </div>
+          <div><span class="tag">${safeText(shop.status || "active")}</span></div>
+        </article>
+      `).join("")
+    : blankState("No shops");
+  elements.adminUserList.innerHTML = state.platformData.users.length
+    ? state.platformData.users.map((user) => `
+        <article class="record-row">
+          <div>
+            <strong>${safeText(user.username || user.email || "-")}</strong>
+            <div class="meta-line">${safeText([user.role, user.shop_id || user.shopId, user.phone].filter(Boolean).join(" • "))}</div>
+          </div>
+        </article>
+      `).join("")
+    : blankState("No users");
+}
+
 function formatDateTime(value) {
   if (!value) return "";
   const date = typeof value === "string" ? new Date(value) : new Date(value);
@@ -1184,7 +1408,7 @@ function renderReceipt() {
   elements.receiptItems.innerHTML = state.latestReceipt.items.map((item) => `
       <div class="receipt-row">
         <span>${item.qty}</span>
-        <span>${safeText(item.name)}<small>${money(item.price)} x ${item.qty}</small></span>
+        <span>${safeText(item.name)}${itemOptionsMarkup(item)}<small>${money(item.price)} x ${item.qty}</small></span>
         <span>${money(item.qty * item.price)}</span>
       </div>
     `).join("");
@@ -1212,8 +1436,10 @@ function renderAll() {
   renderReports();
   renderCustomers();
   renderUsers();
+  renderAdminScreen();
   renderSettings();
   renderReceipt();
+  renderItemCustomizer();
   setRoute(state.route);
 }
 
@@ -1333,6 +1559,73 @@ function makeDownload(data) {
   }
 }
 
+function fillSelectOptions(select, options) {
+  if (!select) return;
+  select.innerHTML = options.map((option) => `<option value="${safeText(option)}">${safeText(option)}</option>`).join("");
+}
+
+function renderItemCustomizer() {
+  const product = state.pendingCustomizerProduct;
+  if (!product) {
+    elements.itemModal?.classList.add("hidden");
+    return;
+  }
+  const config = currentOptionConfig();
+  elements.itemModalTitle.textContent = product.name;
+  elements.itemModalPrice.textContent = money(product.price);
+  fillSelectOptions(elements.itemSize, config.sizes);
+  fillSelectOptions(elements.itemSugar, config.sugar);
+  fillSelectOptions(elements.itemIce, config.ice);
+  fillSelectOptions(elements.itemCoffee, config.coffee);
+  elements.itemToppings.innerHTML = config.toppings.length
+    ? config.toppings.map((topping, index) => `
+        <label class="option-check">
+          <input type="checkbox" value="${safeText(topping)}" ${index === 0 ? "" : ""}>
+          <span>${safeText(topping)}</span>
+        </label>
+      `).join("")
+    : `<p class="meta-line">${safeText(state.language === "en" ? "No toppings configured yet." : "មិនទាន់មាន topping ទេ។")}</p>`;
+  elements.itemNote.value = "";
+  elements.itemModal.classList.remove("hidden");
+}
+
+function openItemCustomizer(product) {
+  state.pendingCustomizerProduct = product;
+  renderItemCustomizer();
+}
+
+function closeItemCustomizer() {
+  state.pendingCustomizerProduct = null;
+  elements.itemModal?.classList.add("hidden");
+}
+
+function addCustomizedItemToCart() {
+  const product = state.pendingCustomizerProduct;
+  if (!product) return;
+  const selectedToppings = [...elements.itemToppings.querySelectorAll("input:checked")].map((node) => node.value);
+  const options = {
+    size: elements.itemSize.value,
+    sugar: elements.itemSugar.value,
+    ice: elements.itemIce.value,
+    coffee: elements.itemCoffee.value,
+    toppings: selectedToppings,
+    note: elements.itemNote.value.trim()
+  };
+  state.cart.push({
+    id: crypto.randomUUID(),
+    productId: product.id,
+    name: product.name,
+    image_url: product.image_url || "",
+    qty: 1,
+    price: Number(product.price || 0),
+    options
+  });
+  state.productSearchQuery = "";
+  elements.productSearch.value = "";
+  closeItemCustomizer();
+  renderAll();
+}
+
 async function downloadReceiptAsPdf() {
   const receiptNode = document.getElementById("receiptPaper");
   const jsPdfCtor = window.jspdf?.jsPDF;
@@ -1371,10 +1664,6 @@ async function downloadReceiptAsPdf() {
   setTimeout(() => URL.revokeObjectURL(url), 1500);
 }
 
-function nextInvoiceNumber() {
-  return `#${Date.now().toString().slice(-8)}`;
-}
-
 function createMockBackend() {
   const listeners = new Set();
   const seed = () => ({
@@ -1389,7 +1678,17 @@ function createMockBackend() {
       qr_image_url: "",
       receipt_name: "nilaa-os",
       receipt_footer: "Thanks you bong! please come again.",
-      shop_logo_url: ""
+      shop_logo_url: "",
+      receipt_address: "",
+      receipt_contact: "",
+      receipt_manager: "",
+      receipt_note: "",
+      option_sizes: "Small\nMedium\nLarge",
+      option_sugar_levels: "0%\n50%\n100%",
+      option_ice_levels: "No ice\nLess ice\nNormal ice",
+      option_coffee_levels: "Light\nNormal\nStrong",
+      option_toppings: "",
+      order_counter: 1
     }],
     users: [],
     products: [
@@ -1448,7 +1747,7 @@ function createMockBackend() {
     async getProfile(uid) {
       const store = load();
       const user = store.users.find((item) => item.id === uid);
-      return user ? { id: user.id, username: user.username, role: user.role, shop_id: user.shop_id, status: user.status } : null;
+      return user ? { id: user.id, username: user.username, email: user.email, phone: user.phone, role: user.role, shop_id: user.shop_id, status: user.status } : null;
     },
     async getShop(shopId) {
       const store = load();
@@ -1464,6 +1763,10 @@ function createMockBackend() {
         settings: store.settings.find((item) => item.shop_id === shopId) || null,
         capabilities: { settings: true, payments: true, customers: true }
       };
+    },
+    async fetchPlatformData() {
+      const store = load();
+      return { shops: store.shops, users: store.users };
     },
     async saveProduct(shopId, payload) {
       const store = load();
@@ -1489,6 +1792,8 @@ function createMockBackend() {
     },
     async checkout(shopId, payload, profile) {
       const store = load();
+      const settings = store.settings.find((item) => item.shop_id === shopId);
+      const counter = Number(settings?.order_counter || 1);
       for (const item of payload.items) {
         const product = store.products.find((row) => row.id === item.productId && row.shop_id === shopId);
         if (!product || product.stock_qty < item.qty) throw new Error(`ស្តុកមិនគ្រប់សម្រាប់ ${item.name}`);
@@ -1500,7 +1805,7 @@ function createMockBackend() {
       const order = {
         id: crypto.randomUUID(),
         shop_id: shopId,
-        invoice_no: payload.invoiceNo || `#${String(store.orders.length + 1).padStart(4, "0")}`,
+        invoice_no: payload.invoiceNo || `#${counter}`,
         buyer_name: payload.buyerName,
         buyer_phone: payload.buyerPhone,
         payment_method: payload.paymentMethod,
@@ -1514,6 +1819,7 @@ function createMockBackend() {
         date: todayKey()
       };
       store.orders.push(order);
+      if (settings) settings.order_counter = counter + 1;
       save(store);
       return order;
     },
@@ -1532,19 +1838,18 @@ function createMockBackend() {
     async createUser(payload, profile) {
       if (!["owner", "business_owner", "admin"].includes(profile.role)) throw new Error("Only owner can create users.");
       const store = load();
-      const shopId = crypto.randomUUID();
-      store.shops.push({ id: shopId, name: payload.shopName, status: "active", created_at: new Date().toISOString() });
-      store.settings.push({
-        id: crypto.randomUUID(),
-        shop_id: shopId,
-        business_name: payload.shopName,
-        business_description: "",
-        payment_method: "both",
-        qr_image_url: "",
-        receipt_name: payload.shopName || "nilaa-os",
-        receipt_footer: "Thanks you bong! please come again.",
-        shop_logo_url: ""
-      });
+      let shopId = profile.shop_id || profile.shopId;
+      if (payload.scope === "platform") {
+        shopId = crypto.randomUUID();
+        store.shops.push({ id: shopId, name: payload.shopName, status: "active", created_at: new Date().toISOString() });
+        store.settings.push({
+          id: crypto.randomUUID(),
+          shop_id: shopId,
+          ...defaultSettings(),
+          business_name: payload.shopName,
+          receipt_name: payload.shopName || "nilaa-os"
+        });
+      }
       store.users.push({ id: crypto.randomUUID(), username: payload.username, email: payload.username, phone: payload.phone, password: payload.password, role: payload.role, shop_id: shopId, status: "active", created_at: new Date().toISOString() });
       save(store);
     },
@@ -1571,7 +1876,7 @@ function createMockBackend() {
       </style></head><body>
       <h1>nilaa-os</h1><p>វិក្កយបត្រលក់</p><p>អ្នកទិញ: ${safeText(receipt.buyerName || "ភ្ញៀវ")}</p>${receipt.buyerPhone ? `<p>ទូរស័ព្ទ: ${safeText(receipt.buyerPhone)}</p>` : ""}
       <div class="divider"></div><div class="row"><span>${safeText(receipt.createdAtText)}</span><span>${safeText(receipt.invoiceNo)}</span></div>
-      <div class="divider"></div>${receipt.items.map((item) => `<div class="row"><span>${item.qty}</span><span>${safeText(item.name)}</span><span>${money(item.qty * item.price)}</span></div>`).join("")}
+      <div class="divider"></div>${receipt.items.map((item) => `<div class="row"><span>${item.qty}</span><span>${safeText(item.name)}${safeText(itemOptionsInlineText(item))}</span><span>${money(item.qty * item.price)}</span></div>`).join("")}
       <div class="divider"></div><div class="row"><span>សរុបមុខទំនិញ</span><span>${money(receipt.subtotal)}</span></div>
       <div class="row"><span>ថ្លៃបន្ថែម</span><span>${money(receipt.fee)}</span></div><div class="row total"><span>សរុបចុងក្រោយ</span><span>${money(receipt.total)}</span></div>
       <div class="divider"></div><p>Thanks you bong! please come again.</p></body></html>`;
@@ -1675,6 +1980,15 @@ function createSupabaseBackend() {
         capabilities
       };
     },
+    async fetchPlatformData() {
+      const [shopsRes, usersRes] = await Promise.all([
+        supabase.from("shops").select("*").order("created_at", { ascending: false }),
+        supabase.from("users").select("*").order("created_at", { ascending: false })
+      ]);
+      if (shopsRes.error) throw shopsRes.error;
+      if (usersRes.error) throw usersRes.error;
+      return { shops: shopsRes.data || [], users: usersRes.data || [] };
+    },
     async saveProduct(shopId, payload) {
       const { data: existing, error: checkError } = await supabase
         .from("products")
@@ -1721,6 +2035,12 @@ function createSupabaseBackend() {
       if (error) throw error;
     },
     async checkout(shopId, payload, profile) {
+      const settingsAvailable = await detectTable("settings");
+      let nextCounter = 1;
+      if (settingsAvailable) {
+        const { data: settingsRow } = await supabase.from("settings").select("order_counter").eq("shop_id", shopId).maybeSingle();
+        nextCounter = Number(settingsRow?.order_counter || 1);
+      }
       const productIds = payload.items.map((item) => item.productId);
       const { data: productRows, error: productError } = await supabase
         .from("products")
@@ -1749,7 +2069,7 @@ function createSupabaseBackend() {
 
       const orderRecord = {
         shop_id: shopId,
-        invoice_no: payload.invoiceNo || payload.invoice_no || nextInvoiceNumber(),
+        invoice_no: payload.invoiceNo || payload.invoice_no || `#${nextCounter}`,
         buyer_name: payload.buyerName,
         buyer_phone: payload.buyerPhone,
         payment_method: payload.paymentMethod,
@@ -1792,6 +2112,11 @@ function createSupabaseBackend() {
       });
       if (paymentInsert.error && !relationMissing(paymentInsert.error)) {
         console.warn(paymentInsert.error);
+      }
+      if (settingsAvailable) {
+        await supabase
+          .from("settings")
+          .upsert({ shop_id: shopId, order_counter: nextCounter + 1, updated_at: new Date().toISOString() }, { onConflict: "shop_id" });
       }
       return { ...data, buyer_phone: payload.buyerPhone };
     },
@@ -1844,7 +2169,7 @@ function createSupabaseBackend() {
       }
 
       let shopId = profile.shop_id || profile.shopId;
-      if (payload.shopName) {
+      if (payload.scope === "platform") {
         const { data: shop, error: shopError } = await supabase
           .from("shops")
           .insert({ name: payload.shopName, status: "active" })
@@ -1880,6 +2205,15 @@ function createSupabaseBackend() {
           updated_at: new Date().toISOString()
         });
       }
+      if (payload.scope === "platform") {
+        await supabase.from("settings").upsert({
+          shop_id: shopId,
+          ...defaultSettings(),
+          business_name: payload.shopName,
+          receipt_name: payload.shopName || "nilaa-os",
+          updated_at: new Date().toISOString()
+        }, { onConflict: "shop_id" });
+      }
     },
     async saveSettings(shopId, payload) {
       const settingsRecord = {
@@ -1895,20 +2229,25 @@ function createSupabaseBackend() {
         receipt_contact: payload.receipt_contact,
         receipt_manager: payload.receipt_manager,
         receipt_note: payload.receipt_note,
+        option_sizes: payload.option_sizes,
+        option_sugar_levels: payload.option_sugar_levels,
+        option_ice_levels: payload.option_ice_levels,
+        option_coffee_levels: payload.option_coffee_levels,
+        option_toppings: payload.option_toppings,
+        order_counter: payload.order_counter,
         updated_at: new Date().toISOString()
       };
       let { error } = await supabase.from("settings").upsert(settingsRecord, { onConflict: "shop_id" });
       if (error && columnMissing(error)) {
         const legacySettings = {
           shop_id: shopId,
+          business_name: payload.business_name,
+          business_description: payload.business_description,
+          payment_method: payload.payment_method,
           receipt_name: payload.receipt_name,
           receipt_footer: payload.receipt_footer,
           qr_image_url: payload.qr_image_url,
           shop_logo_url: payload.shop_logo_url,
-          receipt_address: payload.receipt_address,
-          receipt_contact: payload.receipt_contact,
-          receipt_manager: payload.receipt_manager,
-          receipt_note: payload.receipt_note,
           updated_at: new Date().toISOString()
         };
         const fallback = await supabase.from("settings").upsert(legacySettings, { onConflict: "shop_id" });
@@ -1945,7 +2284,7 @@ function createSupabaseBackend() {
         </style></head><body>
         <h1>nilaa-os</h1><p>${safeText(t("receiptTitle"))}</p><p>${safeText(t("buyerLine", { buyer: receipt.buyerName || t("guestBuyer") }))}</p>${receipt.buyerPhone ? `<p>${safeText(t("phoneLine", { phone: receipt.buyerPhone }))}</p>` : ""}
         <div class="divider"></div><div class="row"><span>${safeText(receipt.createdAtText)}</span><span>${safeText(receipt.invoiceNo)}</span></div>
-        <div class="divider"></div>${receipt.items.map((item) => `<div class="row"><span>${item.qty}</span><span>${safeText(item.name)}</span><span>${money(item.qty * item.price)}</span></div>`).join("")}
+        <div class="divider"></div>${receipt.items.map((item) => `<div class="row"><span>${item.qty}</span><span>${safeText(item.name)}${safeText(itemOptionsInlineText(item))}</span><span>${money(item.qty * item.price)}</span></div>`).join("")}
         <div class="divider"></div><div class="row"><span>${safeText(t("subtotalLabel"))}</span><span>${money(receipt.subtotal)}</span></div>
         <div class="row"><span>${safeText(t("feeLabel"))}</span><span>${money(receipt.fee)}</span></div><div class="row total"><span>${safeText(t("totalLabel"))}</span><span>${money(receipt.total)}</span></div>
         <div class="divider"></div><p>${safeText(t("receiptThanks"))}</p></body></html>`;
@@ -1961,7 +2300,7 @@ state.backendMode = backend.mode;
 
 async function loadDashboardData() {
   if (!state.profile) return;
-  const data = await backend.fetchDashboard(state.profile.shop_id || state.profile.shopId, state.profile.role);
+  const data = await backend.fetchDashboard(state.profile.shop_id || state.profile.shopId, isPlatformAdminProfile(state.profile) ? "admin" : state.profile.role);
   state.products = data.products.map((row) => ({
     ...row,
     stock_qty: Number(row.stock_qty ?? row.stockQty ?? 0),
@@ -1978,6 +2317,9 @@ async function loadDashboardData() {
   state.users = data.users;
   state.settings = data.settings ? { ...defaultSettings(), ...data.settings } : defaultSettings();
   state.capabilities = { settings: true, payments: true, customers: true, ...(data.capabilities || {}) };
+  state.platformData = isPlatformAdminProfile(state.profile) && backend.fetchPlatformData
+    ? await backend.fetchPlatformData()
+    : { shops: [], users: [] };
   refreshSetupBanner();
 }
 
@@ -2000,6 +2342,7 @@ async function loadSignedInUser(user) {
     state.pendingPaymentOrder = null;
     state.latestReceipt = null;
     state.customerExpanded = false;
+    state.platformData = { shops: [], users: [] };
     elements.paymentModal.classList.add("hidden");
     renderAll();
     return;
@@ -2007,6 +2350,7 @@ async function loadSignedInUser(user) {
   state.profile = await backend.getProfile(user.id || user.uid);
   state.shop = state.profile ? await backend.getShop(state.profile.shop_id || state.profile.shopId) : null;
   await loadDashboardData();
+  state.route = defaultRouteForCurrentUser();
   renderAll();
 }
 
@@ -2078,10 +2422,21 @@ elements.buyerPhone.addEventListener("input", (event) => {
 });
 
 elements.productSearch.addEventListener("input", () => {
+  state.productSearchQuery = elements.productSearch.value.trim();
+  const product = currentProductByName(elements.productSearch.value);
+  if (product) {
+    elements.productPrice.value = product.price;
+    elements.productQty.value = 1;
+  }
+  renderProducts();
+});
+
+elements.productSearch.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter") return;
   const product = currentProductByName(elements.productSearch.value);
   if (!product) return;
-  elements.productPrice.value = product.price;
-  elements.productQty.value = 1;
+  event.preventDefault();
+  openItemCustomizer(product);
 });
 
 elements.productNameInput?.addEventListener("input", () => {
@@ -2109,17 +2464,7 @@ elements.quickProductList.addEventListener("click", (event) => {
   if (!target) return;
   const product = state.products.find((item) => item.id === target.dataset.quickProductId);
   if (!product || effectiveStock(product) <= 0) return;
-  const existing = state.cart.find((item) => item.productId === product.id);
-  if (existing) existing.qty += 1;
-  else state.cart.push({
-    id: crypto.randomUUID(),
-    productId: product.id,
-    name: product.name,
-    image_url: product.image_url || "",
-    qty: 1,
-    price: Number(product.price || 0)
-  });
-  renderAll();
+  openItemCustomizer(product);
 });
 
 elements.orderFee.addEventListener("input", renderCart);
@@ -2179,7 +2524,7 @@ elements.checkoutButton.addEventListener("click", async () => {
     invoiceNo: nextInvoiceNumber(),
     buyerName: elements.buyerName.value.trim() || t("guestBuyer"),
     buyerPhone: elements.buyerPhone.value.trim(),
-    items: state.cart.map((item) => ({ productId: item.productId, name: item.name, qty: item.qty, price: item.price })),
+    items: state.cart.map((item) => ({ productId: item.productId, name: item.name, qty: item.qty, price: item.price, options: item.options || {} })),
     subtotal,
     fee,
     total: subtotal + fee
@@ -2225,10 +2570,10 @@ elements.productForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (!state.profile) return;
   const name = elements.productNameInput.value.trim();
-  const price = Number(elements.productPriceInput.value);
-  const stock_qty = Number(elements.productStockInput.value);
-  const low_stock_at = Number(elements.productLowStockInput.value);
   const existing = currentProductByName(name);
+  const price = canEditProductMeta() ? Number(elements.productPriceInput.value) : Number(existing?.price || 0);
+  const stock_qty = Number(elements.productStockInput.value);
+  const low_stock_at = canEditProductMeta() ? Number(elements.productLowStockInput.value) : Number(existing?.low_stock_at ?? existing?.lowStockAt ?? 5);
   if (!name || price < 0 || stock_qty < 0 || low_stock_at < 0) {
     window.alert(t("productInvalid"));
     return;
@@ -2303,10 +2648,33 @@ elements.adminCreateUserForm.addEventListener("submit", async (event) => {
       username: elements.newUsername.value.trim(),
       phone: elements.newPhone.value.trim(),
       password: elements.newPassword.value.trim(),
-      shopName: elements.newShopName.value.trim(),
-      role: elements.newUserRole.value
+      role: elements.newUserRole.value,
+      scope: "team"
     }, state.profile));
     elements.adminCreateUserForm.reset();
+    await afterMutation();
+  } catch (error) {
+    window.alert(error.message || t("createUserFailed"));
+  }
+});
+
+elements.adminPlatformForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!state.profile || !isPlatformAdminProfile()) return;
+  try {
+    await runWithStatus({
+      title: state.language === "en" ? "Creating shop" : "កំពុងបង្កើតហាង",
+      message: state.language === "en" ? "Please wait..." : "សូមរង់ចាំ...",
+      successTitle: state.language === "en" ? "Shop created" : "បង្កើតបាន"
+    }, () => backend.createUser({
+      username: elements.adminUsername.value.trim(),
+      phone: elements.adminPhone.value.trim(),
+      password: elements.adminPassword.value.trim(),
+      shopName: elements.adminShopName.value.trim(),
+      role: "owner",
+      scope: "platform"
+    }, state.profile));
+    elements.adminPlatformForm.reset();
     await afterMutation();
   } catch (error) {
     window.alert(error.message || t("createUserFailed"));
@@ -2319,6 +2687,9 @@ elements.settingsProfileImage?.addEventListener("change", () => {
 
 elements.settingsQrUpload?.addEventListener("change", () => {
   previewImage(elements.settingsQrUpload, elements.settingsQrPreview);
+});
+elements.resetOrderCounterButton?.addEventListener("click", () => {
+  if (elements.settingsOrderCounter) elements.settingsOrderCounter.value = "1";
 });
 
 elements.settingsForm?.addEventListener("submit", async (event) => {
@@ -2343,7 +2714,13 @@ elements.settingsForm?.addEventListener("submit", async (event) => {
       receipt_address: elements.settingsReceiptAddress.value.trim(),
       receipt_contact: elements.settingsReceiptContact.value.trim(),
       receipt_manager: elements.settingsReceiptManager.value.trim(),
-      receipt_note: elements.settingsReceiptNote.value.trim()
+      receipt_note: elements.settingsReceiptNote.value.trim(),
+      option_sizes: elements.settingsOptionSizes.value.trim(),
+      option_sugar_levels: elements.settingsOptionSugar.value.trim(),
+      option_ice_levels: elements.settingsOptionIce.value.trim(),
+      option_coffee_levels: elements.settingsOptionCoffee.value.trim(),
+      option_toppings: elements.settingsOptionToppings.value.trim(),
+      order_counter: Math.max(1, Number(elements.settingsOrderCounter.value || 1))
     };
     await runWithStatus({
       title: state.language === "en" ? "Saving settings" : "កំពុងរក្សាទុកការកំណត់",
@@ -2361,6 +2738,12 @@ elements.settingsForm?.addEventListener("submit", async (event) => {
 });
 
 elements.closeReceiptButton.addEventListener("click", closeReceipt);
+elements.closeItemButton?.addEventListener("click", closeItemCustomizer);
+elements.cancelItemButton?.addEventListener("click", closeItemCustomizer);
+elements.addItemToCartButton?.addEventListener("click", addCustomizedItemToCart);
+elements.itemModal?.addEventListener("click", (event) => {
+  if (event.target.id === "itemModal") closeItemCustomizer();
+});
 elements.receiptModal.addEventListener("click", (event) => {
   if (event.target.id === "receiptModal") closeReceipt();
 });
