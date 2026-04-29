@@ -51,10 +51,21 @@ create table if not exists categories (
   id uuid primary key default gen_random_uuid(),
   shop_id uuid not null references shops(id) on delete cascade,
   name text not null,
+  enable_size boolean not null default true,
+  enable_sugar boolean not null default true,
+  enable_ice boolean not null default true,
+  enable_coffee boolean not null default true,
+  enable_toppings boolean not null default false,
   sort_order integer not null default 0,
   active boolean not null default true,
   created_at timestamptz not null default now()
 );
+
+alter table categories add column if not exists enable_size boolean not null default true;
+alter table categories add column if not exists enable_sugar boolean not null default true;
+alter table categories add column if not exists enable_ice boolean not null default true;
+alter table categories add column if not exists enable_coffee boolean not null default true;
+alter table categories add column if not exists enable_toppings boolean not null default false;
 
 alter table products add column if not exists category_id uuid references categories(id) on delete set null;
 alter table products add column if not exists image_url text;

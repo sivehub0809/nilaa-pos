@@ -21,20 +21,11 @@
   <section id="startupSplash" class="startup-splash">
     <div class="startup-splash__center">
       <img class="startup-logo" src="assets/nilaa-logo.png" alt="Nilaa logo">
-      <p class="startup-title">nilaa-os</p>
+      <p class="startup-title">Nilaa POS</p>
       <div class="startup-loader" aria-hidden="true">
-        <span class="startup-loader__dot"></span>
-        <span class="startup-loader__dot"></span>
-        <span class="startup-loader__dot"></span>
-        <span class="startup-loader__dot"></span>
-        <span class="startup-loader__dot"></span>
-        <span class="startup-loader__dot"></span>
-        <span class="startup-loader__dot"></span>
-        <span class="startup-loader__dot"></span>
-        <span class="startup-loader__dot"></span>
-        <span class="startup-loader__dot"></span>
-        <span class="startup-loader__dot"></span>
-        <span class="startup-loader__dot"></span>
+        <span class="startup-loader__track">
+          <span class="startup-loader__bar"></span>
+        </span>
       </div>
     </div>
   </section>
@@ -185,6 +176,14 @@
                 <div class="pos-head__meta">
                   <span class="tag" data-i18n="fixedPriceTag">Fixed prices</span>
                   <button id="clearCartButton" class="ghost-button" type="button" data-i18n="clearCart">Clear cart</button>
+                </div>
+              </div>
+
+              <div class="pos-home-identity">
+                <img id="posShopProfileImage" class="pos-home-identity__image hidden" src="assets/nilaa-logo.png" alt="Shop profile">
+                <div class="pos-home-identity__copy">
+                  <strong id="posShopBusinessName">Nilaa POS</strong>
+                  <p id="posShopBusinessDescription" class="hidden"></p>
                 </div>
               </div>
 
@@ -383,6 +382,12 @@
                 </label>
               </div>
               <label data-non-staff="true">
+                <span data-i18n="productCategoryLabel">Product category</span>
+                <select id="productCategorySelect">
+                  <option value="" data-i18n="productCategoryPlaceholder">No category</option>
+                </select>
+              </label>
+              <label data-non-staff="true">
                 <span data-i18n="priceLabel">Price</span>
                 <input id="productPriceInput" type="number" min="0" step="0.01" placeholder="0.00">
               </label>
@@ -519,7 +524,7 @@
                   </div>
                   <label>
                     <span data-i18n="businessNameLabel">Business name</span>
-                    <input id="settingsBusinessName" type="text" placeholder="Nilaa Coffee">
+                    <input id="settingsBusinessName" type="text" data-i18n-placeholder="businessNamePlaceholder" placeholder="Nilaa Coffee">
                   </label>
                   <label>
                     <span data-i18n="businessDescriptionLabel">Business description</span>
@@ -558,7 +563,7 @@
                 <div class="settings-stack">
                   <label>
                     <span data-i18n="receiptNameLabel">Receipt title</span>
-                    <input id="settingsReceiptTitle" type="text" placeholder="nilaa-os">
+                    <input id="settingsReceiptTitle" type="text" data-i18n-placeholder="receiptNamePlaceholder" placeholder="nilaa-os">
                   </label>
                   <label>
                     <span data-i18n="receiptFooterLabel">Receipt footer</span>
@@ -598,24 +603,69 @@
                 <div class="settings-stack">
                   <label>
                     <span data-i18n="productOptionSizesLabel">Sizes (one per line)</span>
-                    <textarea id="settingsOptionSizes" rows="3" placeholder="Small&#10;Medium&#10;Large"></textarea>
+                    <textarea id="settingsOptionSizes" rows="3" data-i18n-placeholder="productOptionSizesPlaceholder" placeholder="Small&#10;Medium&#10;Large"></textarea>
                   </label>
                   <label>
                     <span data-i18n="productOptionSugarLabel">Sugar levels</span>
-                    <textarea id="settingsOptionSugar" rows="3" placeholder="0%&#10;50%&#10;100%"></textarea>
+                    <textarea id="settingsOptionSugar" rows="3" data-i18n-placeholder="productOptionSugarPlaceholder" placeholder="0%&#10;50%&#10;100%"></textarea>
                   </label>
                   <label>
                     <span data-i18n="productOptionIceLabel">Ice levels</span>
-                    <textarea id="settingsOptionIce" rows="3" placeholder="No ice&#10;Less ice&#10;Normal ice"></textarea>
+                    <textarea id="settingsOptionIce" rows="3" data-i18n-placeholder="productOptionIcePlaceholder" placeholder="No ice&#10;Less ice&#10;Normal ice"></textarea>
                   </label>
                   <label>
                     <span data-i18n="productOptionCoffeeLabel">Coffee levels</span>
-                    <textarea id="settingsOptionCoffee" rows="3" placeholder="Light&#10;Normal&#10;Strong"></textarea>
+                    <textarea id="settingsOptionCoffee" rows="3" data-i18n-placeholder="productOptionCoffeePlaceholder" placeholder="Light&#10;Normal&#10;Strong"></textarea>
                   </label>
                   <label>
                     <span data-i18n="productOptionToppingsLabel">Toppings</span>
-                    <textarea id="settingsOptionToppings" rows="3" placeholder="Pearl&#10;Jelly&#10;Cream"></textarea>
+                    <textarea id="settingsOptionToppings" rows="3" data-i18n-placeholder="productOptionToppingsPlaceholder" placeholder="Pearl&#10;Jelly&#10;Cream"></textarea>
                   </label>
+                </div>
+              </section>
+
+              <section class="record-box">
+                <div class="list-head">
+                  <h4 data-i18n="categoryOptionHeading">Category option defaults</h4>
+                </div>
+                <form id="categoryForm" class="settings-stack">
+                  <label>
+                    <span data-i18n="categoryNameLabel">Category name</span>
+                    <input id="categoryNameInput" type="text" data-i18n-placeholder="categoryNamePlaceholder" placeholder="Coffee">
+                  </label>
+                  <fieldset class="option-fieldset">
+                    <legend data-i18n="categoryOptionLegend">Default options for this category</legend>
+                    <div class="option-toggle-grid">
+                      <label class="option-check">
+                        <input id="categoryEnableSize" type="checkbox" checked>
+                        <span data-i18n="productEnableSize">Size</span>
+                      </label>
+                      <label class="option-check">
+                        <input id="categoryEnableSugar" type="checkbox" checked>
+                        <span data-i18n="productEnableSugar">Sugar</span>
+                      </label>
+                      <label class="option-check">
+                        <input id="categoryEnableIce" type="checkbox" checked>
+                        <span data-i18n="productEnableIce">Ice</span>
+                      </label>
+                      <label class="option-check">
+                        <input id="categoryEnableCoffee" type="checkbox" checked>
+                        <span data-i18n="productEnableCoffee">Coffee</span>
+                      </label>
+                      <label class="option-check">
+                        <input id="categoryEnableToppings" type="checkbox">
+                        <span data-i18n="productEnableToppings">Toppings</span>
+                      </label>
+                    </div>
+                  </fieldset>
+                  <button class="secondary-button" type="submit" data-i18n="saveCategoryButton">Save category</button>
+                </form>
+                <div class="record-box record-box--nested">
+                  <div class="list-head">
+                    <h4 data-i18n="categoryListHeading">Saved categories</h4>
+                    <span id="categoryCount">0</span>
+                  </div>
+                  <div id="categoryList" class="stack-list"></div>
                 </div>
               </section>
 
@@ -648,11 +698,11 @@
             <form id="adminCreateUserForm" class="grid-form">
               <label>
                 <span data-i18n="newUsernameLabel">User email</span>
-                <input id="newUsername" type="email" placeholder="owner@example.com">
+                <input id="newUsername" type="email" data-i18n-placeholder="userEmailPlaceholder" placeholder="owner@example.com">
               </label>
               <label>
                 <span data-i18n="newPhoneLabel">User phone</span>
-                <input id="newPhone" type="tel" inputmode="tel" placeholder="012 345 678">
+                <input id="newPhone" type="tel" inputmode="tel" data-i18n-placeholder="userPhonePlaceholder" placeholder="012 345 678">
               </label>
               <label>
                 <span data-i18n="passwordLabel">Password</span>
@@ -705,15 +755,15 @@
             <form id="adminPlatformForm" class="grid-form">
               <label>
                 <span data-i18n="shopNameLabel">Shop name</span>
-                <input id="adminShopName" type="text" placeholder="Nilaa Coffee">
+                <input id="adminShopName" type="text" data-i18n-placeholder="businessNamePlaceholder" placeholder="Nilaa Coffee">
               </label>
               <label>
                 <span data-i18n="newUsernameLabel">User email</span>
-                <input id="adminUsername" type="email" placeholder="owner@example.com">
+                <input id="adminUsername" type="email" data-i18n-placeholder="userEmailPlaceholder" placeholder="owner@example.com">
               </label>
               <label>
                 <span data-i18n="newPhoneLabel">User phone</span>
-                <input id="adminPhone" type="tel" inputmode="tel" placeholder="012 345 678">
+                <input id="adminPhone" type="tel" inputmode="tel" data-i18n-placeholder="userPhonePlaceholder" placeholder="012 345 678">
               </label>
               <label>
                 <span data-i18n="passwordLabel">Password</span>
@@ -899,6 +949,7 @@
       </div>
       <div class="receipt-actions">
         <button id="receiptBackButton" class="secondary-button" type="button" data-i18n="backButton">Back</button>
+        <button id="shareReceiptButton" class="secondary-button" type="button" data-i18n="shareButton">Share</button>
         <button id="downloadReceiptButton" class="primary-button" type="button" data-i18n="savePdfButton">Save PDF</button>
         <button id="printReceiptButton" class="secondary-button" type="button" data-i18n="printButton">Print</button>
       </div>

@@ -17,6 +17,7 @@ const state = {
     payments: true,
     customers: true
   },
+  categories: [],
   products: [],
   expenses: [],
   orders: [],
@@ -103,6 +104,7 @@ const elements = {
   productNameInput: document.getElementById("productNameInput"),
   productImageInput: document.getElementById("productImageInput"),
   productImagePreview: document.getElementById("productImagePreview"),
+  productCategorySelect: document.getElementById("productCategorySelect"),
   productPriceInput: document.getElementById("productPriceInput"),
   productStockInput: document.getElementById("productStockInput"),
   productLowStockInput: document.getElementById("productLowStockInput"),
@@ -166,6 +168,18 @@ const elements = {
   settingsOptionToppings: document.getElementById("settingsOptionToppings"),
   settingsOrderCounter: document.getElementById("settingsOrderCounter"),
   resetOrderCounterButton: document.getElementById("resetOrderCounterButton"),
+  categoryForm: document.getElementById("categoryForm"),
+  categoryNameInput: document.getElementById("categoryNameInput"),
+  categoryEnableSize: document.getElementById("categoryEnableSize"),
+  categoryEnableSugar: document.getElementById("categoryEnableSugar"),
+  categoryEnableIce: document.getElementById("categoryEnableIce"),
+  categoryEnableCoffee: document.getElementById("categoryEnableCoffee"),
+  categoryEnableToppings: document.getElementById("categoryEnableToppings"),
+  categoryCount: document.getElementById("categoryCount"),
+  categoryList: document.getElementById("categoryList"),
+  posShopProfileImage: document.getElementById("posShopProfileImage"),
+  posShopBusinessName: document.getElementById("posShopBusinessName"),
+  posShopBusinessDescription: document.getElementById("posShopBusinessDescription"),
   nonStaffFields: [...document.querySelectorAll("[data-non-staff='true']")],
   paymentQrImage: document.getElementById("paymentQrImage"),
   receiptHeaderTitle: document.getElementById("receiptHeaderTitle"),
@@ -226,6 +240,7 @@ const elements = {
   receiptSubtotal: document.getElementById("receiptSubtotal"),
   receiptFee: document.getElementById("receiptFee"),
   receiptTotal: document.getElementById("receiptTotal"),
+  shareReceiptButton: document.getElementById("shareReceiptButton"),
   downloadReceiptButton: document.getElementById("downloadReceiptButton"),
   printReceiptButton: document.getElementById("printReceiptButton")
 };
@@ -678,6 +693,110 @@ Object.assign(translations.en, {
   noPlatformUsers: "No users"
 });
 
+Object.assign(translations.km, {
+  dashboardButton: "ផ្ទាំងគ្រប់គ្រង",
+  navDashboard: "ផ្ទាំងគ្រប់គ្រង",
+  navOrdersShort: "ការបញ្ជាទិញ",
+  navAdmin: "ផ្ទាំង Admin",
+  navExpenses: "ចំណាយ",
+  navCustomers: "អតិថិជន",
+  navUsers: "អ្នកប្រើ និងបុគ្គលិក",
+  navHelp: "ជំនួយ និងគាំទ្រ",
+  fixedPriceTag: "តម្លៃថេរ",
+  customerToggle: "បន្ថែមព័ត៌មានអតិថិជន",
+  discountPlaceholder: "បញ្ចុះតម្លៃ",
+  taxPlaceholder: "ពន្ធ",
+  customerHistoryHeading: "អតិថិជនថ្មីៗ",
+  helpHeading: "ត្រូវការជំនួយ?",
+  helpCopy: "ប្រើ Telegram សម្រាប់ស្នើគណនី កំណត់ហាង និងដោះស្រាយបញ្ហាចូលប្រើ។",
+  authCopy: "ស្នើសុំគណនីតាម Telegram មុនសិន។ បន្ទាប់ពីម្ចាស់អនុម័ត អ្នកអាចចូលប្រើបាន ហើយប្រព័ន្ធនឹងរក្សា session លើឧបករណ៍នេះ។",
+  requestStep1: "ផ្ញើសារ Telegram ទៅម្ចាស់ហាង",
+  requestStep3: "រង់ចាំម្ចាស់បង្កើតគណនីអោយ",
+  receiptExtraNoteLabel: "កំណត់ចំណាំបន្ថែម",
+  productOptionToppingsLabel: "Topping",
+  scrollToCheckoutButton: "មើលកន្លែងទូទាត់",
+  tapToAdd: "ចុចដើម្បីបន្ថែម",
+  reportRecentHeading: "វិក្កយបត្រថ្មីៗ",
+  createOwnerButton: "បង្កើតហាងម្ចាស់",
+  adminShopCountLabel: "ហាង",
+  adminUserCountLabel: "អ្នកប្រើ",
+  adminShopListHeading: "ហាងទាំងអស់",
+  adminUserListHeading: "អ្នកប្រើទាំងអស់",
+  noShops: "មិនទាន់មានហាងទេ",
+  noPlatformUsers: "មិនទាន់មានអ្នកប្រើទេ",
+  savePdfButton: "រក្សាទុក PDF",
+  shareButton: "ចែករំលែក",
+  productCategoryLabel: "ប្រភេទទំនិញ",
+  productCategoryPlaceholder: "មិនបានជ្រើសប្រភេទ",
+  categoryOptionHeading: "លំនាំដើមជម្រើសតាមប្រភេទ",
+  categoryOptionLegend: "ជម្រើសលំនាំដើមសម្រាប់ប្រភេទនេះ",
+  categoryNameLabel: "ឈ្មោះប្រភេទ",
+  categoryNamePlaceholder: "ឧទាហរណ៍: កាហ្វេ",
+  saveCategoryButton: "រក្សាទុកប្រភេទ",
+  categoryListHeading: "ប្រភេទដែលបានរក្សាទុក",
+  saveCategoryFailed: "រក្សាទុកប្រភេទមិនបាន",
+  deleteCategoryFailed: "លុបប្រភេទមិនបាន",
+  categoryMissing: "សូមបញ្ចូលឈ្មោះប្រភេទ",
+  homepageBusinessFallback: "អាជីវកម្មរបស់អ្នក",
+  startupLoading: "កំពុងរៀបចំប្រព័ន្ធ...",
+  startupReady: "ប្រព័ន្ធកំពុងរួចរាល់",
+  noCategories: "មិនទាន់មានប្រភេទទេ",
+  categoryDefaultTag: "លំនាំដើមតាមប្រភេទ",
+  receiptActionHint: "រក្សាទុក ឬចែករំលែកវិក្កយបត្រនេះ",
+  paymentBankLabel: "បង់តាម QR",
+  paymentCashLabel: "បង់ផ្ទាល់",
+  reportPageHint: "មើលស្ថិតិ និងបើកវិក្កយបត្រវិញ",
+  ordersPageHint: "ស្វែងរក និងពិនិត្យការបញ្ជាទិញ",
+  settingsPageHint: "កំណត់ហាង កូដ QR និងវិក្កយបត្រ",
+  businessNamePlaceholder: "ឧទាហរណ៍: Nilaa Coffee",
+  receiptNamePlaceholder: "ឈ្មោះវិក្កយបត្រ",
+  productOptionSizesPlaceholder: "តូច\nមធ្យម\nធំ",
+  productOptionSugarPlaceholder: "0%\n50%\n100%",
+  productOptionIcePlaceholder: "គ្មានទឹកកក\nទឹកកកតិច\nទឹកកកធម្មតា",
+  productOptionCoffeePlaceholder: "ស្រាល\nធម្មតា\nខ្លាំង",
+  productOptionToppingsPlaceholder: "ប៊ូបា\nចាហួយ\nក្រែម",
+  userEmailPlaceholder: "owner@example.com",
+  userPhonePlaceholder: "012 345 678",
+  receiptFooterPlaceholder: "អរគុណសម្រាប់ការគាំទ្រ សូមអញ្ជើញមកម្តងទៀត។",
+  receiptThanks: "អរគុណសម្រាប់ការគាំទ្រ សូមអញ្ជើញមកម្តងទៀត។",
+  receiptActionHint: "រក្សាទុក ឬចែករំលែកវិក្កយបត្រនេះ"
+});
+
+Object.assign(translations.en, {
+  shareButton: "Share",
+  productCategoryLabel: "Product category",
+  productCategoryPlaceholder: "No category",
+  categoryOptionHeading: "Category option defaults",
+  categoryOptionLegend: "Default options for this category",
+  categoryNameLabel: "Category name",
+  categoryNamePlaceholder: "Example: Coffee",
+  saveCategoryButton: "Save category",
+  categoryListHeading: "Saved categories",
+  saveCategoryFailed: "Could not save category.",
+  deleteCategoryFailed: "Could not delete category.",
+  categoryMissing: "Please enter a category name.",
+  homepageBusinessFallback: "Your business",
+  startupLoading: "Preparing your workspace...",
+  startupReady: "System ready",
+  noCategories: "No categories yet.",
+  categoryDefaultTag: "Category default",
+  receiptActionHint: "Save or share this receipt",
+  paymentBankLabel: "Pay with QR",
+  paymentCashLabel: "Pay manual",
+  reportPageHint: "See KPIs and reopen receipts",
+  ordersPageHint: "Search and review every order",
+  settingsPageHint: "Set shop profile, QR, and receipt",
+  businessNamePlaceholder: "Example: Nilaa Coffee",
+  receiptNamePlaceholder: "Receipt name",
+  productOptionSizesPlaceholder: "Small\nMedium\nLarge",
+  productOptionSugarPlaceholder: "0%\n50%\n100%",
+  productOptionIcePlaceholder: "No ice\nLess ice\nNormal ice",
+  productOptionCoffeePlaceholder: "Light\nNormal\nStrong",
+  productOptionToppingsPlaceholder: "Pearl\nJelly\nCream",
+  userEmailPlaceholder: "owner@example.com",
+  userPhonePlaceholder: "012 345 678"
+});
+
 function t(key, vars = {}) {
   const pack = translations[state.language] || translations.km;
   let text = pack[key] || translations.km[key] || key;
@@ -803,13 +922,18 @@ function currentOptionConfig() {
   };
 }
 
+function categoryById(categoryId) {
+  return state.categories.find((item) => item.id === categoryId) || null;
+}
+
 function productOptionState(product = {}) {
+  const category = categoryById(product.category_id || product.categoryId);
   return {
-    size: product.enable_size !== false,
-    sugar: product.enable_sugar !== false,
-    ice: product.enable_ice !== false,
-    coffee: product.enable_coffee !== false,
-    toppings: product.enable_toppings === true
+    size: product.enable_size ?? category?.enable_size ?? true,
+    sugar: product.enable_sugar ?? category?.enable_sugar ?? true,
+    ice: product.enable_ice ?? category?.enable_ice ?? true,
+    coffee: product.enable_coffee ?? category?.enable_coffee ?? true,
+    toppings: product.enable_toppings ?? category?.enable_toppings ?? false
   };
 }
 
@@ -926,17 +1050,11 @@ async function runWithStatus(config, task) {
 }
 
 function initializeSplash() {
-  if (sessionStorage.getItem("nilaa-os-splash-done")) {
-    state.splashDone = true;
-    elements.startupSplash?.classList.add("hidden");
-    return;
-  }
   window.setTimeout(() => {
     state.splashDone = true;
-    sessionStorage.setItem("nilaa-os-splash-done", "1");
     elements.startupSplash?.classList.add("hidden");
     renderAuth();
-  }, 4300);
+  }, 3000);
 }
 
 function defaultSettings() {
@@ -1003,6 +1121,17 @@ function syncBrandVisuals() {
     elements.receiptNote.classList.toggle("hidden", !settings.receipt_note);
   }
   if (elements.receiptFooterText) elements.receiptFooterText.textContent = settings.receipt_footer || t("receiptThanks");
+  if (elements.posShopProfileImage) {
+    elements.posShopProfileImage.src = settings.shop_logo_url || "assets/nilaa-logo.png";
+    elements.posShopProfileImage.classList.toggle("hidden", !settings.shop_logo_url);
+  }
+  if (elements.posShopBusinessName) {
+    elements.posShopBusinessName.textContent = settings.business_name || state.shop?.name || t("homepageBusinessFallback");
+  }
+  if (elements.posShopBusinessDescription) {
+    elements.posShopBusinessDescription.textContent = settings.business_description || t("settingsPageHint");
+    elements.posShopBusinessDescription.classList.remove("hidden");
+  }
   if (elements.shopName && state.route === "pos") {
     elements.shopName.textContent = t("navPOS");
   }
@@ -1031,6 +1160,67 @@ function renderSettings() {
     elements.settingsQrPreview.classList.toggle("hidden", !qrUrl);
   }
   syncBrandVisuals();
+}
+
+function renderCategoryOptions() {
+  if (!elements.productCategorySelect) return;
+  const currentValue = elements.productCategorySelect.value;
+  elements.productCategorySelect.innerHTML = [
+    `<option value="">${safeText(t("productCategoryPlaceholder"))}</option>`,
+    ...state.categories
+      .slice()
+      .sort((a, b) => a.name.localeCompare(b.name, "km"))
+      .map((category) => `<option value="${category.id}">${safeText(category.name)}</option>`)
+  ].join("");
+  elements.productCategorySelect.value = currentValue && state.categories.some((item) => item.id === currentValue) ? currentValue : "";
+}
+
+function renderCategories() {
+  renderCategoryOptions();
+  if (!elements.categoryList || !elements.categoryCount) return;
+  elements.categoryCount.textContent = state.categories.length;
+  elements.categoryList.innerHTML = state.categories.length
+    ? state.categories
+        .slice()
+        .sort((a, b) => a.name.localeCompare(b.name, "km"))
+        .map((category) => {
+          const enabled = [
+            category.enable_size ? t("productEnableSize") : "",
+            category.enable_sugar ? t("productEnableSugar") : "",
+            category.enable_ice ? t("productEnableIce") : "",
+            category.enable_coffee ? t("productEnableCoffee") : "",
+            category.enable_toppings ? t("productEnableToppings") : ""
+          ].filter(Boolean);
+          return `
+            <article class="record-row">
+              <div>
+                <strong>${safeText(category.name)}</strong>
+                <div class="meta-line">${safeText(enabled.join(" • ") || t("noCategories"))}</div>
+              </div>
+              <div class="record-actions__buttons">
+                <button class="delete-button" type="button" data-category-id="${category.id}">${t("deleteButton")}</button>
+              </div>
+            </article>
+          `;
+        })
+        .join("")
+    : blankState(t("noCategories"));
+}
+
+function applyCategoryDefaultsToProductForm(categoryId) {
+  const category = categoryById(categoryId);
+  const defaults = {
+    size: category?.enable_size ?? true,
+    sugar: category?.enable_sugar ?? true,
+    ice: category?.enable_ice ?? true,
+    coffee: category?.enable_coffee ?? true,
+    toppings: category?.enable_toppings ?? false
+  };
+  if (elements.productEnableSize) elements.productEnableSize.checked = defaults.size;
+  if (elements.productEnableSugar) elements.productEnableSugar.checked = defaults.sugar;
+  if (elements.productEnableIce) elements.productEnableIce.checked = defaults.ice;
+  if (elements.productEnableCoffee) elements.productEnableCoffee.checked = defaults.coffee;
+  if (elements.productEnableToppings) elements.productEnableToppings.checked = defaults.toppings;
 }
 
 async function readFileAsDataUrl(file) {
@@ -1235,10 +1425,12 @@ function renderProducts() {
         const left = effectiveStock(product);
         const options = productOptionState(product);
         const optionCount = Object.values(options).filter(Boolean).length;
+        const category = categoryById(product.category_id || product.categoryId);
         return `
           <button class="quick-product" type="button" data-quick-product-id="${product.id}" ${left <= 0 ? "disabled" : ""}>
-              ${productImageMarkup(product)}
-              <strong>${safeText(product.name)}</strong>
+            ${productImageMarkup(product)}
+            <strong>${safeText(product.name)}</strong>
+            ${category ? `<small>${safeText(category.name)}</small>` : ""}
             <span>${money(product.price)} • ${left}</span>
             <span class="quick-product__hint">${safeText(optionCount ? t("optionsCountLabel", { count: optionCount }) : t("tapToAdd"))}</span>
           </button>
@@ -1252,7 +1444,9 @@ function renderProducts() {
         const lowAt = Number(product.low_stock_at ?? product.lowStockAt ?? 0);
         const isLow = left <= lowAt;
         const options = productOptionState(product);
+        const category = categoryById(product.category_id || product.categoryId);
         const enabledList = [
+          category?.name ? category.name : "",
           options.size ? t("productEnableSize") : "",
           options.sugar ? t("productEnableSugar") : "",
           options.ice ? t("productEnableIce") : "",
@@ -1539,6 +1733,7 @@ function renderAll() {
   renderUsers();
   renderAdminScreen();
   renderSettings();
+  renderCategories();
   renderReceipt();
   renderItemCustomizer();
   setRoute(state.route);
@@ -1562,7 +1757,7 @@ function openPayment(order) {
     elements.paymentQrImage.src = settings.qr_image_url || "";
     elements.paymentQrImage.classList.toggle("hidden", !settings.qr_image_url);
   }
-  elements.qrBox.querySelector("strong").textContent = settings.qr_image_url ? "Bank QR" : "Beta QR";
+  elements.qrBox.querySelector("strong").textContent = settings.qr_image_url ? t("paymentBankLabel") : "Beta QR";
   elements.betaQrGrid.classList.toggle("hidden", Boolean(settings.qr_image_url));
   if (settings.payment_method === "bank") {
     elements.payManualButton.classList.add("hidden");
@@ -1601,6 +1796,12 @@ async function completePayment() {
       payment_method: method,
       paymentMethod: method
     };
+    state.orders.unshift(receiptOrder);
+    state.pendingPaymentOrder.items.forEach((item) => {
+      const product = state.products.find((row) => row.id === item.productId);
+      if (product) product.stock_qty = Math.max(0, Number(product.stock_qty || 0) - item.qty);
+    });
+    state.settings = { ...currentSettings(), order_counter: Number(currentSettings().order_counter || 1) + 1 };
     state.cart = [];
     state.currentBuyer = "";
     state.currentPhone = "";
@@ -1608,7 +1809,6 @@ async function completePayment() {
     elements.buyerPhone.value = "";
     elements.orderFee.value = "0";
     state.latestReceipt = buildReceipt(receiptOrder);
-    await afterMutation();
   } catch (error) {
     window.alert(error.message || t("checkoutFailed"));
     return;
@@ -1756,12 +1956,12 @@ async function downloadReceiptAsPdf() {
   });
   pdf.addImage(imageData, "PNG", 0, 0, pdfWidth, pdfHeight);
   const blob = pdf.output("blob");
+  return blob;
+}
+
+async function saveReceiptPdf() {
+  const blob = await downloadReceiptAsPdf();
   const fileName = `receipt-${state.latestReceipt?.invoiceNo || Date.now()}.pdf`;
-  const file = new File([blob], fileName, { type: "application/pdf" });
-  if (navigator.canShare?.({ files: [file] })) {
-    await navigator.share({ files: [file], title: fileName });
-    return;
-  }
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
@@ -1770,6 +1970,17 @@ async function downloadReceiptAsPdf() {
   link.click();
   link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+
+async function shareReceiptFile() {
+  const blob = await downloadReceiptAsPdf();
+  const fileName = `receipt-${state.latestReceipt?.invoiceNo || Date.now()}.pdf`;
+  const file = new File([blob], fileName, { type: "application/pdf" });
+  if (navigator.canShare?.({ files: [file] })) {
+    await navigator.share({ files: [file], title: fileName });
+    return true;
+  }
+  return false;
 }
 
 function createMockBackend() {
@@ -1799,14 +2010,33 @@ function createMockBackend() {
       order_counter: 1
     }],
     users: [],
+    categories: [
+      {
+        id: crypto.randomUUID(),
+        shop_id: "shop-admin",
+        name: "Coffee",
+        enable_size: true,
+        enable_sugar: true,
+        enable_ice: true,
+        enable_coffee: true,
+        enable_toppings: false,
+        created_at: new Date().toISOString()
+      }
+    ],
     products: [
-      { id: crypto.randomUUID(), shop_id: "shop-admin", name: "កាហ្វេទឹកកក", price: 1.5, stock_qty: 20, low_stock_at: 5 },
-      { id: crypto.randomUUID(), shop_id: "shop-admin", name: "តែទឹកដោះគោ", price: 2, stock_qty: 15, low_stock_at: 5 }
+      { id: crypto.randomUUID(), shop_id: "shop-admin", name: "កាហ្វេទឹកកក", price: 1.5, stock_qty: 20, low_stock_at: 5, category_id: null },
+      { id: crypto.randomUUID(), shop_id: "shop-admin", name: "តែទឹកដោះគោ", price: 2, stock_qty: 15, low_stock_at: 5, category_id: null }
     ],
     expenses: [],
     orders: []
   });
-  const load = () => JSON.parse(localStorage.getItem(MOCK_STORAGE_KEY) || "null") || seed();
+  const load = () => {
+    const store = JSON.parse(localStorage.getItem(MOCK_STORAGE_KEY) || "null") || seed();
+    store.categories ||= [];
+    store.settings ||= [];
+    store.products ||= [];
+    return store;
+  };
   const save = (store) => localStorage.setItem(MOCK_STORAGE_KEY, JSON.stringify(store));
   const notify = async () => {
     const store = load();
@@ -1864,6 +2094,7 @@ function createMockBackend() {
     async fetchDashboard(shopId, role) {
       const store = load();
       return {
+        categories: store.categories.filter((item) => item.shop_id === shopId),
         products: store.products.filter((item) => item.shop_id === shopId),
         expenses: store.expenses.filter((item) => item.shop_id === shopId && item.date === todayKey()).reverse(),
         orders: store.orders.filter((item) => item.shop_id === shopId && item.date === todayKey()).reverse(),
@@ -1879,8 +2110,29 @@ function createMockBackend() {
     async saveProduct(shopId, payload) {
       const store = load();
       const existing = store.products.find((item) => item.shop_id === shopId && item.name.toLowerCase() === payload.name.toLowerCase());
+      if (existing) {
+        Object.assign(existing, payload);
+        save(store);
+        return existing;
+      }
+      const created = { id: crypto.randomUUID(), shop_id: shopId, ...payload };
+      store.products.push(created);
+      save(store);
+      return created;
+    },
+    async saveCategory(shopId, payload) {
+      const store = load();
+      store.categories ||= [];
+      const existing = store.categories.find((item) => item.shop_id === shopId && item.name.toLowerCase() === payload.name.toLowerCase());
       if (existing) Object.assign(existing, payload);
-      else store.products.push({ id: crypto.randomUUID(), shop_id: shopId, ...payload });
+      else store.categories.push({ id: crypto.randomUUID(), shop_id: shopId, ...payload, created_at: new Date().toISOString() });
+      save(store);
+      return store.categories.find((item) => item.shop_id === shopId && item.name.toLowerCase() === payload.name.toLowerCase());
+    },
+    async deleteCategory(shopId, categoryId) {
+      const store = load();
+      store.categories = (store.categories || []).filter((item) => !(item.shop_id === shopId && item.id === categoryId));
+      store.products = store.products.map((item) => item.category_id === categoryId ? { ...item, category_id: null } : item);
       save(store);
     },
     async deleteProduct(shopId, productId) {
@@ -1890,8 +2142,10 @@ function createMockBackend() {
     },
     async createExpense(shopId, payload, profile) {
       const store = load();
-      store.expenses.push({ id: crypto.randomUUID(), shop_id: shopId, note: payload.note, amount: payload.amount, created_by: profile.username, created_at: new Date().toISOString(), date: todayKey() });
+      const expense = { id: crypto.randomUUID(), shop_id: shopId, note: payload.note, amount: payload.amount, created_by: profile.username, created_at: new Date().toISOString(), date: todayKey() };
+      store.expenses.push(expense);
       save(store);
+      return expense;
     },
     async deleteExpense(shopId, expenseId) {
       const store = load();
@@ -1958,8 +2212,10 @@ function createMockBackend() {
           receipt_name: payload.shopName || "nilaa-os"
         });
       }
-      store.users.push({ id: crypto.randomUUID(), username: payload.username, email: payload.username, phone: payload.phone, password: payload.password, role: payload.role, shop_id: shopId, status: "active", created_at: new Date().toISOString() });
+      const user = { id: crypto.randomUUID(), username: payload.username, email: payload.username, phone: payload.phone, password: payload.password, role: payload.role, shop_id: shopId, status: "active", created_at: new Date().toISOString() };
+      store.users.push(user);
       save(store);
+      return user;
     },
     async saveSettings(shopId, payload) {
       const store = load();
@@ -2063,7 +2319,8 @@ function createSupabaseBackend() {
         payments: await detectTable("payments"),
         customers: await detectTable("customers")
       };
-      const [productsRes, expensesRes, ordersRes, usersRes, settingsRes] = await Promise.all([
+      const [categoriesRes, productsRes, expensesRes, ordersRes, usersRes, settingsRes] = await Promise.all([
+        supabase.from("categories").select("*").eq("shop_id", shopId).order("name"),
         supabase.from("products").select("*").eq("shop_id", shopId).order("name"),
         supabase.from("expenses").select("*").eq("shop_id", shopId).eq("date", todayKey()).order("created_at", { ascending: false }),
         supabase.from("orders").select("*").eq("shop_id", shopId).eq("date", todayKey()).order("created_at", { ascending: false }),
@@ -2075,11 +2332,12 @@ function createSupabaseBackend() {
           : Promise.resolve({ data: null, error: null })
       ]);
 
-      for (const result of [productsRes, expensesRes, ordersRes, usersRes]) {
+      for (const result of [categoriesRes, productsRes, expensesRes, ordersRes, usersRes]) {
         if (result.error) throw result.error;
       }
 
       return {
+        categories: categoriesRes.data || [],
         products: productsRes.data || [],
         expenses: expensesRes.data || [],
         orders: (ordersRes.data || []).map((row) => ({ ...row, items: row.items || [] })),
@@ -2106,7 +2364,7 @@ function createSupabaseBackend() {
         .maybeSingle();
       if (checkError) throw checkError;
       if (existing) {
-        let { error } = await supabase.from("products").update(payload).eq("id", existing.id);
+        let { data, error } = await supabase.from("products").update(payload).eq("id", existing.id).select("*").single();
         if (error && columnMissing(error)) {
           const {
             image_url: _imageUrl,
@@ -2120,12 +2378,14 @@ function createSupabaseBackend() {
             enable_toppings: _enableToppings,
             ...legacyPayload
           } = payload;
-          const fallback = await supabase.from("products").update(legacyPayload).eq("id", existing.id);
+          const fallback = await supabase.from("products").update(legacyPayload).eq("id", existing.id).select("*").single();
+          data = fallback.data;
           error = fallback.error;
         }
         if (error) throw error;
+        return data;
       } else {
-        let { error } = await supabase.from("products").insert({ shop_id: shopId, ...payload });
+        let { data, error } = await supabase.from("products").insert({ shop_id: shopId, ...payload }).select("*").single();
         if (error && columnMissing(error)) {
           const {
             image_url: _imageUrl,
@@ -2139,26 +2399,60 @@ function createSupabaseBackend() {
             enable_toppings: _enableToppings,
             ...legacyPayload
           } = payload;
-          const fallback = await supabase.from("products").insert({ shop_id: shopId, ...legacyPayload });
+          const fallback = await supabase.from("products").insert({ shop_id: shopId, ...legacyPayload }).select("*").single();
+          data = fallback.data;
           error = fallback.error;
         }
         if (error) throw error;
+        return data;
       }
+    },
+    async saveCategory(shopId, payload) {
+      const { data: existing, error: checkError } = await supabase
+        .from("categories")
+        .select("id")
+        .eq("shop_id", shopId)
+        .eq("name", payload.name)
+        .maybeSingle();
+      if (checkError) throw checkError;
+      if (existing) {
+        const { error } = await supabase.from("categories").update(payload).eq("id", existing.id);
+        if (error) throw error;
+        return { id: existing.id, shop_id: shopId, ...payload };
+      }
+      const { data, error } = await supabase
+        .from("categories")
+        .insert({ shop_id: shopId, ...payload })
+        .select("*")
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    async deleteCategory(shopId, categoryId) {
+      const { error: clearError } = await supabase
+        .from("products")
+        .update({ category_id: null })
+        .eq("shop_id", shopId)
+        .eq("category_id", categoryId);
+      if (clearError) throw clearError;
+      const { error } = await supabase.from("categories").delete().eq("shop_id", shopId).eq("id", categoryId);
+      if (error) throw error;
     },
     async deleteProduct(_shopId, productId) {
       const { error } = await supabase.from("products").delete().eq("id", productId);
       if (error) throw error;
     },
     async createExpense(shopId, payload, profile) {
-      const { error } = await supabase.from("expenses").insert({
+      const { data, error } = await supabase.from("expenses").insert({
         shop_id: shopId,
         note: payload.note,
         amount: payload.amount,
         created_by: profile.username,
         created_at: new Date().toISOString(),
         date: todayKey()
-      });
+      }).select("*").single();
       if (error) throw error;
+      return data;
     },
     async deleteExpense(_shopId, expenseId) {
       const { error } = await supabase.from("expenses").delete().eq("id", expenseId);
@@ -2344,6 +2638,7 @@ function createSupabaseBackend() {
           updated_at: new Date().toISOString()
         }, { onConflict: "shop_id" });
       }
+      return profileRecord;
     },
     async saveSettings(shopId, payload) {
       const settingsRecord = {
@@ -2431,6 +2726,14 @@ state.backendMode = backend.mode;
 async function loadDashboardData() {
   if (!state.profile) return;
   const data = await backend.fetchDashboard(state.profile.shop_id || state.profile.shopId, isPlatformAdminProfile(state.profile) ? "admin" : state.profile.role);
+  state.categories = (data.categories || []).map((row) => ({
+    ...row,
+    enable_size: row.enable_size ?? true,
+    enable_sugar: row.enable_sugar ?? true,
+    enable_ice: row.enable_ice ?? true,
+    enable_coffee: row.enable_coffee ?? true,
+    enable_toppings: row.enable_toppings ?? false
+  }));
   state.products = data.products.map((row) => ({
     ...row,
     stock_qty: Number(row.stock_qty ?? row.stockQty ?? 0),
@@ -2464,6 +2767,7 @@ async function loadSignedInUser(user) {
     state.profile = null;
     state.shop = null;
     state.settings = null;
+    state.categories = [];
     state.products = [];
     state.expenses = [];
     state.orders = [];
@@ -2499,6 +2803,7 @@ function syncProductFormPreview(product = null) {
   elements.productImagePreview.src = imageUrl || "";
   elements.productImagePreview.classList.toggle("hidden", !imageUrl);
   const options = productOptionState(product || {});
+  if (elements.productCategorySelect) elements.productCategorySelect.value = product?.category_id || product?.categoryId || "";
   if (elements.productEnableSize) elements.productEnableSize.checked = options.size;
   if (elements.productEnableSugar) elements.productEnableSugar.checked = options.sugar;
   if (elements.productEnableIce) elements.productEnableIce.checked = options.ice;
@@ -2589,12 +2894,22 @@ elements.productNameInput?.addEventListener("input", () => {
     }
     elements.productStockInput.value = "0";
     syncProductFormPreview();
+    if (elements.productCategorySelect?.value) {
+      applyCategoryDefaultsToProductForm(elements.productCategorySelect.value);
+    }
     return;
   }
   elements.productPriceInput.value = existing.price ?? "";
   elements.productStockInput.value = existing.stock_qty ?? 0;
   elements.productLowStockInput.value = existing.low_stock_at ?? 5;
   syncProductFormPreview(existing);
+});
+
+elements.productCategorySelect?.addEventListener("change", () => {
+  const existing = currentProductByName(elements.productNameInput.value);
+  if (!existing) {
+    applyCategoryDefaultsToProductForm(elements.productCategorySelect.value);
+  }
 });
 
 elements.productImageInput?.addEventListener("change", () => {
@@ -2695,17 +3010,26 @@ elements.expenseForm.addEventListener("submit", async (event) => {
     return;
   }
   try {
-    await runWithStatus({
+    const savedExpense = await runWithStatus({
       title: state.language === "en" ? "Saving expense" : "កំពុងរក្សាទុកចំណាយ",
       message: state.language === "en" ? "Please wait..." : "សូមរង់ចាំ...",
       successTitle: state.language === "en" ? "Expense saved" : "រក្សាទុកបាន"
     }, () => backend.createExpense(state.profile.shop_id || state.profile.shopId, { note, amount }, state.profile));
+    state.expenses.unshift(savedExpense || {
+      id: crypto.randomUUID(),
+      shop_id: state.profile.shop_id || state.profile.shopId,
+      note,
+      amount,
+      created_by: state.profile.username,
+      created_at: new Date().toISOString(),
+      date: todayKey()
+    });
   } catch (error) {
     window.alert(error.message || t("saveExpenseFailed"));
     return;
   }
   elements.expenseForm.reset();
-  await afterMutation();
+  renderAll();
 });
 
 elements.expenseList.addEventListener("click", async (event) => {
@@ -2716,7 +3040,8 @@ elements.expenseList.addEventListener("click", async (event) => {
     message: state.language === "en" ? "Please wait..." : "សូមរង់ចាំ...",
     successTitle: state.language === "en" ? "Expense removed" : "លុបបាន"
   }, () => backend.deleteExpense(state.profile.shop_id || state.profile.shopId, target.dataset.expenseId));
-  await afterMutation();
+  state.expenses = state.expenses.filter((item) => item.id !== target.dataset.expenseId);
+  renderAll();
 });
 
 elements.productForm.addEventListener("submit", async (event) => {
@@ -2739,6 +3064,7 @@ elements.productForm.addEventListener("submit", async (event) => {
     const image_url = elements.productImageInput.files?.[0]
       ? await readFileAsDataUrl(elements.productImageInput.files[0])
       : existing?.image_url || "";
+    const category_id = canEditProductMeta() ? (elements.productCategorySelect.value || null) : (existing?.category_id || null);
     const optionPayload = canEditProductMeta()
       ? {
           enable_size: elements.productEnableSize?.checked ?? true,
@@ -2754,11 +3080,17 @@ elements.productForm.addEventListener("submit", async (event) => {
           enable_coffee: existing?.enable_coffee ?? true,
           enable_toppings: existing?.enable_toppings ?? false
         };
-    await runWithStatus({
+    const payload = { name, image_url, price, stock_qty, low_stock_at, active: true, category_id, ...optionPayload };
+    const savedProduct = await runWithStatus({
       title: state.language === "en" ? "Saving product" : "កំពុងរក្សាទុកទំនិញ",
       message: state.language === "en" ? "Please wait..." : "សូមរង់ចាំ...",
       successTitle: state.language === "en" ? "Product saved" : "រក្សាទុកបាន"
-    }, () => backend.saveProduct(state.profile.shop_id || state.profile.shopId, { name, image_url, price, stock_qty, low_stock_at, active: true, ...optionPayload }));
+    }, () => backend.saveProduct(state.profile.shop_id || state.profile.shopId, payload));
+    if (existing) {
+      Object.assign(existing, savedProduct || payload);
+    } else {
+      state.products.push(savedProduct || { id: crypto.randomUUID(), shop_id: state.profile.shop_id || state.profile.shopId, ...payload });
+    }
   } catch (error) {
     window.alert(error.message || t("saveProductFailed"));
     return;
@@ -2767,7 +3099,7 @@ elements.productForm.addEventListener("submit", async (event) => {
   elements.productStockInput.value = "0";
   elements.productLowStockInput.value = "5";
   syncProductFormPreview();
-  await afterMutation();
+  renderAll();
 });
 
 elements.productList.addEventListener("click", async (event) => {
@@ -2778,7 +3110,8 @@ elements.productList.addEventListener("click", async (event) => {
     message: state.language === "en" ? "Please wait..." : "សូមរង់ចាំ...",
     successTitle: state.language === "en" ? "Product removed" : "លុបបាន"
   }, () => backend.deleteProduct(state.profile.shop_id || state.profile.shopId, target.dataset.productId));
-  await afterMutation();
+  state.products = state.products.filter((item) => item.id !== target.dataset.productId);
+  renderAll();
 });
 
 const handleOrderAction = async (event) => {
@@ -2798,7 +3131,15 @@ const handleOrderAction = async (event) => {
     message: state.language === "en" ? "Please wait..." : "សូមរង់ចាំ...",
     successTitle: state.language === "en" ? "Order removed" : "លុបបាន"
   }, () => backend.deleteOrder(state.profile.shop_id || state.profile.shopId, deleteTarget.dataset.orderId));
-  await afterMutation();
+  const order = state.orders.find((item) => item.id === deleteTarget.dataset.orderId);
+  if (order) {
+    order.items.forEach((item) => {
+      const product = state.products.find((row) => row.id === item.productId);
+      if (product) product.stock_qty += item.qty;
+    });
+  }
+  state.orders = state.orders.filter((item) => item.id !== deleteTarget.dataset.orderId);
+  renderAll();
 };
 
 elements.orderList.addEventListener("click", handleOrderAction);
@@ -2808,7 +3149,7 @@ elements.adminCreateUserForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (!state.profile) return;
   try {
-    await runWithStatus({
+    const createdUser = await runWithStatus({
       title: state.language === "en" ? "Creating user" : "កំពុងបង្កើតអ្នកប្រើ",
       message: state.language === "en" ? "Please wait..." : "សូមរង់ចាំ...",
       successTitle: state.language === "en" ? "User created" : "បង្កើតបាន"
@@ -2819,8 +3160,18 @@ elements.adminCreateUserForm.addEventListener("submit", async (event) => {
       role: elements.newUserRole.value,
       scope: "team"
     }, state.profile));
+    state.users.unshift(createdUser || {
+      id: crypto.randomUUID(),
+      username: elements.newUsername.value.trim(),
+      email: elements.newUsername.value.trim(),
+      phone: elements.newPhone.value.trim(),
+      role: elements.newUserRole.value,
+      shop_id: state.profile.shop_id || state.profile.shopId,
+      status: "active",
+      created_at: new Date().toISOString()
+    });
     elements.adminCreateUserForm.reset();
-    await afterMutation();
+    renderAll();
   } catch (error) {
     window.alert(error.message || t("createUserFailed"));
   }
@@ -2858,6 +3209,56 @@ elements.settingsQrUpload?.addEventListener("change", () => {
 });
 elements.resetOrderCounterButton?.addEventListener("click", () => {
   if (elements.settingsOrderCounter) elements.settingsOrderCounter.value = "1";
+});
+
+elements.categoryForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!state.profile) return;
+  const name = elements.categoryNameInput.value.trim();
+  if (!name) {
+    window.alert(t("categoryMissing"));
+    return;
+  }
+  const payload = {
+    name,
+    enable_size: elements.categoryEnableSize.checked,
+    enable_sugar: elements.categoryEnableSugar.checked,
+    enable_ice: elements.categoryEnableIce.checked,
+    enable_coffee: elements.categoryEnableCoffee.checked,
+    enable_toppings: elements.categoryEnableToppings.checked
+  };
+  try {
+    const saved = await runWithStatus({
+      title: state.language === "en" ? "Saving category" : "កំពុងរក្សាទុកប្រភេទ",
+      message: state.language === "en" ? "Please wait..." : "សូមរង់ចាំ...",
+      successTitle: state.language === "en" ? "Category saved" : "រក្សាទុកបាន"
+    }, () => backend.saveCategory(state.profile.shop_id || state.profile.shopId, payload));
+    const existingIndex = state.categories.findIndex((item) => item.id === saved.id || item.name.toLowerCase() === saved.name.toLowerCase());
+    if (existingIndex >= 0) state.categories[existingIndex] = { ...state.categories[existingIndex], ...saved };
+    else state.categories.push({ shop_id: state.profile.shop_id || state.profile.shopId, ...saved });
+    elements.categoryForm.reset();
+    renderCategories();
+    renderProducts();
+  } catch (error) {
+    window.alert(error.message || t("saveCategoryFailed"));
+  }
+});
+
+elements.categoryList?.addEventListener("click", async (event) => {
+  const target = event.target.closest("[data-category-id]");
+  if (!target || !state.profile) return;
+  try {
+    await runWithStatus({
+      title: state.language === "en" ? "Removing category" : "កំពុងលុបប្រភេទ",
+      message: state.language === "en" ? "Please wait..." : "សូមរង់ចាំ...",
+      successTitle: state.language === "en" ? "Category removed" : "លុបបាន"
+    }, () => backend.deleteCategory(state.profile.shop_id || state.profile.shopId, target.dataset.categoryId));
+    state.categories = state.categories.filter((item) => item.id !== target.dataset.categoryId);
+    state.products = state.products.map((item) => item.category_id === target.dataset.categoryId ? { ...item, category_id: null } : item);
+    renderAll();
+  } catch (error) {
+    window.alert(error.message || t("deleteCategoryFailed"));
+  }
 });
 
 elements.settingsForm?.addEventListener("submit", async (event) => {
@@ -2899,7 +3300,7 @@ elements.settingsForm?.addEventListener("submit", async (event) => {
     state.settings = { ...current, ...payload };
     elements.settingsProfileImage.value = "";
     elements.settingsQrUpload.value = "";
-    await afterMutation();
+    renderAll();
   } catch (error) {
     window.alert(error.message || t("saveSettingsFailed"));
   }
@@ -2929,7 +3330,23 @@ elements.printReceiptButton.addEventListener("click", () => window.print());
 elements.downloadReceiptButton.addEventListener("click", async () => {
   if (!state.latestReceipt) return;
   try {
-    await downloadReceiptAsPdf();
+    await saveReceiptPdf();
+  } catch (error) {
+    try {
+      const file = await backend.generateReceiptPdf(state.latestReceipt);
+      makeDownload(file);
+    } catch (fallbackError) {
+      window.alert(fallbackError.message || error.message || t("createPdfFailed"));
+    }
+  }
+});
+elements.shareReceiptButton?.addEventListener("click", async () => {
+  if (!state.latestReceipt) return;
+  try {
+    const shared = await shareReceiptFile();
+    if (!shared) {
+      await saveReceiptPdf();
+    }
   } catch (error) {
     try {
       const file = await backend.generateReceiptPdf(state.latestReceipt);
