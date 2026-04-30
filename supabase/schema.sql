@@ -3,9 +3,12 @@ create extension if not exists pgcrypto;
 create table if not exists shops (
   id uuid primary key default gen_random_uuid(),
   name text not null,
+  shop_type text not null default 'fnb' check (shop_type in ('fnb', 'retail')),
   status text not null default 'active',
   created_at timestamptz not null default now()
 );
+
+alter table shops add column if not exists shop_type text not null default 'fnb';
 
 create table if not exists users (
   id uuid primary key references auth.users(id) on delete cascade,
@@ -34,7 +37,16 @@ create table if not exists products (
   shop_id uuid not null references shops(id) on delete cascade,
   name text not null,
   price numeric(12,2) not null default 0,
+  cost_price numeric(12,2) not null default 0,
   stock_qty integer not null default 0,
+  barcode text,
+  sku text,
+  brand text,
+  supplier text,
+  color text,
+  size_label text,
+  discount numeric(12,2) not null default 0,
+  variant_options jsonb not null default '[]'::jsonb,
   low_stock_at integer not null default 5,
   enable_size boolean not null default true,
   enable_sugar boolean not null default true,
@@ -71,6 +83,15 @@ alter table products add column if not exists category_id uuid references catego
 alter table products add column if not exists image_url text;
 alter table products add column if not exists sort_order integer not null default 0;
 alter table products add column if not exists is_popular boolean not null default false;
+alter table products add column if not exists cost_price numeric(12,2) not null default 0;
+alter table products add column if not exists barcode text;
+alter table products add column if not exists sku text;
+alter table products add column if not exists brand text;
+alter table products add column if not exists supplier text;
+alter table products add column if not exists color text;
+alter table products add column if not exists size_label text;
+alter table products add column if not exists discount numeric(12,2) not null default 0;
+alter table products add column if not exists variant_options jsonb not null default '[]'::jsonb;
 alter table products add column if not exists enable_size boolean not null default true;
 alter table products add column if not exists enable_sugar boolean not null default true;
 alter table products add column if not exists enable_ice boolean not null default true;
@@ -117,6 +138,9 @@ create table if not exists customers (
   shop_id uuid not null references shops(id) on delete cascade,
   name text,
   phone text,
+  member_code text,
+  store_credit_balance numeric(12,2) not null default 0,
+  loyalty_points integer not null default 0,
   created_at timestamptz not null default now(),
   last_order_at timestamptz
 );
@@ -154,6 +178,10 @@ create table if not exists settings (
   receipt_contact text,
   receipt_manager text,
   receipt_note text,
+  retail_tax_rate numeric(8,2) not null default 0,
+  retail_barcode_mode text not null default 'camera',
+  retail_store_credit_label text,
+  retail_loyalty_label text,
   option_sizes text,
   option_sugar_levels text,
   option_ice_levels text,
@@ -176,6 +204,10 @@ alter table settings add column if not exists receipt_address text;
 alter table settings add column if not exists receipt_contact text;
 alter table settings add column if not exists receipt_manager text;
 alter table settings add column if not exists receipt_note text;
+alter table settings add column if not exists retail_tax_rate numeric(8,2) not null default 0;
+alter table settings add column if not exists retail_barcode_mode text not null default 'camera';
+alter table settings add column if not exists retail_store_credit_label text;
+alter table settings add column if not exists retail_loyalty_label text;
 alter table settings add column if not exists option_sizes text;
 alter table settings add column if not exists option_sugar_levels text;
 alter table settings add column if not exists option_ice_levels text;
@@ -187,6 +219,12 @@ alter table settings add column if not exists currency text not null default 'US
 alter table settings add column if not exists printer_mode text not null default 'browser';
 alter table settings add column if not exists shop_logo_url text;
 alter table settings add column if not exists updated_at timestamptz not null default now();
+alter table customers add column if not exists member_code text;
+alter table customers add column if not exists store_credit_balance numeric(12,2) not null default 0;
+alter table customers add column if not exists loyalty_points integer not null default 0;
+alter table orders add column if not exists subtotal_discount numeric(12,2) not null default 0;
+alter table orders add column if not exists tax numeric(12,2) not null default 0;
+alter table orders add column if not exists store_credit_used numeric(12,2) not null default 0;
 
 alter table shops enable row level security;
 alter table users enable row level security;

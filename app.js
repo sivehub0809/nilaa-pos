@@ -21,6 +21,7 @@ const state = {
   products: [],
   expenses: [],
   orders: [],
+  customers: [],
   users: [],
   cart: [],
   currentBuyer: "",
@@ -32,6 +33,7 @@ const state = {
   customerExpanded: false,
   productSearchQuery: "",
   ordersSearchQuery: "",
+  customerSearchQuery: "",
   pendingCustomizerProduct: null,
   platformData: { shops: [], users: [] }
 };
@@ -75,6 +77,11 @@ const elements = {
   orderForm: document.getElementById("orderForm"),
   buyerName: document.getElementById("buyerName"),
   buyerPhone: document.getElementById("buyerPhone"),
+  retailMemberCard: document.getElementById("retailMemberCard"),
+  retailMemberName: document.getElementById("retailMemberName"),
+  retailMemberPhone: document.getElementById("retailMemberPhone"),
+  retailMemberPoints: document.getElementById("retailMemberPoints"),
+  retailMemberCredit: document.getElementById("retailMemberCredit"),
   productSearch: document.getElementById("productSearch"),
   productSuggestions: document.getElementById("productSuggestions"),
   quickProductList: document.getElementById("quickProductList"),
@@ -85,7 +92,14 @@ const elements = {
   cartList: document.getElementById("cartList"),
   cartCount: document.getElementById("cartCount"),
   orderFee: document.getElementById("orderFee"),
+  retailSubtotalDiscountInput: document.getElementById("retailSubtotalDiscountInput"),
+  retailTaxRateInput: document.getElementById("retailTaxRateInput"),
+  retailStoreCreditInput: document.getElementById("retailStoreCreditInput"),
   cartSubtotal: document.getElementById("cartSubtotal"),
+  cartItemDiscount: document.getElementById("cartItemDiscount"),
+  cartSubtotalDiscount: document.getElementById("cartSubtotalDiscount"),
+  cartTax: document.getElementById("cartTax"),
+  cartStoreCredit: document.getElementById("cartStoreCredit"),
   cartTotal: document.getElementById("cartTotal"),
   checkoutButton: document.getElementById("checkoutButton"),
   expenseForm: document.getElementById("expenseForm"),
@@ -100,12 +114,30 @@ const elements = {
   ordersPageCount: document.getElementById("ordersPageCount"),
   customerList: document.getElementById("customerList"),
   customerCount: document.getElementById("customerCount"),
+  customerMemberCount: document.getElementById("customerMemberCount"),
+  customerSpendSummary: document.getElementById("customerSpendSummary"),
+  customerSearchInput: document.getElementById("customerSearchInput"),
+  customerForm: document.getElementById("customerForm"),
+  customerNameInput: document.getElementById("customerNameInput"),
+  customerPhoneInput: document.getElementById("customerPhoneInput"),
+  customerMemberCodeInput: document.getElementById("customerMemberCodeInput"),
+  customerStoreCreditInput: document.getElementById("customerStoreCreditInput"),
+  customerLoyaltyPointsInput: document.getElementById("customerLoyaltyPointsInput"),
   productForm: document.getElementById("productForm"),
   productNameInput: document.getElementById("productNameInput"),
   productImageInput: document.getElementById("productImageInput"),
   productImagePreview: document.getElementById("productImagePreview"),
   productCategorySelect: document.getElementById("productCategorySelect"),
   productPriceInput: document.getElementById("productPriceInput"),
+  productBarcodeInput: document.getElementById("productBarcodeInput"),
+  productSkuInput: document.getElementById("productSkuInput"),
+  productCostPriceInput: document.getElementById("productCostPriceInput"),
+  productBrandInput: document.getElementById("productBrandInput"),
+  productSupplierInput: document.getElementById("productSupplierInput"),
+  productColorInput: document.getElementById("productColorInput"),
+  productSizeLabelInput: document.getElementById("productSizeLabelInput"),
+  productDiscountInput: document.getElementById("productDiscountInput"),
+  productVariantsInput: document.getElementById("productVariantsInput"),
   productStockInput: document.getElementById("productStockInput"),
   productLowStockInput: document.getElementById("productLowStockInput"),
   productEnableSize: document.getElementById("productEnableSize"),
@@ -137,6 +169,7 @@ const elements = {
   userCount: document.getElementById("userCount"),
   adminPlatformForm: document.getElementById("adminPlatformForm"),
   adminShopName: document.getElementById("adminShopName"),
+  adminShopType: document.getElementById("adminShopType"),
   adminUsername: document.getElementById("adminUsername"),
   adminPhone: document.getElementById("adminPhone"),
   adminPassword: document.getElementById("adminPassword"),
@@ -161,6 +194,10 @@ const elements = {
   settingsReceiptContact: document.getElementById("settingsReceiptContact"),
   settingsReceiptManager: document.getElementById("settingsReceiptManager"),
   settingsReceiptNote: document.getElementById("settingsReceiptNote"),
+  settingsRetailTaxRate: document.getElementById("settingsRetailTaxRate"),
+  settingsRetailBarcodeMode: document.getElementById("settingsRetailBarcodeMode"),
+  settingsRetailStoreCreditLabel: document.getElementById("settingsRetailStoreCreditLabel"),
+  settingsRetailLoyaltyLabel: document.getElementById("settingsRetailLoyaltyLabel"),
   settingsOptionSizes: document.getElementById("settingsOptionSizes"),
   settingsOptionSugar: document.getElementById("settingsOptionSugar"),
   settingsOptionIce: document.getElementById("settingsOptionIce"),
@@ -228,21 +265,35 @@ const elements = {
   qrBox: document.getElementById("qrBox"),
   payQrButton: document.getElementById("payQrButton"),
   payManualButton: document.getElementById("payManualButton"),
+  payCardButton: document.getElementById("payCardButton"),
+  payBankButton: document.getElementById("payBankButton"),
+  paySplitButton: document.getElementById("paySplitButton"),
+  payStoreCreditButton: document.getElementById("payStoreCreditButton"),
   paymentBackButton: document.getElementById("paymentBackButton"),
   betaQrGrid: document.getElementById("betaQrGrid"),
   closeReceiptButton: document.getElementById("closeReceiptButton"),
   receiptBackButton: document.getElementById("receiptBackButton"),
+  receiptCashier: document.getElementById("receiptCashier"),
+  receiptPaymentMethod: document.getElementById("receiptPaymentMethod"),
   receiptBuyer: document.getElementById("receiptBuyer"),
   receiptPhone: document.getElementById("receiptPhone"),
   receiptDate: document.getElementById("receiptDate"),
   receiptInvoice: document.getElementById("receiptInvoice"),
   receiptItems: document.getElementById("receiptItems"),
+  receiptRetailSummary: document.getElementById("receiptRetailSummary"),
+  receiptItemDiscount: document.getElementById("receiptItemDiscount"),
+  receiptSubtotalDiscount: document.getElementById("receiptSubtotalDiscount"),
+  receiptTax: document.getElementById("receiptTax"),
+  receiptStoreCredit: document.getElementById("receiptStoreCredit"),
   receiptSubtotal: document.getElementById("receiptSubtotal"),
   receiptFee: document.getElementById("receiptFee"),
   receiptTotal: document.getElementById("receiptTotal"),
   shareReceiptButton: document.getElementById("shareReceiptButton"),
   downloadReceiptButton: document.getElementById("downloadReceiptButton"),
-  printReceiptButton: document.getElementById("printReceiptButton")
+  printReceiptButton: document.getElementById("printReceiptButton"),
+  itemModalMeta: document.getElementById("itemModalMeta"),
+  itemVariantLabel: document.getElementById("itemVariantLabel"),
+  itemVariant: document.getElementById("itemVariant")
 };
 
 elements.telegramLink.href = appSettings.telegramRequestUrl;
@@ -596,6 +647,28 @@ Object.assign(translations.km, {
   productEnableCoffee: "កាហ្វេ",
   productEnableToppings: "Topping",
   createOwnerButton: "បង្កើតហាងម្ចាស់",
+  shopTypeLabel: "ប្រភេទហាង",
+  shopTypeFnb: "ហាង F&B",
+  shopTypeRetail: "ហាង Retail",
+  retailPosHint: "ស្វែងរកតាមឈ្មោះ បាកូដ ឬ SKU",
+  barcodeLabel: "បាកូដ",
+  skuLabel: "SKU",
+  costPriceLabel: "តម្លៃដើម",
+  brandLabel: "ម៉ាក",
+  supplierLabel: "អ្នកផ្គត់ផ្គង់",
+  variantColorLabel: "ពណ៌",
+  variantSizeLabel: "ស្លាកទំហំ",
+  discountLabel: "បញ្ចុះតម្លៃ",
+  variantsLabel: "បញ្ជីវ៉ារ្យ៉ង់",
+  variantLabel: "វ៉ារ្យ៉ង់",
+  cashierLabel: "អ្នកគិតលុយ",
+  itemDiscountLabel: "បញ្ចុះតម្លៃតាមទំនិញ",
+  subtotalDiscountLabel: "បញ្ចុះតម្លៃសរុប",
+  taxLabel: "ពន្ធ",
+  payCardButton: "កាត",
+  payBankPlaceholder: "ធនាគារ",
+  paySplitPlaceholder: "បង់ចែក",
+  payStoreCreditPlaceholder: "Store credit",
   adminShopCountLabel: "ចំនួនហាង",
   adminUserCountLabel: "ចំនួនអ្នកប្រើ",
   adminSchemaLabel: "Schema",
@@ -680,6 +753,28 @@ Object.assign(translations.en, {
   productEnableCoffee: "Coffee",
   productEnableToppings: "Toppings",
   createOwnerButton: "Create owner shop",
+  shopTypeLabel: "Shop type",
+  shopTypeFnb: "F&B shop",
+  shopTypeRetail: "Retail shop",
+  retailPosHint: "Search by name, barcode, or SKU",
+  barcodeLabel: "Barcode",
+  skuLabel: "SKU",
+  costPriceLabel: "Cost price",
+  brandLabel: "Brand",
+  supplierLabel: "Supplier",
+  variantColorLabel: "Color",
+  variantSizeLabel: "Size label",
+  discountLabel: "Discount",
+  variantsLabel: "Variants",
+  variantLabel: "Variant",
+  cashierLabel: "Cashier",
+  itemDiscountLabel: "Item discount",
+  subtotalDiscountLabel: "Subtotal discount",
+  taxLabel: "Tax",
+  payCardButton: "Card",
+  payBankPlaceholder: "Bank",
+  paySplitPlaceholder: "Split",
+  payStoreCreditPlaceholder: "Store credit",
   adminShopCountLabel: "Shops",
   adminUserCountLabel: "Users",
   adminSchemaLabel: "Schema",
@@ -795,6 +890,60 @@ Object.assign(translations.en, {
   productOptionToppingsPlaceholder: "Pearl\nJelly\nCream",
   userEmailPlaceholder: "owner@example.com",
   userPhonePlaceholder: "012 345 678"
+});
+
+Object.assign(translations.km, {
+  customerLookupHeading: "ស្វែងរកអតិថិជន",
+  customerSearchPlaceholder: "ស្វែងរកឈ្មោះ ឬ លេខទូរស័ព្ទ",
+  customerMemberCountLabel: "សមាជិក",
+  customerSpendSummaryLabel: "ចំណាយសរុប",
+  customerMemberEditorHeading: "ព័ត៌មានសមាជិក",
+  memberCodeLabel: "កូដសមាជិក",
+  storeCreditBalanceLabel: "សមតុល្យ Store credit",
+  loyaltyPointsLabel: "ពិន្ទុ Loyalty",
+  saveCustomerButton: "រក្សាទុកសមាជិក",
+  customerSaved: "រក្សាទុកសមាជិកបាន",
+  taxRateLabel: "អត្រាពន្ធ (%)",
+  storeCreditApplyLabel: "Store credit ប្រើ",
+  retailSettingsHeading: "ការកំណត់ Retail",
+  barcodeModeLabel: "របៀប Barcode",
+  barcodeModeCamera: "Camera និង keyboard",
+  barcodeModeKeyboard: "Keyboard scanner ប៉ុណ្ណោះ",
+  storeCreditLabel: "ឈ្មោះ Store credit",
+  storeCreditLabelPlaceholder: "Store credit",
+  loyaltyProgramLabel: "ឈ្មោះ Loyalty",
+  loyaltyProgramPlaceholder: "Loyalty points",
+  noCustomers: "មិនទាន់មានអតិថិជនទេ",
+  retailCustomerMeta: "ចំនួនទិញ {count} ដង • ចំណាយ {amount}",
+  retailStoreCreditTag: "Store credit {amount}",
+  retailPointsTag: "{points} pts"
+});
+
+Object.assign(translations.en, {
+  customerLookupHeading: "Customer lookup",
+  customerSearchPlaceholder: "Search name or phone",
+  customerMemberCountLabel: "Members",
+  customerSpendSummaryLabel: "Total spend",
+  customerMemberEditorHeading: "Member profile",
+  memberCodeLabel: "Member code",
+  storeCreditBalanceLabel: "Store credit balance",
+  loyaltyPointsLabel: "Loyalty points",
+  saveCustomerButton: "Save member",
+  customerSaved: "Member saved",
+  taxRateLabel: "Tax rate (%)",
+  storeCreditApplyLabel: "Store credit",
+  retailSettingsHeading: "Retail settings",
+  barcodeModeLabel: "Barcode mode",
+  barcodeModeCamera: "Camera and keyboard",
+  barcodeModeKeyboard: "Keyboard scanner only",
+  storeCreditLabel: "Store credit label",
+  storeCreditLabelPlaceholder: "Store credit",
+  loyaltyProgramLabel: "Loyalty label",
+  loyaltyProgramPlaceholder: "Loyalty points",
+  noCustomers: "No customers yet.",
+  retailCustomerMeta: "{count} visits • {amount} spent",
+  retailStoreCreditTag: "Store credit {amount}",
+  retailPointsTag: "{points} pts"
 });
 
 function t(key, vars = {}) {
@@ -939,7 +1088,7 @@ function productOptionState(product = {}) {
 
 function itemOptionParts(item) {
   const options = item?.options || {};
-  const parts = [options.size, options.sugar, options.ice, options.coffee].filter(Boolean);
+  const parts = [options.variant, options.size, options.sugar, options.ice, options.coffee].filter(Boolean);
   if (Array.isArray(options.toppings) && options.toppings.length) parts.push(options.toppings.join(", "));
   if (options.note) parts.push(options.note);
   return parts;
@@ -1057,7 +1206,8 @@ function initializeSplash() {
   }, 3000);
 }
 
-function defaultSettings() {
+function defaultSettingsForShopType(shopType = currentShopType()) {
+  const retail = shopType === "retail";
   return {
     business_name: state.shop?.name || "nilaa-os",
     business_description: "",
@@ -1070,7 +1220,11 @@ function defaultSettings() {
     receipt_contact: "",
     receipt_manager: "",
     receipt_note: "",
-    option_sizes: "Small\nMedium\nLarge",
+    retail_tax_rate: retail ? 10 : 0,
+    retail_barcode_mode: "camera",
+    retail_store_credit_label: "Store credit",
+    retail_loyalty_label: "Loyalty points",
+    option_sizes: retail ? "XS\nS\nM\nL\nXL" : "Small\nMedium\nLarge",
     option_sugar_levels: "0%\n50%\n100%",
     option_ice_levels: "No ice\nLess ice\nNormal ice",
     option_coffee_levels: "Light\nNormal\nStrong",
@@ -1079,12 +1233,94 @@ function defaultSettings() {
   };
 }
 
+function defaultSettings() {
+  return defaultSettingsForShopType(currentShopType());
+}
+
 function nextInvoiceNumber() {
   return `#${Number(currentSettings().order_counter || 1)}`;
 }
 
 function currentSettings() {
   return { ...defaultSettings(), ...(state.settings || {}) };
+}
+
+function aggregatedCustomers() {
+  const map = new Map();
+  state.customers.forEach((customer) => {
+    const key = normalizePhone(customer.phone) || String(customer.id || "").toLowerCase();
+    if (!key) return;
+    map.set(key, {
+      id: customer.id,
+      name: customer.name || "",
+      phone: customer.phone || "",
+      member_code: customer.member_code || "",
+      store_credit_balance: Number(customer.store_credit_balance || 0),
+      loyalty_points: Number(customer.loyalty_points || 0),
+      visits: 0,
+      totalSpent: 0,
+      lastOrderAt: customer.last_order_at || customer.created_at || ""
+    });
+  });
+  state.orders.forEach((order) => {
+    const phone = order.buyer_phone || order.buyerPhone || "";
+    const name = order.buyer_name || order.buyerName || "";
+    const key = normalizePhone(phone) || name.trim().toLowerCase();
+    if (!key) return;
+    const existing = map.get(key) || {
+      id: key,
+      name,
+      phone,
+      member_code: "",
+      store_credit_balance: 0,
+      loyalty_points: 0,
+      visits: 0,
+      totalSpent: 0,
+      lastOrderAt: ""
+    };
+    existing.name ||= name;
+    existing.phone ||= phone;
+    existing.visits += 1;
+    existing.totalSpent += Number(order.total || 0);
+    existing.lastOrderAt = order.created_at || order.createdAt || existing.lastOrderAt;
+    map.set(key, existing);
+  });
+  return [...map.values()].sort((a, b) => new Date(b.lastOrderAt || 0) - new Date(a.lastOrderAt || 0));
+}
+
+function currentRetailCustomer() {
+  const phone = normalizePhone(elements.buyerPhone?.value || state.currentPhone);
+  const name = String(elements.buyerName?.value || state.currentBuyer || "").trim().toLowerCase();
+  return aggregatedCustomers().find((customer) =>
+    (phone && normalizePhone(customer.phone) === phone) ||
+    (name && String(customer.name || "").trim().toLowerCase() === name)
+  ) || null;
+}
+
+function retailPricingSummary() {
+  const subtotal = state.cart.reduce((sum, item) => sum + item.qty * item.price, 0);
+  const fee = Number(elements.orderFee?.value || 0);
+  const itemDiscount = isRetailShop()
+    ? state.cart.reduce((sum, item) => sum + Number(item.discount || 0) * Number(item.qty || 0), 0)
+    : 0;
+  const subtotalDiscount = isRetailShop() ? Number(elements.retailSubtotalDiscountInput?.value || 0) : 0;
+  const configuredRate = Number(currentSettings().retail_tax_rate || 0);
+  const taxRate = isRetailShop()
+    ? Number(elements.retailTaxRateInput?.value || configuredRate || 0)
+    : 0;
+  const member = currentRetailCustomer();
+  const availableCredit = Number(member?.store_credit_balance || 0);
+  let storeCreditUsed = isRetailShop() ? Number(elements.retailStoreCreditInput?.value || 0) : 0;
+  const discountedSubtotal = Math.max(0, subtotal - itemDiscount - subtotalDiscount);
+  const tax = discountedSubtotal * (taxRate / 100);
+  const beforeCredit = discountedSubtotal + tax + fee;
+  if (storeCreditUsed > availableCredit) {
+    storeCreditUsed = availableCredit;
+    if (elements.retailStoreCreditInput) elements.retailStoreCreditInput.value = String(storeCreditUsed);
+  }
+  storeCreditUsed = Math.min(storeCreditUsed, beforeCredit);
+  const total = Math.max(0, beforeCredit - storeCreditUsed);
+  return { subtotal, fee, itemDiscount, subtotalDiscount, taxRate, tax, storeCreditUsed, total, member };
 }
 
 function syncBrandVisuals() {
@@ -1148,6 +1384,10 @@ function renderSettings() {
   if (elements.settingsReceiptContact) elements.settingsReceiptContact.value = settings.receipt_contact || "";
   if (elements.settingsReceiptManager) elements.settingsReceiptManager.value = settings.receipt_manager || "";
   if (elements.settingsReceiptNote) elements.settingsReceiptNote.value = settings.receipt_note || "";
+  if (elements.settingsRetailTaxRate) elements.settingsRetailTaxRate.value = Number(settings.retail_tax_rate || 0);
+  if (elements.settingsRetailBarcodeMode) elements.settingsRetailBarcodeMode.value = settings.retail_barcode_mode || "camera";
+  if (elements.settingsRetailStoreCreditLabel) elements.settingsRetailStoreCreditLabel.value = settings.retail_store_credit_label || "Store credit";
+  if (elements.settingsRetailLoyaltyLabel) elements.settingsRetailLoyaltyLabel.value = settings.retail_loyalty_label || "Loyalty points";
   if (elements.settingsOptionSizes) elements.settingsOptionSizes.value = settings.option_sizes || "Small\nMedium\nLarge";
   if (elements.settingsOptionSugar) elements.settingsOptionSugar.value = settings.option_sugar_levels || "0%\n50%\n100%";
   if (elements.settingsOptionIce) elements.settingsOptionIce.value = settings.option_ice_levels || "No ice\nLess ice\nNormal ice";
@@ -1246,6 +1486,33 @@ function currentRole() {
   return role === "business_owner" || role === "admin" ? "owner" : role;
 }
 
+function currentShopType() {
+  return state.shop?.shop_type || state.shop?.shopType || "fnb";
+}
+
+function isRetailShop() {
+  return currentShopType() === "retail";
+}
+
+function retailDefaultCategories() {
+  return [
+    "Homeware",
+    "Bedding",
+    "Skincare",
+    "Fashion",
+    "Towels"
+  ];
+}
+
+function fnbDefaultCategories() {
+  return [
+    "Coffee",
+    "Tea",
+    "Drinks",
+    "Food"
+  ];
+}
+
 function canManageSettings() {
   return currentRole() === "owner";
 }
@@ -1292,6 +1559,8 @@ function buttonLabel(route) {
 function setRoute(route) {
   if (!canAccessRoute(route)) route = defaultRouteForCurrentUser();
   state.route = route;
+  document.body.classList.toggle("shop-type-retail", isRetailShop());
+  document.body.classList.toggle("shop-type-fnb", !isRetailShop());
   Object.entries(elements.screens).forEach(([key, screen]) => {
     screen.classList.toggle("hidden", key !== route);
   });
@@ -1331,15 +1600,28 @@ function renderAuth() {
 }
 
 function renderCart() {
-  const subtotal = state.cart.reduce((sum, item) => sum + item.qty * item.price, 0);
-  const fee = Number(elements.orderFee.value || 0);
+  const pricing = retailPricingSummary();
   const itemCount = state.cart.reduce((sum, item) => sum + item.qty, 0);
   elements.cartCount.textContent = `${itemCount} ${t("itemUnit")}`;
-  elements.cartSubtotal.textContent = money(subtotal);
-  elements.cartTotal.textContent = money(subtotal + fee);
+  elements.cartSubtotal.textContent = money(pricing.subtotal);
+  if (elements.cartItemDiscount) elements.cartItemDiscount.textContent = money(pricing.itemDiscount);
+  if (elements.cartSubtotalDiscount) elements.cartSubtotalDiscount.textContent = money(pricing.subtotalDiscount);
+  if (elements.cartTax) elements.cartTax.textContent = money(pricing.tax);
+  if (elements.cartStoreCredit) elements.cartStoreCredit.textContent = money(pricing.storeCreditUsed);
+  elements.cartTotal.textContent = money(pricing.total);
   if (elements.mobileCheckoutButton) {
-    elements.mobileCheckoutButton.textContent = `${t("scrollToCheckoutButton")} • ${itemCount} • ${money(subtotal + fee)}`;
+    elements.mobileCheckoutButton.textContent = `${t("scrollToCheckoutButton")} • ${itemCount} • ${money(pricing.total)}`;
     elements.mobileCheckoutButton.classList.toggle("hidden", state.cart.length === 0);
+  }
+  if (elements.retailMemberCard) {
+    const member = pricing.member;
+    elements.retailMemberCard.classList.toggle("hidden", !isRetailShop() || !member);
+    if (member) {
+      elements.retailMemberName.textContent = member.name || t("guestBuyer");
+      elements.retailMemberPhone.textContent = member.phone || "-";
+      elements.retailMemberPoints.textContent = t("retailPointsTag", { points: Number(member.loyalty_points || 0) });
+      elements.retailMemberCredit.textContent = t("retailStoreCreditTag", { amount: money(member.store_credit_balance || 0) });
+    }
   }
 
   elements.cartList.innerHTML = state.cart.length
@@ -1395,7 +1677,14 @@ function renderProducts() {
   elements.productSuggestions.innerHTML = state.products
     .slice()
     .sort((a, b) => a.name.localeCompare(b.name, "km"))
-    .map((product) => `<option value="${safeText(product.name)}"></option>`)
+    .flatMap((product) => {
+      const suggestions = [product.name];
+      if (isRetailShop()) {
+        if (product.sku) suggestions.push(product.sku);
+        if (product.barcode) suggestions.push(product.barcode);
+      }
+      return suggestions.map((value) => `<option value="${safeText(value)}"></option>`);
+    })
     .join("");
   elements.categoryChips.forEach((button) => {
     button.classList.toggle("category-chip--active", button.dataset.productFilter === state.productFilter);
@@ -1408,7 +1697,13 @@ function renderProducts() {
       if (state.productFilter === "popular" && !(Boolean(product.is_popular) || index < 8)) return false;
       if (state.productFilter === "low" && !(left <= lowAt)) return false;
       if (!query) return true;
-      return product.name.toLowerCase().includes(query);
+      return [
+        product.name,
+        product.sku,
+        product.barcode,
+        product.brand,
+        product.supplier
+      ].filter(Boolean).some((value) => String(value).toLowerCase().includes(query));
     })
     .sort((a, b) => {
       if (!query) return a.name.localeCompare(b.name, "km");
@@ -1426,11 +1721,15 @@ function renderProducts() {
         const options = productOptionState(product);
         const optionCount = Object.values(options).filter(Boolean).length;
         const category = categoryById(product.category_id || product.categoryId);
+        const retailMeta = isRetailShop()
+          ? [product.brand, product.sku || product.barcode].filter(Boolean).join(" • ")
+          : "";
         return `
           <button class="quick-product" type="button" data-quick-product-id="${product.id}" ${left <= 0 ? "disabled" : ""}>
             ${productImageMarkup(product)}
             <strong>${safeText(product.name)}</strong>
             ${category ? `<small>${safeText(category.name)}</small>` : ""}
+            ${retailMeta ? `<small>${safeText(retailMeta)}</small>` : ""}
             <span>${money(product.price)} • ${left}</span>
             <span class="quick-product__hint">${safeText(optionCount ? t("optionsCountLabel", { count: optionCount }) : t("tapToAdd"))}</span>
           </button>
@@ -1447,6 +1746,8 @@ function renderProducts() {
         const category = categoryById(product.category_id || product.categoryId);
         const enabledList = [
           category?.name ? category.name : "",
+          isRetailShop() && product.brand ? product.brand : "",
+          isRetailShop() && (product.sku || product.barcode) ? (product.sku || product.barcode) : "",
           options.size ? t("productEnableSize") : "",
           options.sugar ? t("productEnableSugar") : "",
           options.ice ? t("productEnableIce") : "",
@@ -1572,22 +1873,30 @@ function renderReports() {
 
 function renderCustomers() {
   if (!elements.customerList) return;
-  const buyers = state.orders.filter((order) => order.buyer_name || order.buyerName || order.buyer_phone || order.buyerPhone);
+  const query = String(state.customerSearchQuery || "").trim().toLowerCase();
+  const buyers = aggregatedCustomers().filter((customer) =>
+    !query || [customer.name, customer.phone, customer.member_code].filter(Boolean).some((value) => String(value).toLowerCase().includes(query))
+  );
   elements.customerCount.textContent = buyers.length;
+  if (elements.customerMemberCount) elements.customerMemberCount.textContent = buyers.length;
+  if (elements.customerSpendSummary) {
+    elements.customerSpendSummary.textContent = money(buyers.reduce((sum, customer) => sum + Number(customer.totalSpent || 0), 0));
+  }
   elements.customerList.innerHTML = buyers.length
-    ? buyers.map((order) => `
+    ? buyers.map((customer) => `
         <article class="record-row">
           <div>
-            <strong>${safeText(order.buyer_name || order.buyerName || t("guestBuyer"))}</strong>
-            <div class="meta-line">${safeText(order.buyer_phone || order.buyerPhone || "-")}</div>
+            <strong>${safeText(customer.name || t("guestBuyer"))}</strong>
+            <div class="meta-line">${safeText(customer.phone || customer.member_code || "-")}</div>
+            ${isRetailShop() ? `<div class="meta-line">${safeText(t("retailCustomerMeta", { count: customer.visits || 0, amount: money(customer.totalSpent || 0) }))}</div>` : ""}
           </div>
           <div>
-            <strong>${money(order.total)}</strong>
-            <div class="meta-line">${safeText(formatDateTime(order.created_at || order.createdAt))}</div>
+            <strong>${money(customer.totalSpent || 0)}</strong>
+            <div class="meta-line">${safeText(formatDateTime(customer.lastOrderAt))}</div>
           </div>
         </article>
       `).join("")
-    : blankState(t("noSales"));
+    : blankState(t("noCustomers"));
 }
 
 function renderUsers() {
@@ -1621,7 +1930,7 @@ function renderAdminScreen() {
         <article class="record-row">
           <div>
             <strong>${safeText(shop.name)}</strong>
-            <div class="meta-line">${safeText(shop.id)}</div>
+            <div class="meta-line">${safeText([shop.shop_type || "fnb", shop.id].join(" • "))}</div>
           </div>
           <div><span class="tag">${safeText(shop.status || "active")}</span></div>
         </article>
@@ -1656,6 +1965,7 @@ function formatDateTime(value) {
 function buildReceipt(order) {
   const settings = currentSettings();
   const invoiceNo = order.invoice_no || order.invoiceNo;
+  const itemDiscount = (order.items || []).reduce((sum, item) => sum + Number(item.discount || 0) * Number(item.qty || 0), 0);
   return {
     invoiceNo,
     buyerName: order.buyer_name || order.buyerName,
@@ -1672,9 +1982,15 @@ function buildReceipt(order) {
     logoUrl: settings.shop_logo_url || "",
     address: settings.receipt_address || "",
     contact: settings.receipt_contact || "",
-    manager: settings.receipt_manager || "",
+    manager: settings.receipt_manager || state.profile?.username || "",
     note: settings.receipt_note || "",
-    barcodeValue: `#${String(invoiceNo || "").replace(/[^0-9A-Za-z]/g, "").slice(-16) || "NILAAOS"}#`
+    barcodeValue: `#${String(invoiceNo || "").replace(/[^0-9A-Za-z]/g, "").slice(-16) || "NILAAOS"}#`,
+    cashier: state.profile?.username || "",
+    itemDiscount,
+    subtotalDiscount: Number(order.subtotal_discount || 0),
+    tax: Number(order.tax || 0),
+    storeCreditUsed: Number(order.store_credit_used || 0),
+    shopType: currentShopType()
   };
 }
 
@@ -1688,6 +2004,8 @@ function renderReceipt() {
   elements.receiptBrandName.textContent = state.latestReceipt.receiptName || "nilaa-os";
   elements.receiptBrandLogo.src = state.latestReceipt.logoUrl || "assets/nilaa-logo.png";
   elements.receiptBrandLogo.classList.toggle("hidden", !state.latestReceipt.logoUrl);
+  if (elements.receiptCashier) elements.receiptCashier.textContent = state.latestReceipt.cashier || "-";
+  if (elements.receiptPaymentMethod) elements.receiptPaymentMethod.textContent = state.latestReceipt.paymentMethod || "-";
   elements.receiptBuyer.textContent = state.latestReceipt.buyerName || t("guestBuyer");
   elements.receiptPhone.textContent = state.latestReceipt.buyerPhone || "-";
   elements.receiptBusinessDescription.textContent = state.latestReceipt.businessDescription || "";
@@ -1703,10 +2021,15 @@ function renderReceipt() {
   elements.receiptItems.innerHTML = state.latestReceipt.items.map((item) => `
       <div class="receipt-row">
         <span>${item.qty}</span>
-        <span>${safeText(item.name)}${itemOptionsMarkup(item)}<small>${money(item.price)} x ${item.qty}</small></span>
+        <span>${safeText(item.name)}${itemOptionsMarkup(item)}<small>${money(item.price)} x ${item.qty}${item.sku ? ` • ${safeText(item.sku)}` : ""}</small></span>
         <span>${money(item.qty * item.price)}</span>
       </div>
     `).join("");
+  elements.receiptRetailSummary?.classList.toggle("hidden", !isRetailShop());
+  if (elements.receiptItemDiscount) elements.receiptItemDiscount.textContent = money(state.latestReceipt.itemDiscount || 0);
+  if (elements.receiptSubtotalDiscount) elements.receiptSubtotalDiscount.textContent = money(state.latestReceipt.subtotalDiscount || 0);
+  if (elements.receiptTax) elements.receiptTax.textContent = money(state.latestReceipt.tax || 0);
+  if (elements.receiptStoreCredit) elements.receiptStoreCredit.textContent = money(state.latestReceipt.storeCreditUsed || 0);
   elements.receiptSubtotal.textContent = money(state.latestReceipt.subtotal);
   elements.receiptFee.textContent = money(state.latestReceipt.fee);
   elements.receiptTotal.textContent = money(state.latestReceipt.total);
@@ -1723,6 +2046,10 @@ function renderAll() {
   if (!state.authUser || !state.profile) return;
   elements.buyerName.value = state.currentBuyer;
   elements.buyerPhone.value = state.currentPhone;
+  if (elements.customerSearchInput) elements.customerSearchInput.value = state.customerSearchQuery;
+  if (elements.retailTaxRateInput && document.activeElement !== elements.retailTaxRateInput) {
+    elements.retailTaxRateInput.value = Number(elements.retailTaxRateInput.value || currentSettings().retail_tax_rate || 0);
+  }
   elements.customerFields?.classList.toggle("hidden", !state.customerExpanded);
   renderCart();
   renderMoney();
@@ -1746,6 +2073,7 @@ function closeReceipt() {
 
 function openPayment(order) {
   const settings = currentSettings();
+  const retailCustomer = currentRetailCustomer();
   state.pendingPaymentOrder = order;
   elements.paymentTotal.textContent = money(order.total);
   elements.paymentInvoice.textContent = order.invoice_no || order.invoiceNo;
@@ -1769,6 +2097,10 @@ function openPayment(order) {
   } else {
     elements.payQrButton.classList.remove("hidden");
   }
+  [elements.payCardButton, elements.payBankButton, elements.paySplitButton].forEach((button) => {
+    button?.classList.toggle("hidden", !isRetailShop());
+  });
+  elements.payStoreCreditButton?.classList.toggle("hidden", !isRetailShop() || Number(retailCustomer?.store_credit_balance || 0) <= 0);
   elements.paymentModal.classList.remove("hidden");
 }
 
@@ -1794,7 +2126,10 @@ async function completePayment() {
       ...savedOrder,
       buyer_phone: state.pendingPaymentOrder.buyerPhone,
       payment_method: method,
-      paymentMethod: method
+      paymentMethod: method,
+      subtotal_discount: state.pendingPaymentOrder.subtotalDiscount || 0,
+      tax: state.pendingPaymentOrder.tax || 0,
+      store_credit_used: state.pendingPaymentOrder.storeCreditUsed || 0
     };
     state.orders.unshift(receiptOrder);
     state.pendingPaymentOrder.items.forEach((item) => {
@@ -1802,12 +2137,35 @@ async function completePayment() {
       if (product) product.stock_qty = Math.max(0, Number(product.stock_qty || 0) - item.qty);
     });
     state.settings = { ...currentSettings(), order_counter: Number(currentSettings().order_counter || 1) + 1 };
+    if (isRetailShop() && (receiptOrder.buyer_phone || receiptOrder.buyer_name)) {
+      const phone = normalizePhone(receiptOrder.buyer_phone);
+      const existingCustomer = state.customers.find((item) => normalizePhone(item.phone) === phone);
+      if (existingCustomer) {
+        existingCustomer.name = receiptOrder.buyer_name || existingCustomer.name;
+        existingCustomer.last_order_at = new Date().toISOString();
+        existingCustomer.loyalty_points = Number(existingCustomer.loyalty_points || 0) + Math.floor(Number(receiptOrder.total || 0));
+        existingCustomer.store_credit_balance = Math.max(0, Number(existingCustomer.store_credit_balance || 0) - Number(receiptOrder.store_credit_used || 0));
+      } else {
+        state.customers.unshift({
+          id: crypto.randomUUID(),
+          shop_id: state.profile.shop_id || state.profile.shopId,
+          name: receiptOrder.buyer_name || t("guestBuyer"),
+          phone: receiptOrder.buyer_phone || "",
+          member_code: "",
+          store_credit_balance: 0,
+          loyalty_points: Math.floor(Number(receiptOrder.total || 0)),
+          last_order_at: new Date().toISOString()
+        });
+      }
+    }
     state.cart = [];
     state.currentBuyer = "";
     state.currentPhone = "";
     elements.buyerName.value = "";
     elements.buyerPhone.value = "";
     elements.orderFee.value = "0";
+    if (elements.retailSubtotalDiscountInput) elements.retailSubtotalDiscountInput.value = "0";
+    if (elements.retailStoreCreditInput) elements.retailStoreCreditInput.value = "0";
     state.latestReceipt = buildReceipt(receiptOrder);
   } catch (error) {
     window.alert(error.message || t("checkoutFailed"));
@@ -1875,6 +2233,21 @@ function renderItemCustomizer() {
   const enabled = productOptionState(product);
   elements.itemModalTitle.textContent = product.name;
   elements.itemModalPrice.textContent = money(product.price);
+  const variantOptions = Array.isArray(product.variant_options)
+    ? product.variant_options
+    : String(product.variant_options || "").split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
+  const variantMeta = [
+    product.brand,
+    product.sku || product.barcode,
+    product.color,
+    product.size_label
+  ].filter(Boolean).join(" • ");
+  if (elements.itemModalMeta) {
+    elements.itemModalMeta.textContent = variantMeta;
+    elements.itemModalMeta.classList.toggle("hidden", !variantMeta);
+  }
+  fillSelectOptions(elements.itemVariant, variantOptions.length ? variantOptions : [product.color, product.size_label].filter(Boolean));
+  elements.itemVariantLabel?.classList.toggle("hidden", !isRetailShop() || !(variantOptions.length || product.color || product.size_label));
   fillSelectOptions(elements.itemSize, config.sizes);
   fillSelectOptions(elements.itemSugar, config.sugar);
   fillSelectOptions(elements.itemIce, config.ice);
@@ -1912,6 +2285,7 @@ function addCustomizedItemToCart() {
   const selectedToppings = [...elements.itemToppings.querySelectorAll("input:checked")].map((node) => node.value);
   const enabled = productOptionState(product);
   const options = {
+    variant: !elements.itemVariantLabel?.classList.contains("hidden") ? elements.itemVariant.value : "",
     size: enabled.size ? elements.itemSize.value : "",
     sugar: enabled.sugar ? elements.itemSugar.value : "",
     ice: enabled.ice ? elements.itemIce.value : "",
@@ -1926,6 +2300,10 @@ function addCustomizedItemToCart() {
     image_url: product.image_url || "",
     qty: 1,
     price: Number(product.price || 0),
+    sku: product.sku || "",
+    barcode: product.barcode || "",
+    brand: product.brand || "",
+    discount: Number(product.discount || 0),
     options
   });
   state.productSearchQuery = "";
@@ -1985,9 +2363,20 @@ async function shareReceiptFile() {
 
 function createMockBackend() {
   const listeners = new Set();
+  const createCategorySeed = (shopId, name, shopType) => ({
+    id: crypto.randomUUID(),
+    shop_id: shopId,
+    name,
+    enable_size: shopType === "retail",
+    enable_sugar: shopType !== "retail",
+    enable_ice: shopType !== "retail",
+    enable_coffee: shopType !== "retail",
+    enable_toppings: false,
+    created_at: new Date().toISOString()
+  });
   const seed = () => ({
     sessionUserId: null,
-    shops: [{ id: "shop-admin", name: "Nilaa Main Shop", status: "active", created_at: new Date().toISOString() }],
+    shops: [{ id: "shop-admin", name: "Nilaa Main Shop", shop_type: "fnb", status: "active", created_at: new Date().toISOString() }],
     settings: [{
       id: crypto.randomUUID(),
       shop_id: "shop-admin",
@@ -2011,30 +2400,23 @@ function createMockBackend() {
     }],
     users: [],
     categories: [
-      {
-        id: crypto.randomUUID(),
-        shop_id: "shop-admin",
-        name: "Coffee",
-        enable_size: true,
-        enable_sugar: true,
-        enable_ice: true,
-        enable_coffee: true,
-        enable_toppings: false,
-        created_at: new Date().toISOString()
-      }
+      createCategorySeed("shop-admin", "Coffee", "fnb")
     ],
     products: [
       { id: crypto.randomUUID(), shop_id: "shop-admin", name: "កាហ្វេទឹកកក", price: 1.5, stock_qty: 20, low_stock_at: 5, category_id: null },
       { id: crypto.randomUUID(), shop_id: "shop-admin", name: "តែទឹកដោះគោ", price: 2, stock_qty: 15, low_stock_at: 5, category_id: null }
     ],
     expenses: [],
-    orders: []
+    orders: [],
+    customers: []
   });
   const load = () => {
     const store = JSON.parse(localStorage.getItem(MOCK_STORAGE_KEY) || "null") || seed();
+    store.shops = (store.shops || []).map((item) => ({ shop_type: "fnb", ...item }));
     store.categories ||= [];
     store.settings ||= [];
     store.products ||= [];
+    store.customers ||= [];
     return store;
   };
   const save = (store) => localStorage.setItem(MOCK_STORAGE_KEY, JSON.stringify(store));
@@ -2098,6 +2480,7 @@ function createMockBackend() {
         products: store.products.filter((item) => item.shop_id === shopId),
         expenses: store.expenses.filter((item) => item.shop_id === shopId && item.date === todayKey()).reverse(),
         orders: store.orders.filter((item) => item.shop_id === shopId && item.date === todayKey()).reverse(),
+        customers: (store.customers || []).filter((item) => item.shop_id === shopId),
         users: role === "admin" ? store.users : store.users.filter((item) => item.shop_id === shopId),
         settings: store.settings.find((item) => item.shop_id === shopId) || null,
         capabilities: { settings: true, payments: true, customers: true }
@@ -2152,6 +2535,21 @@ function createMockBackend() {
       store.expenses = store.expenses.filter((item) => !(item.shop_id === shopId && item.id === expenseId));
       save(store);
     },
+    async saveCustomer(shopId, payload) {
+      const store = load();
+      store.customers ||= [];
+      const normalizedPhone = normalizePhone(payload.phone);
+      const existing = store.customers.find((item) => item.shop_id === shopId && normalizePhone(item.phone) === normalizedPhone);
+      if (existing) {
+        Object.assign(existing, payload, { updated_at: new Date().toISOString() });
+        save(store);
+        return existing;
+      }
+      const created = { id: crypto.randomUUID(), shop_id: shopId, ...payload, created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+      store.customers.push(created);
+      save(store);
+      return created;
+    },
     async checkout(shopId, payload, profile) {
       const store = load();
       const settings = store.settings.find((item) => item.shop_id === shopId);
@@ -2173,6 +2571,9 @@ function createMockBackend() {
         payment_method: payload.paymentMethod,
         items: payload.items,
         subtotal: payload.subtotal,
+        subtotal_discount: payload.subtotalDiscount || 0,
+        tax: payload.tax || 0,
+        store_credit_used: payload.storeCreditUsed || 0,
         fee: payload.fee,
         total: payload.total,
         status: "completed",
@@ -2181,6 +2582,31 @@ function createMockBackend() {
         date: todayKey()
       };
       store.orders.push(order);
+      if (payload.buyerPhone || payload.buyerName) {
+        store.customers ||= [];
+        const normalizedPhone = normalizePhone(payload.buyerPhone);
+        let customer = store.customers.find((item) => item.shop_id === shopId && normalizePhone(item.phone) === normalizedPhone);
+        if (!customer) {
+          customer = {
+            id: crypto.randomUUID(),
+            shop_id: shopId,
+            name: payload.buyerName,
+            phone: payload.buyerPhone,
+            member_code: "",
+            store_credit_balance: 0,
+            loyalty_points: 0,
+            created_at: new Date().toISOString()
+          };
+          store.customers.push(customer);
+        }
+        customer.name = payload.buyerName || customer.name;
+        customer.phone = payload.buyerPhone || customer.phone;
+        customer.last_order_at = new Date().toISOString();
+        customer.loyalty_points = Number(customer.loyalty_points || 0) + Math.floor(Number(payload.total || 0));
+        if (payload.storeCreditUsed) {
+          customer.store_credit_balance = Math.max(0, Number(customer.store_credit_balance || 0) - Number(payload.storeCreditUsed || 0));
+        }
+      }
       if (settings) settings.order_counter = counter + 1;
       save(store);
       return order;
@@ -2203,14 +2629,17 @@ function createMockBackend() {
       let shopId = profile.shop_id || profile.shopId;
       if (payload.scope === "platform") {
         shopId = crypto.randomUUID();
-        store.shops.push({ id: shopId, name: payload.shopName, status: "active", created_at: new Date().toISOString() });
+        const shopType = payload.shopType || "fnb";
+        store.shops.push({ id: shopId, name: payload.shopName, shop_type: shopType, status: "active", created_at: new Date().toISOString() });
         store.settings.push({
           id: crypto.randomUUID(),
           shop_id: shopId,
-          ...defaultSettings(),
+          ...defaultSettingsForShopType(shopType),
           business_name: payload.shopName,
           receipt_name: payload.shopName || "nilaa-os"
         });
+        const defaultCategories = shopType === "retail" ? retailDefaultCategories() : fnbDefaultCategories();
+        store.categories.push(...defaultCategories.map((name) => createCategorySeed(shopId, name, shopType)));
       }
       const user = { id: crypto.randomUUID(), username: payload.username, email: payload.username, phone: payload.phone, password: payload.password, role: payload.role, shop_id: shopId, status: "active", created_at: new Date().toISOString() };
       store.users.push(user);
@@ -2319,7 +2748,7 @@ function createSupabaseBackend() {
         payments: await detectTable("payments"),
         customers: await detectTable("customers")
       };
-      const [categoriesRes, productsRes, expensesRes, ordersRes, usersRes, settingsRes] = await Promise.all([
+      const [categoriesRes, productsRes, expensesRes, ordersRes, usersRes, settingsRes, customersRes] = await Promise.all([
         supabase.from("categories").select("*").eq("shop_id", shopId).order("name"),
         supabase.from("products").select("*").eq("shop_id", shopId).order("name"),
         supabase.from("expenses").select("*").eq("shop_id", shopId).eq("date", todayKey()).order("created_at", { ascending: false }),
@@ -2329,10 +2758,13 @@ function createSupabaseBackend() {
           : supabase.from("users").select("*").eq("shop_id", shopId).order("created_at", { ascending: false }),
         capabilities.settings
           ? supabase.from("settings").select("*").eq("shop_id", shopId).maybeSingle()
-          : Promise.resolve({ data: null, error: null })
+          : Promise.resolve({ data: null, error: null }),
+        capabilities.customers
+          ? supabase.from("customers").select("*").eq("shop_id", shopId).order("last_order_at", { ascending: false })
+          : Promise.resolve({ data: [], error: null })
       ]);
 
-      for (const result of [categoriesRes, productsRes, expensesRes, ordersRes, usersRes]) {
+      for (const result of [categoriesRes, productsRes, expensesRes, ordersRes, usersRes, customersRes]) {
         if (result.error) throw result.error;
       }
 
@@ -2341,6 +2773,7 @@ function createSupabaseBackend() {
         products: productsRes.data || [],
         expenses: expensesRes.data || [],
         orders: (ordersRes.data || []).map((row) => ({ ...row, items: row.items || [] })),
+        customers: customersRes.data || [],
         users: usersRes.data || [],
         settings: settingsRes.error ? null : settingsRes.data || null,
         capabilities
@@ -2371,6 +2804,15 @@ function createSupabaseBackend() {
             category_id: _categoryId,
             sort_order: _sortOrder,
             is_popular: _isPopular,
+            cost_price: _costPrice,
+            barcode: _barcode,
+            sku: _sku,
+            brand: _brand,
+            supplier: _supplier,
+            color: _color,
+            size_label: _sizeLabel,
+            discount: _discount,
+            variant_options: _variantOptions,
             enable_size: _enableSize,
             enable_sugar: _enableSugar,
             enable_ice: _enableIce,
@@ -2392,6 +2834,15 @@ function createSupabaseBackend() {
             category_id: _categoryId,
             sort_order: _sortOrder,
             is_popular: _isPopular,
+            cost_price: _costPrice,
+            barcode: _barcode,
+            sku: _sku,
+            brand: _brand,
+            supplier: _supplier,
+            color: _color,
+            size_label: _sizeLabel,
+            discount: _discount,
+            variant_options: _variantOptions,
             enable_size: _enableSize,
             enable_sugar: _enableSugar,
             enable_ice: _enableIce,
@@ -2458,6 +2909,44 @@ function createSupabaseBackend() {
       const { error } = await supabase.from("expenses").delete().eq("id", expenseId);
       if (error) throw error;
     },
+    async saveCustomer(shopId, payload) {
+      const { data: existing, error: lookupError } = await supabase
+        .from("customers")
+        .select("id")
+        .eq("shop_id", shopId)
+        .eq("phone", payload.phone)
+        .maybeSingle();
+      if (lookupError && !relationMissing(lookupError)) throw lookupError;
+      const customerRecord = {
+        shop_id: shopId,
+        name: payload.name,
+        phone: payload.phone,
+        member_code: payload.member_code,
+        store_credit_balance: payload.store_credit_balance,
+        loyalty_points: payload.loyalty_points,
+        last_order_at: payload.last_order_at || null
+      };
+      if (existing?.id) {
+        let { data, error } = await supabase.from("customers").update(customerRecord).eq("id", existing.id).select("*").single();
+        if (error && columnMissing(error)) {
+          const { member_code: _memberCode, store_credit_balance: _credit, loyalty_points: _points, ...legacyCustomerRecord } = customerRecord;
+          const fallback = await supabase.from("customers").update(legacyCustomerRecord).eq("id", existing.id).select("*").single();
+          data = fallback.data;
+          error = fallback.error;
+        }
+        if (error) throw error;
+        return data;
+      }
+      let { data, error } = await supabase.from("customers").insert(customerRecord).select("*").single();
+      if (error && columnMissing(error)) {
+        const { member_code: _memberCode, store_credit_balance: _credit, loyalty_points: _points, ...legacyCustomerRecord } = customerRecord;
+        const fallback = await supabase.from("customers").insert(legacyCustomerRecord).select("*").single();
+        data = fallback.data;
+        error = fallback.error;
+      }
+      if (error) throw error;
+      return data;
+    },
     async checkout(shopId, payload, profile) {
       const settingsAvailable = await detectTable("settings");
       let nextCounter = 1;
@@ -2499,6 +2988,9 @@ function createSupabaseBackend() {
         payment_method: payload.paymentMethod,
         items: payload.items,
         subtotal: payload.subtotal,
+        subtotal_discount: payload.subtotalDiscount,
+        tax: payload.tax,
+        store_credit_used: payload.storeCreditUsed,
         fee: payload.fee,
         total: payload.total,
         status: "completed",
@@ -2509,22 +3001,43 @@ function createSupabaseBackend() {
 
       let { data, error } = await supabase.from("orders").insert(orderRecord).select("*").single();
       if (error && columnMissing(error)) {
-        const { buyer_phone: _buyerPhone, payment_method: _paymentMethod, ...legacyOrderRecord } = orderRecord;
+        const {
+          buyer_phone: _buyerPhone,
+          payment_method: _paymentMethod,
+          subtotal_discount: _subtotalDiscount,
+          tax: _tax,
+          store_credit_used: _storeCreditUsed,
+          ...legacyOrderRecord
+        } = orderRecord;
         const legacyResult = await supabase.from("orders").insert(legacyOrderRecord).select("*").single();
         data = legacyResult.data;
         error = legacyResult.error;
       }
       if (error) throw error;
       if (payload.buyerName || payload.buyerPhone) {
-        const customerInsert = await supabase.from("customers").insert({
+        const customersAvailable = await detectTable("customers");
+        const { data: existingCustomer } = customersAvailable
+          ? await supabase.from("customers").select("*").eq("shop_id", shopId).eq("phone", payload.buyerPhone).maybeSingle()
+          : { data: null };
+        let customerInsert = await supabase.from("customers").upsert({
+          ...(existingCustomer?.id ? { id: existingCustomer.id } : {}),
           shop_id: shopId,
           name: payload.buyerName,
           phone: payload.buyerPhone,
+          member_code: existingCustomer?.member_code || null,
+          store_credit_balance: Math.max(0, Number(existingCustomer?.store_credit_balance || 0) - Number(payload.storeCreditUsed || 0)),
+          loyalty_points: Number(existingCustomer?.loyalty_points || 0) + Math.floor(Number(payload.total || 0)),
           last_order_at: new Date().toISOString()
-        });
-        if (customerInsert.error && !relationMissing(customerInsert.error)) {
-          console.warn(customerInsert.error);
+        }, { onConflict: "id" });
+        if (customerInsert.error && columnMissing(customerInsert.error)) {
+          customerInsert = await supabase.from("customers").upsert({
+            shop_id: shopId,
+            name: payload.buyerName,
+            phone: payload.buyerPhone,
+            last_order_at: new Date().toISOString()
+          });
         }
+        if (customerInsert.error && !relationMissing(customerInsert.error)) console.warn(customerInsert.error);
       }
       const paymentInsert = await supabase.from("payments").insert({
         order_id: data.id,
@@ -2594,13 +3107,24 @@ function createSupabaseBackend() {
 
       let shopId = profile.shop_id || profile.shopId;
       if (payload.scope === "platform") {
+        const shopType = payload.shopType || "fnb";
         const { data: shop, error: shopError } = await supabase
           .from("shops")
-          .insert({ name: payload.shopName, status: "active" })
+          .insert({ name: payload.shopName, shop_type: shopType, status: "active" })
           .select("*")
           .single();
         if (shopError) throw shopError;
         shopId = shop.id;
+        const defaultCategories = (shopType === "retail" ? retailDefaultCategories() : fnbDefaultCategories()).map((name) => ({
+          shop_id: shopId,
+          name,
+          enable_size: shopType === "retail",
+          enable_sugar: shopType !== "retail",
+          enable_ice: shopType !== "retail",
+          enable_coffee: shopType !== "retail",
+          enable_toppings: false
+        }));
+        await supabase.from("categories").insert(defaultCategories);
       }
 
       const profileRecord = {
@@ -2632,7 +3156,7 @@ function createSupabaseBackend() {
       if (payload.scope === "platform") {
         await supabase.from("settings").upsert({
           shop_id: shopId,
-          ...defaultSettings(),
+          ...defaultSettingsForShopType(payload.shopType || "fnb"),
           business_name: payload.shopName,
           receipt_name: payload.shopName || "nilaa-os",
           updated_at: new Date().toISOString()
@@ -2654,6 +3178,10 @@ function createSupabaseBackend() {
         receipt_contact: payload.receipt_contact,
         receipt_manager: payload.receipt_manager,
         receipt_note: payload.receipt_note,
+        retail_tax_rate: payload.retail_tax_rate,
+        retail_barcode_mode: payload.retail_barcode_mode,
+        retail_store_credit_label: payload.retail_store_credit_label,
+        retail_loyalty_label: payload.retail_loyalty_label,
         option_sizes: payload.option_sizes,
         option_sugar_levels: payload.option_sugar_levels,
         option_ice_levels: payload.option_ice_levels,
@@ -2738,14 +3266,25 @@ async function loadDashboardData() {
     ...row,
     stock_qty: Number(row.stock_qty ?? row.stockQty ?? 0),
     price: Number(row.price || 0),
-    low_stock_at: Number(row.low_stock_at ?? row.lowStockAt ?? 0)
+    cost_price: Number(row.cost_price || 0),
+    discount: Number(row.discount || 0),
+    low_stock_at: Number(row.low_stock_at ?? row.lowStockAt ?? 0),
+    variant_options: Array.isArray(row.variant_options) ? row.variant_options : []
   }));
   state.expenses = data.expenses.map((row) => ({ ...row, amount: Number(row.amount || 0) }));
   state.orders = data.orders.map((row) => ({
     ...row,
     subtotal: Number(row.subtotal || 0),
+    subtotal_discount: Number(row.subtotal_discount || 0),
+    tax: Number(row.tax || 0),
+    store_credit_used: Number(row.store_credit_used || 0),
     fee: Number(row.fee || 0),
     total: Number(row.total || 0)
+  }));
+  state.customers = (data.customers || []).map((row) => ({
+    ...row,
+    store_credit_balance: Number(row.store_credit_balance || 0),
+    loyalty_points: Number(row.loyalty_points || 0)
   }));
   state.users = data.users;
   state.settings = data.settings ? { ...defaultSettings(), ...data.settings } : defaultSettings();
@@ -2771,6 +3310,7 @@ async function loadSignedInUser(user) {
     state.products = [];
     state.expenses = [];
     state.orders = [];
+    state.customers = [];
     state.users = [];
     state.cart = [];
     state.pendingPaymentOrder = null;
@@ -2792,6 +3332,16 @@ function currentProductByName(name) {
   return state.products.find((item) => item.name.toLowerCase() === name.trim().toLowerCase());
 }
 
+function currentProductBySearch(query) {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return null;
+  return state.products.find((item) =>
+    String(item.name || "").toLowerCase() === needle ||
+    String(item.sku || "").toLowerCase() === needle ||
+    String(item.barcode || "").toLowerCase() === needle
+  ) || null;
+}
+
 function resetOrderInputs() {
   elements.productSearch.value = "";
   elements.productQty.value = 1;
@@ -2804,6 +3354,15 @@ function syncProductFormPreview(product = null) {
   elements.productImagePreview.classList.toggle("hidden", !imageUrl);
   const options = productOptionState(product || {});
   if (elements.productCategorySelect) elements.productCategorySelect.value = product?.category_id || product?.categoryId || "";
+  if (elements.productBarcodeInput) elements.productBarcodeInput.value = product?.barcode || "";
+  if (elements.productSkuInput) elements.productSkuInput.value = product?.sku || "";
+  if (elements.productCostPriceInput) elements.productCostPriceInput.value = product?.cost_price ?? "";
+  if (elements.productBrandInput) elements.productBrandInput.value = product?.brand || "";
+  if (elements.productSupplierInput) elements.productSupplierInput.value = product?.supplier || "";
+  if (elements.productColorInput) elements.productColorInput.value = product?.color || "";
+  if (elements.productSizeLabelInput) elements.productSizeLabelInput.value = product?.size_label || "";
+  if (elements.productDiscountInput) elements.productDiscountInput.value = product?.discount ?? "";
+  if (elements.productVariantsInput) elements.productVariantsInput.value = Array.isArray(product?.variant_options) ? product.variant_options.join("\n") : (product?.variant_options || "");
   if (elements.productEnableSize) elements.productEnableSize.checked = options.size;
   if (elements.productEnableSugar) elements.productEnableSugar.checked = options.sugar;
   if (elements.productEnableIce) elements.productEnableIce.checked = options.ice;
@@ -2856,15 +3415,17 @@ elements.customerToggleButton?.addEventListener("click", () => {
 });
 elements.buyerName.addEventListener("input", (event) => {
   state.currentBuyer = event.target.value.trim();
+  renderCart();
 });
 
 elements.buyerPhone.addEventListener("input", (event) => {
   state.currentPhone = event.target.value.trim();
+  renderCart();
 });
 
 elements.productSearch.addEventListener("input", () => {
   state.productSearchQuery = elements.productSearch.value.trim();
-  const product = currentProductByName(elements.productSearch.value);
+  const product = currentProductBySearch(elements.productSearch.value);
   if (product) {
     elements.productPrice.value = product.price;
     elements.productQty.value = 1;
@@ -2877,9 +3438,18 @@ elements.ordersSearchInput?.addEventListener("input", () => {
   renderOrdersHistory();
 });
 
+elements.customerSearchInput?.addEventListener("input", () => {
+  state.customerSearchQuery = elements.customerSearchInput.value.trim();
+  renderCustomers();
+});
+
+[elements.retailSubtotalDiscountInput, elements.retailTaxRateInput, elements.retailStoreCreditInput, elements.orderFee].forEach((input) => {
+  input?.addEventListener("input", () => renderCart());
+});
+
 elements.productSearch.addEventListener("keydown", (event) => {
   if (event.key !== "Enter") return;
-  const product = currentProductByName(elements.productSearch.value);
+  const product = currentProductBySearch(elements.productSearch.value);
   if (!product) return;
   event.preventDefault();
   openItemCustomizer(product);
@@ -2939,7 +3509,7 @@ elements.orderFee.addEventListener("input", renderCart);
 
 elements.orderForm.addEventListener("submit", (event) => {
   event.preventDefault();
-  const product = currentProductByName(elements.productSearch.value);
+  const product = currentProductBySearch(elements.productSearch.value);
   const qty = Number(elements.productQty.value);
   const enteredPrice = Number(product?.price || 0);
   if (!product || !qty || qty <= 0 || enteredPrice < 0) {
@@ -2985,17 +3555,20 @@ elements.clearCartButton.addEventListener("click", () => {
 
 elements.checkoutButton.addEventListener("click", async () => {
   if (!state.cart.length || !state.profile) return;
-  const subtotal = state.cart.reduce((sum, item) => sum + item.qty * item.price, 0);
-  const fee = Number(elements.orderFee.value || 0);
+  const pricing = retailPricingSummary();
   const payload = {
     shopId: state.profile.shop_id || state.profile.shopId,
     invoiceNo: nextInvoiceNumber(),
     buyerName: elements.buyerName.value.trim() || t("guestBuyer"),
     buyerPhone: elements.buyerPhone.value.trim(),
-    items: state.cart.map((item) => ({ productId: item.productId, name: item.name, qty: item.qty, price: item.price, options: item.options || {} })),
-    subtotal,
-    fee,
-    total: subtotal + fee
+    items: state.cart.map((item) => ({ productId: item.productId, name: item.name, qty: item.qty, price: item.price, options: item.options || {}, sku: item.sku || "", discount: Number(item.discount || 0) })),
+    subtotal: pricing.subtotal,
+    subtotalDiscount: pricing.subtotalDiscount,
+    tax: pricing.tax,
+    taxRate: pricing.taxRate,
+    storeCreditUsed: pricing.storeCreditUsed,
+    fee: pricing.fee,
+    total: pricing.total
   };
   openPayment(payload);
 });
@@ -3065,6 +3638,9 @@ elements.productForm.addEventListener("submit", async (event) => {
       ? await readFileAsDataUrl(elements.productImageInput.files[0])
       : existing?.image_url || "";
     const category_id = canEditProductMeta() ? (elements.productCategorySelect.value || null) : (existing?.category_id || null);
+    const variant_options = canEditProductMeta()
+      ? elements.productVariantsInput.value.split(/\r?\n/).map((item) => item.trim()).filter(Boolean)
+      : (existing?.variant_options || []);
     const optionPayload = canEditProductMeta()
       ? {
           enable_size: elements.productEnableSize?.checked ?? true,
@@ -3080,7 +3656,25 @@ elements.productForm.addEventListener("submit", async (event) => {
           enable_coffee: existing?.enable_coffee ?? true,
           enable_toppings: existing?.enable_toppings ?? false
         };
-    const payload = { name, image_url, price, stock_qty, low_stock_at, active: true, category_id, ...optionPayload };
+    const payload = {
+      name,
+      image_url,
+      price,
+      stock_qty,
+      low_stock_at,
+      active: true,
+      category_id,
+      barcode: canEditProductMeta() ? elements.productBarcodeInput.value.trim() : (existing?.barcode || ""),
+      sku: canEditProductMeta() ? elements.productSkuInput.value.trim() : (existing?.sku || ""),
+      cost_price: canEditProductMeta() ? Number(elements.productCostPriceInput.value || 0) : Number(existing?.cost_price || 0),
+      brand: canEditProductMeta() ? elements.productBrandInput.value.trim() : (existing?.brand || ""),
+      supplier: canEditProductMeta() ? elements.productSupplierInput.value.trim() : (existing?.supplier || ""),
+      color: canEditProductMeta() ? elements.productColorInput.value.trim() : (existing?.color || ""),
+      size_label: canEditProductMeta() ? elements.productSizeLabelInput.value.trim() : (existing?.size_label || ""),
+      discount: canEditProductMeta() ? Number(elements.productDiscountInput.value || 0) : Number(existing?.discount || 0),
+      variant_options,
+      ...optionPayload
+    };
     const savedProduct = await runWithStatus({
       title: state.language === "en" ? "Saving product" : "កំពុងរក្សាទុកទំនិញ",
       message: state.language === "en" ? "Please wait..." : "សូមរង់ចាំ...",
@@ -3190,6 +3784,7 @@ elements.adminPlatformForm?.addEventListener("submit", async (event) => {
       phone: elements.adminPhone.value.trim(),
       password: elements.adminPassword.value.trim(),
       shopName: elements.adminShopName.value.trim(),
+      shopType: elements.adminShopType?.value || "fnb",
       role: "owner",
       scope: "platform"
     }, state.profile));
@@ -3284,6 +3879,10 @@ elements.settingsForm?.addEventListener("submit", async (event) => {
       receipt_contact: elements.settingsReceiptContact.value.trim(),
       receipt_manager: elements.settingsReceiptManager.value.trim(),
       receipt_note: elements.settingsReceiptNote.value.trim(),
+      retail_tax_rate: Number(elements.settingsRetailTaxRate?.value || 0),
+      retail_barcode_mode: elements.settingsRetailBarcodeMode?.value || "camera",
+      retail_store_credit_label: elements.settingsRetailStoreCreditLabel?.value?.trim() || "Store credit",
+      retail_loyalty_label: elements.settingsRetailLoyaltyLabel?.value?.trim() || "Loyalty points",
       option_sizes: elements.settingsOptionSizes.value.trim(),
       option_sugar_levels: elements.settingsOptionSugar.value.trim(),
       option_ice_levels: elements.settingsOptionIce.value.trim(),
@@ -3306,6 +3905,37 @@ elements.settingsForm?.addEventListener("submit", async (event) => {
   }
 });
 
+elements.customerForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!state.profile) return;
+  const payload = {
+    name: elements.customerNameInput.value.trim(),
+    phone: elements.customerPhoneInput.value.trim(),
+    member_code: elements.customerMemberCodeInput.value.trim(),
+    store_credit_balance: Number(elements.customerStoreCreditInput.value || 0),
+    loyalty_points: Number(elements.customerLoyaltyPointsInput.value || 0)
+  };
+  if (!payload.name || !payload.phone) {
+    window.alert(state.language === "en" ? "Please enter member name and phone." : "សូមបញ្ចូលឈ្មោះ និងលេខទូរស័ព្ទសមាជិក។");
+    return;
+  }
+  try {
+    const savedCustomer = await runWithStatus({
+      title: state.language === "en" ? "Saving member" : "កំពុងរក្សាទុកសមាជិក",
+      message: state.language === "en" ? "Please wait..." : "សូមរង់ចាំ...",
+      successTitle: t("customerSaved")
+    }, () => backend.saveCustomer(state.profile.shop_id || state.profile.shopId, payload));
+    const phone = normalizePhone(payload.phone);
+    const index = state.customers.findIndex((item) => normalizePhone(item.phone) === phone);
+    if (index >= 0) state.customers[index] = { ...state.customers[index], ...(savedCustomer || payload) };
+    else state.customers.unshift(savedCustomer || { id: crypto.randomUUID(), shop_id: state.profile.shop_id || state.profile.shopId, ...payload });
+    elements.customerForm.reset();
+    renderAll();
+  } catch (error) {
+    window.alert(error.message || t("createUserFailed"));
+  }
+});
+
 elements.closeReceiptButton.addEventListener("click", closeReceipt);
 elements.closeItemButton?.addEventListener("click", closeItemCustomizer);
 elements.cancelItemButton?.addEventListener("click", closeItemCustomizer);
@@ -3323,6 +3953,10 @@ elements.paymentModal.addEventListener("click", (event) => {
 });
 elements.payQrButton.addEventListener("click", () => choosePaymentMethod("bank"));
 elements.payManualButton.addEventListener("click", () => choosePaymentMethod("cash"));
+elements.payCardButton?.addEventListener("click", () => choosePaymentMethod("card"));
+elements.payBankButton?.addEventListener("click", () => choosePaymentMethod("bank_transfer"));
+elements.paySplitButton?.addEventListener("click", () => choosePaymentMethod("split"));
+elements.payStoreCreditButton?.addEventListener("click", () => choosePaymentMethod("store_credit"));
 elements.paymentBackButton.addEventListener("click", backToPaymentChoice);
 elements.markPaidButton.addEventListener("click", completePayment);
 elements.receiptBackButton.addEventListener("click", closeReceipt);
