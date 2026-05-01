@@ -35,7 +35,8 @@ const state = {
   ordersSearchQuery: "",
   customerSearchQuery: "",
   pendingCustomizerProduct: null,
-  platformData: { shops: [], users: [] }
+  platformData: { shops: [], users: [] },
+  platformAdminView: "adminChooser"
 };
 
 const elements = {
@@ -68,9 +69,11 @@ const elements = {
   closeDashboardButton: document.getElementById("closeDashboardButton"),
   logoutButton: document.getElementById("logoutButton"),
   sidebarLogoutButton: document.getElementById("sidebarLogoutButton"),
-  bottomMoreButton: document.getElementById("bottomMoreButton"),
+  bottomMoreButton: document.getElementById("bottomNavButton5"),
   dashboardDrawer: document.getElementById("dashboardDrawer"),
   adminNavButton: document.getElementById("adminNavButton"),
+  platformAdminSwitcher: document.getElementById("platformAdminSwitcher"),
+  adminSystemButtons: [...document.querySelectorAll("[data-admin-system]")],
   navButtons: [...document.querySelectorAll(".nav-button")],
   customerToggleButton: document.getElementById("customerToggleButton"),
   customerFields: document.getElementById("customerFields"),
@@ -230,6 +233,7 @@ const elements = {
   receiptBarcodeValue: document.getElementById("receiptBarcodeValue"),
   receiptFooterText: document.getElementById("receiptFooterText"),
   screens: {
+    adminChooser: document.getElementById("adminChooserScreen"),
     pos: document.getElementById("posScreen"),
     orders: document.getElementById("ordersScreen"),
     money: document.getElementById("moneyScreen"),
@@ -293,7 +297,14 @@ const elements = {
   printReceiptButton: document.getElementById("printReceiptButton"),
   itemModalMeta: document.getElementById("itemModalMeta"),
   itemVariantLabel: document.getElementById("itemVariantLabel"),
-  itemVariant: document.getElementById("itemVariant")
+  itemVariant: document.getElementById("itemVariant"),
+  bottomNavButtons: [
+    document.getElementById("bottomNavButton1"),
+    document.getElementById("bottomNavButton2"),
+    document.getElementById("bottomNavButton3"),
+    document.getElementById("bottomNavButton4"),
+    document.getElementById("bottomNavButton5")
+  ]
 };
 
 elements.telegramLink.href = appSettings.telegramRequestUrl;
@@ -756,6 +767,12 @@ Object.assign(translations.en, {
   shopTypeLabel: "Shop type",
   shopTypeFnb: "F&B shop",
   shopTypeRetail: "Retail shop",
+  adminChooserHeading: "Choose a system",
+  adminGoFnb: "Open F&B POS",
+  adminGoRetail: "Open Retail POS",
+  adminFnbHint: "Open the food and beverage POS system.",
+  adminRetailHint: "Open the retail checkout and member system.",
+  adminIndexHint: "Create shops, assign shop type, and manage business accounts.",
   retailPosHint: "Search by name, barcode, or SKU",
   barcodeLabel: "Barcode",
   skuLabel: "SKU",
@@ -813,6 +830,12 @@ Object.assign(translations.km, {
   tapToAdd: "ចុចដើម្បីបន្ថែម",
   reportRecentHeading: "វិក្កយបត្រថ្មីៗ",
   createOwnerButton: "បង្កើតហាងម្ចាស់",
+  adminChooserHeading: "ជ្រើសរើសប្រព័ន្ធ",
+  adminGoFnb: "ចូល F&B POS",
+  adminGoRetail: "ចូល Retail POS",
+  adminFnbHint: "បើកប្រព័ន្ធ POS សម្រាប់ហាងអាហារ និងភេសជ្ជៈ។",
+  adminRetailHint: "បើកប្រព័ន្ធ Retail សម្រាប់លក់រាយ និងសមាជិក។",
+  adminIndexHint: "បង្កើតហាង កំណត់ប្រភេទហាង និងគ្រប់គ្រងគណនីអ្នកប្រើ។",
   adminShopCountLabel: "ហាង",
   adminUserCountLabel: "អ្នកប្រើ",
   adminShopListHeading: "ហាងទាំងអស់",
@@ -1486,12 +1509,45 @@ function currentRole() {
   return role === "business_owner" || role === "admin" ? "owner" : role;
 }
 
+function currentShellType() {
+  if (!isPlatformAdminProfile()) return currentShopType();
+  if (state.platformAdminView === "fnb" || state.platformAdminView === "retail") return state.platformAdminView;
+  return "admin";
+}
+
 function currentShopType() {
+  if (isPlatformAdminProfile() && (state.platformAdminView === "fnb" || state.platformAdminView === "retail")) {
+    return state.platformAdminView;
+  }
   return state.shop?.shop_type || state.shop?.shopType || "fnb";
 }
 
 function isRetailShop() {
   return currentShopType() === "retail";
+}
+
+function adminRoutesForCurrentShell() {
+  if (state.platformAdminView === "fnb") {
+    return ["adminChooser", "admin", "pos", "orders", "money", "expenses", "stock", "customers", "reports", "settings", "users", "help"];
+  }
+  if (state.platformAdminView === "retail") {
+    return ["adminChooser", "admin", "pos", "stock", "customers", "settings", "users", "help"];
+  }
+  return ["adminChooser", "admin"];
+}
+
+function ownerRoutesForCurrentShell() {
+  return isRetailShop()
+    ? ["pos", "stock", "customers", "settings", "users", "help"]
+    : ["pos", "orders", "money", "expenses", "stock", "customers", "reports", "settings", "users", "help"];
+}
+
+function staffRoutesForCurrentShell() {
+  return isRetailShop() ? ["pos", "stock", "help"] : ["stock", "help", "pos"];
+}
+
+function cashierRoutesForCurrentShell() {
+  return isRetailShop() ? ["pos", "help"] : ["pos", "orders", "help"];
 }
 
 function retailDefaultCategories() {
@@ -1526,17 +1582,17 @@ function canEditProductMeta() {
 }
 
 function defaultRouteForCurrentUser() {
-  if (isPlatformAdminProfile()) return "admin";
+  if (isPlatformAdminProfile()) return "adminChooser";
   if (currentRole() === "staff") return "stock";
   return "pos";
 }
 
 function canAccessRoute(route) {
-  if (isPlatformAdminProfile() && route === "admin") return true;
+  if (isPlatformAdminProfile()) return adminRoutesForCurrentShell().includes(route);
   const role = currentRole();
-  if (role === "owner") return ["pos", "orders", "money", "expenses", "stock", "customers", "reports", "settings", "users", "help"].includes(route);
-  if (role === "staff") return ["stock", "help", "pos"].includes(route);
-  if (role === "cashier") return ["pos", "orders", "help"].includes(route);
+  if (role === "owner") return ownerRoutesForCurrentShell().includes(route);
+  if (role === "staff") return staffRoutesForCurrentShell().includes(route);
+  if (role === "cashier") return cashierRoutesForCurrentShell().includes(route);
   return ["pos", "help"].includes(route);
 }
 
@@ -1552,15 +1608,82 @@ function buttonLabel(route) {
     reports: t("navReports"),
     users: t("navUsers"),
     admin: t("navAdmin"),
-    help: t("navHelp")
+    help: t("navHelp"),
+    adminChooser: t("adminChooserHeading")
   }[route] || "nilaa-os";
+}
+
+function configureBottomNav() {
+  if (!elements.bottomNavButtons?.length) return;
+  const items = isRetailShop()
+    ? [
+        { route: "pos", label: t("navPOS") },
+        { route: "stock", label: t("navStock") },
+        { route: "customers", label: t("navCustomers") },
+        { route: "settings", label: t("navSettingsShort") },
+        { route: "help", label: t("navHelp") }
+      ]
+    : [
+        { route: "pos", label: t("navPOS") },
+        { route: "orders", label: t("navOrdersShort") },
+        { route: "stock", label: t("navStock") },
+        { route: "money", label: t("navMoney") },
+        { route: "settings", label: t("navSettingsShort") }
+      ];
+  elements.bottomNavButtons.forEach((button, index) => {
+    const item = items[index];
+    if (!button || !item) return;
+    button.dataset.route = item.route;
+    button.textContent = item.label;
+    button.classList.toggle("hidden", !canAccessRoute(item.route));
+  });
+}
+
+function updateShellVisibility() {
+  const shellType = currentShellType();
+  document.body.classList.toggle("shop-type-retail", shellType === "retail");
+  document.body.classList.toggle("shop-type-fnb", shellType === "fnb");
+  document.body.classList.toggle("platform-admin-mode", isPlatformAdminProfile());
+  document.body.classList.toggle("platform-admin-chooser", isPlatformAdminProfile() && state.platformAdminView === "adminChooser");
+  document.querySelectorAll("[data-platform-admin='true']").forEach((node) => {
+    node.classList.toggle("hidden", !isPlatformAdminProfile());
+  });
+  if (elements.platformAdminSwitcher) {
+    elements.platformAdminSwitcher.classList.toggle("hidden", !isPlatformAdminProfile());
+  }
+  elements.adminSystemButtons?.forEach((button) => {
+    button.classList.toggle("tab-button--active", button.dataset.adminSystem === state.platformAdminView);
+  });
+  document.querySelectorAll("[data-owner-only]").forEach((node) => {
+    node.classList.toggle("hidden", !canManageUsers());
+  });
+  elements.nonStaffFields.forEach((node) => {
+    node.classList.toggle("hidden", !canEditProductMeta());
+  });
+  document.querySelectorAll("[data-route='settings']").forEach((node) => {
+    node.classList.toggle("hidden", !canManageSettings());
+  });
+  elements.navButtons.forEach((node) => {
+    if (!node.dataset.route) return;
+    node.classList.toggle("hidden", !canAccessRoute(node.dataset.route));
+  });
+  configureBottomNav();
+  if (elements.openDashboardButton) {
+    const targetRoute = isRetailShop() ? "stock" : "reports";
+    elements.openDashboardButton.dataset.route = targetRoute;
+    elements.openDashboardButton.classList.toggle("hidden", isPlatformAdminProfile() || !canAccessRoute(targetRoute));
+  }
 }
 
 function setRoute(route) {
   if (!canAccessRoute(route)) route = defaultRouteForCurrentUser();
+  if (isPlatformAdminProfile()) {
+    if (route === "admin") state.platformAdminView = "admin";
+    if (route === "adminChooser") state.platformAdminView = "adminChooser";
+  }
   state.route = route;
-  document.body.classList.toggle("shop-type-retail", isRetailShop());
-  document.body.classList.toggle("shop-type-fnb", !isRetailShop());
+  document.body.classList.toggle("route-admin-chooser", route === "adminChooser");
+  updateShellVisibility();
   Object.entries(elements.screens).forEach(([key, screen]) => {
     screen.classList.toggle("hidden", key !== route);
   });
@@ -1580,22 +1703,7 @@ function renderAuth() {
   elements.appShell.classList.toggle("hidden", !loggedIn);
   if (!loggedIn) return;
   elements.welcomeLabel.textContent = `${state.language === "en" ? "Hello" : "សួស្តី"} ${state.profile.username}`;
-  document.querySelectorAll("[data-owner-only]").forEach((node) => {
-    node.classList.toggle("hidden", !canManageUsers());
-  });
-  elements.nonStaffFields.forEach((node) => {
-    node.classList.toggle("hidden", !canEditProductMeta());
-  });
-  document.querySelectorAll("[data-route='settings']").forEach((node) => {
-    node.classList.toggle("hidden", !canManageSettings());
-  });
-  document.querySelectorAll("[data-platform-admin='true']").forEach((node) => {
-    node.classList.toggle("hidden", !isPlatformAdminProfile());
-  });
-  elements.navButtons.forEach((node) => {
-    if (!node.dataset.route) return;
-    node.classList.toggle("hidden", !canAccessRoute(node.dataset.route));
-  });
+  updateShellVisibility();
   if (!canAccessRoute(state.route)) setRoute(defaultRouteForCurrentUser());
 }
 
@@ -1674,6 +1782,9 @@ function renderMoney() {
 
 function renderProducts() {
   elements.productCount.textContent = state.products.length;
+  if (elements.productSearch) {
+    elements.productSearch.placeholder = isRetailShop() ? t("retailPosHint") : t("productSearchPlaceholder");
+  }
   elements.productSuggestions.innerHTML = state.products
     .slice()
     .sort((a, b) => a.name.localeCompare(b.name, "km"))
@@ -3317,6 +3428,7 @@ async function loadSignedInUser(user) {
     state.latestReceipt = null;
     state.customerExpanded = false;
     state.platformData = { shops: [], users: [] };
+    state.platformAdminView = "adminChooser";
     elements.paymentModal.classList.add("hidden");
     renderAll();
     return;
@@ -3324,6 +3436,7 @@ async function loadSignedInUser(user) {
   state.profile = await backend.getProfile(user.id || user.uid);
   state.shop = state.profile ? await backend.getShop(state.profile.shop_id || state.profile.shopId) : null;
   await loadDashboardData();
+  state.platformAdminView = isPlatformAdminProfile(state.profile) ? "adminChooser" : currentShopType();
   state.route = defaultRouteForCurrentUser();
   renderAll();
 }
@@ -3380,6 +3493,15 @@ elements.openDashboardButton.addEventListener("click", () => openDrawer(true));
 elements.closeDashboardButton.addEventListener("click", () => openDrawer(false));
 elements.dashboardDrawer.addEventListener("click", (event) => {
   if (event.target.id === "dashboardDrawer") openDrawer(false);
+});
+elements.adminSystemButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    const target = button.dataset.adminSystem;
+    if (!isPlatformAdminProfile()) return;
+    state.platformAdminView = target === "admin" ? "admin" : target;
+    setRoute(target === "admin" ? "admin" : target === "fnb" || target === "retail" ? "pos" : "adminChooser");
+    openDrawer(false);
+  });
 });
 elements.navButtons.forEach((button) => {
   if (!button.dataset.route) return;

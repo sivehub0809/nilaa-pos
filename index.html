@@ -108,6 +108,11 @@
           <button id="appLangKmButton" class="tab-button tab-button--active" type="button">ខ្មែរ</button>
           <button id="appLangEnButton" class="tab-button" type="button">English</button>
         </div>
+        <div id="platformAdminSwitcher" class="system-switcher hidden" data-platform-admin="true">
+          <button class="secondary-button" type="button" data-admin-system="fnb" data-i18n="adminGoFnb">F&amp;B POS</button>
+          <button class="secondary-button" type="button" data-admin-system="retail" data-i18n="adminGoRetail">Retail POS</button>
+          <button class="secondary-button" type="button" data-admin-system="admin" data-i18n="navAdmin">Admin index</button>
+        </div>
         <div class="user-chip">
           <span id="welcomeLabel">Welcome</span>
         </div>
@@ -165,6 +170,33 @@
       </aside>
 
       <main class="screen-stack">
+        <section id="adminChooserScreen" class="screen hidden">
+          <article class="panel">
+            <div class="panel__head">
+              <div>
+                <p class="eyebrow">Platform</p>
+                <h3 data-i18n="adminChooserHeading">Choose a system</h3>
+              </div>
+            </div>
+            <div class="admin-chooser-grid">
+              <button class="system-card" type="button" data-admin-system="fnb">
+                <span class="system-card__eyebrow" data-i18n="shopTypeFnb">F&amp;B shop</span>
+                <strong data-i18n="adminGoFnb">F&amp;B POS</strong>
+                <small data-i18n="adminFnbHint">Open the food and beverage POS system.</small>
+              </button>
+              <button class="system-card" type="button" data-admin-system="retail">
+                <span class="system-card__eyebrow" data-i18n="shopTypeRetail">Retail shop</span>
+                <strong data-i18n="adminGoRetail">Retail POS</strong>
+                <small data-i18n="adminRetailHint">Open the retail checkout and member system.</small>
+              </button>
+              <button class="system-card system-card--neutral" type="button" data-admin-system="admin">
+                <span class="system-card__eyebrow">Nilaa POS</span>
+                <strong data-i18n="navAdmin">Admin index</strong>
+                <small data-i18n="adminIndexHint">Create shops, assign roles, and manage provisioning.</small>
+              </button>
+            </div>
+          </article>
+        </section>
         <section id="posScreen" class="screen screen--active">
           <div class="pos-layout">
             <article class="panel panel--pos-main">
@@ -961,11 +993,11 @@
     </div>
 
     <nav class="bottom-nav">
-      <button class="nav-button nav-button--active" data-route="pos" type="button" data-i18n="navPOS">POS</button>
-      <button class="nav-button" data-route="orders" type="button" data-i18n="navOrdersShort">Orders</button>
-      <button class="nav-button" data-route="stock" type="button" data-i18n="navStock">Stock</button>
-      <button class="nav-button" data-route="money" type="button" data-i18n="navMoney">Money</button>
-      <button class="nav-button" data-route="settings" type="button" id="bottomMoreButton" data-i18n="navSettingsShort">Settings</button>
+      <button id="bottomNavButton1" class="nav-button nav-button--active" data-route="pos" type="button" data-i18n="navPOS">POS</button>
+      <button id="bottomNavButton2" class="nav-button" data-route="orders" type="button" data-i18n="navOrdersShort">Orders</button>
+      <button id="bottomNavButton3" class="nav-button" data-route="stock" type="button" data-i18n="navStock">Stock</button>
+      <button id="bottomNavButton4" class="nav-button" data-route="money" type="button" data-i18n="navMoney">Money</button>
+      <button id="bottomNavButton5" class="nav-button" data-route="settings" type="button" data-i18n="navSettingsShort">Settings</button>
     </nav>
   </div>
 

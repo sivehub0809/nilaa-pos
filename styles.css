@@ -2180,3 +2180,103 @@ body.shop-type-retail .record-box {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+
+.system-switcher {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-chooser-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.system-card {
+  display: grid;
+  gap: 10px;
+  padding: 20px;
+  text-align: left;
+  border: 1px solid rgba(0, 93, 253, 0.18);
+  background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
+  color: #0f172a;
+}
+
+.system-card--neutral {
+  border-color: rgba(15, 23, 42, 0.1);
+  background: #ffffff;
+}
+
+.system-card__eyebrow {
+  color: #005dfd;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.system-card strong {
+  font-size: 1.1rem;
+}
+
+.system-card small {
+  color: #475569;
+  line-height: 1.5;
+}
+
+.route-admin-chooser .sidebar,
+.route-admin-chooser .bottom-nav,
+.route-admin-chooser #openDashboardButton {
+  display: none !important;
+}
+
+.route-admin-chooser .app-layout {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+.route-admin-chooser .screen-stack {
+  padding: 24px;
+}
+
+.tab-button,
+.primary-button,
+.secondary-button,
+.ghost-button,
+.icon-button,
+.delete-button,
+.nav-button,
+.category-chip,
+.quick-product,
+.system-card,
+.user-chip {
+  border-radius: 10px !important;
+}
+
+.nav-button,
+.tab-button,
+.primary-button,
+.secondary-button,
+.ghost-button,
+.delete-button {
+  box-shadow: none;
+}
+
+.category-chip {
+  min-height: 50px;
+}
+
+.bottom-nav .nav-button {
+  border-radius: 10px !important;
+}
+
+@media (max-width: 719px) {
+  .system-switcher {
+    width: 100%;
+  }
+
+  .system-switcher .secondary-button {
+    flex: 1 1 calc(33.333% - 6px);
+    min-width: 0;
+  }
+}
