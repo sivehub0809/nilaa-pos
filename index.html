@@ -132,14 +132,14 @@
         </div>
         <nav class="drawer__nav">
           <button class="nav-button nav-button--active" data-route="pos" type="button" data-i18n="navPOS">POS</button>
-          <button class="nav-button" data-route="reports" type="button" data-i18n="navDashboard">Dashboard</button>
-          <button class="nav-button" data-route="orders" type="button" data-i18n="navOrdersShort">Orders</button>
+          <button class="nav-button" data-shell="fnb" data-route="reports" type="button" data-i18n="navDashboard">Dashboard</button>
+          <button class="nav-button" data-shell="fnb" data-route="orders" type="button" data-i18n="navOrdersShort">Orders</button>
           <button class="nav-button" data-route="stock" type="button" data-i18n="navStock">Stock</button>
-          <button class="nav-button" data-route="money" type="button" data-i18n="navMoney">Money</button>
-          <button class="nav-button" data-route="expenses" type="button" data-i18n="navExpenses">Expenses</button>
+          <button class="nav-button" data-shell="fnb" data-route="money" type="button" data-i18n="navMoney">Money</button>
+          <button class="nav-button" data-shell="fnb" data-route="expenses" type="button" data-i18n="navExpenses">Expenses</button>
           <button class="nav-button" data-route="customers" type="button" data-i18n="navCustomers">Customers</button>
           <button class="nav-button" data-route="settings" type="button" data-i18n="navSettings">Settings</button>
-          <button class="nav-button" data-route="reports" type="button" data-i18n="navReports">Reports</button>
+          <button class="nav-button" data-shell="fnb" data-route="reports" type="button" data-i18n="navReports">Reports</button>
           <button class="nav-button hidden" data-owner-only="true" data-route="users" type="button" data-i18n="navUsers">Users &amp; Staff</button>
           <button class="nav-button hidden" data-platform-admin="true" data-route="admin" type="button" data-i18n="navAdmin">Admin index</button>
           <button class="nav-button" data-route="help" type="button" data-i18n="navHelp">Help &amp; Support</button>
@@ -155,11 +155,11 @@
           </div>
           <nav class="drawer__nav">
             <button class="nav-button nav-button--active" data-route="pos" type="button" data-i18n="navPOS">POS</button>
-            <button class="nav-button" data-route="reports" type="button" data-i18n="navDashboard">Dashboard</button>
-            <button class="nav-button" data-route="orders" type="button" data-i18n="navOrdersShort">Orders</button>
+            <button class="nav-button" data-shell="fnb" data-route="reports" type="button" data-i18n="navDashboard">Dashboard</button>
+            <button class="nav-button" data-shell="fnb" data-route="orders" type="button" data-i18n="navOrdersShort">Orders</button>
             <button class="nav-button" data-route="stock" type="button" data-i18n="navStock">Stock</button>
-            <button class="nav-button" data-route="money" type="button" data-i18n="navMoney">Money</button>
-            <button class="nav-button" data-route="expenses" type="button" data-i18n="navExpenses">Expenses</button>
+            <button class="nav-button" data-shell="fnb" data-route="money" type="button" data-i18n="navMoney">Money</button>
+            <button class="nav-button" data-shell="fnb" data-route="expenses" type="button" data-i18n="navExpenses">Expenses</button>
             <button class="nav-button" data-route="customers" type="button" data-i18n="navCustomers">Customers</button>
             <button class="nav-button" data-route="settings" type="button" data-i18n="navSettings">Settings</button>
             <button class="nav-button hidden" id="adminNavButton" data-owner-only="true" data-route="users" type="button" data-i18n="navUsers">Users &amp; Staff</button>
@@ -278,7 +278,7 @@
               <div id="cartList" class="stack-list checkout-cart-list"></div>
 
               <div class="checkout-totals">
-                <label class="cart-footer__fee">
+                <label class="cart-footer__fee fnb-only">
                   <span data-i18n="feeLabel">Fee</span>
                   <input id="orderFee" type="number" min="0" step="0.01" value="0">
                 </label>
@@ -329,7 +329,7 @@
           </div>
         </section>
 
-        <section id="ordersScreen" class="screen hidden">
+        <section id="ordersScreen" data-shell="fnb" class="screen hidden">
           <article class="panel">
             <div class="panel__head">
               <div>
@@ -370,7 +370,7 @@
           </article>
         </section>
 
-        <section id="moneyScreen" class="screen hidden">
+        <section id="moneyScreen" data-shell="fnb" class="screen hidden">
           <article class="panel">
             <div class="panel__head">
               <div>
@@ -395,7 +395,7 @@
           </article>
         </section>
 
-        <section id="expensesScreen" class="screen hidden">
+        <section id="expensesScreen" data-shell="fnb" class="screen hidden">
           <article class="panel">
             <div class="panel__head">
               <div>
@@ -602,7 +602,7 @@
           </article>
         </section>
 
-        <section id="reportsScreen" class="screen hidden">
+        <section id="reportsScreen" data-shell="fnb" class="screen hidden">
           <article class="panel">
             <div class="panel__head">
               <div>
@@ -779,15 +779,15 @@
                     <span data-i18n="productOptionSizesLabel">Sizes (one per line)</span>
                     <textarea id="settingsOptionSizes" rows="3" data-i18n-placeholder="productOptionSizesPlaceholder" placeholder="Small&#10;Medium&#10;Large"></textarea>
                   </label>
-                  <label>
+                  <label class="fnb-only">
                     <span data-i18n="productOptionSugarLabel">Sugar levels</span>
                     <textarea id="settingsOptionSugar" rows="3" data-i18n-placeholder="productOptionSugarPlaceholder" placeholder="0%&#10;50%&#10;100%"></textarea>
                   </label>
-                  <label>
+                  <label class="fnb-only">
                     <span data-i18n="productOptionIceLabel">Ice levels</span>
                     <textarea id="settingsOptionIce" rows="3" data-i18n-placeholder="productOptionIcePlaceholder" placeholder="No ice&#10;Less ice&#10;Normal ice"></textarea>
                   </label>
-                  <label>
+                  <label class="fnb-only">
                     <span data-i18n="productOptionCoffeeLabel">Coffee levels</span>
                     <textarea id="settingsOptionCoffee" rows="3" data-i18n-placeholder="productOptionCoffeePlaceholder" placeholder="Light&#10;Normal&#10;Strong"></textarea>
                   </label>
@@ -814,15 +814,15 @@
                         <input id="categoryEnableSize" type="checkbox" checked>
                         <span data-i18n="productEnableSize">Size</span>
                       </label>
-                      <label class="option-check">
+                      <label class="option-check fnb-only">
                         <input id="categoryEnableSugar" type="checkbox" checked>
                         <span data-i18n="productEnableSugar">Sugar</span>
                       </label>
-                      <label class="option-check">
+                      <label class="option-check fnb-only">
                         <input id="categoryEnableIce" type="checkbox" checked>
                         <span data-i18n="productEnableIce">Ice</span>
                       </label>
-                      <label class="option-check">
+                      <label class="option-check fnb-only">
                         <input id="categoryEnableCoffee" type="checkbox" checked>
                         <span data-i18n="productEnableCoffee">Coffee</span>
                       </label>
@@ -927,6 +927,7 @@
             </div>
 
             <form id="adminPlatformForm" class="grid-form">
+              <p class="meta-line admin-form-note" data-i18n="adminIndexHint">Create shops, assign shop type, and manage business accounts.</p>
               <label>
                 <span data-i18n="shopNameLabel">Shop name</span>
                 <input id="adminShopName" type="text" data-i18n-placeholder="businessNamePlaceholder" placeholder="Nilaa Coffee">

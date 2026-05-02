@@ -1528,10 +1528,10 @@ function isRetailShop() {
 
 function adminRoutesForCurrentShell() {
   if (state.platformAdminView === "fnb") {
-    return ["adminChooser", "admin", "pos", "orders", "money", "expenses", "stock", "customers", "reports", "settings", "users", "help"];
+    return ["adminChooser", "admin", "pos", "orders", "money", "expenses", "stock", "customers", "reports", "settings", "help"];
   }
   if (state.platformAdminView === "retail") {
-    return ["adminChooser", "admin", "pos", "stock", "customers", "settings", "users", "help"];
+    return ["adminChooser", "admin", "pos", "stock", "customers", "settings", "help"];
   }
   return ["adminChooser", "admin"];
 }
@@ -1648,6 +1648,11 @@ function updateShellVisibility() {
   document.querySelectorAll("[data-platform-admin='true']").forEach((node) => {
     node.classList.toggle("hidden", !isPlatformAdminProfile());
   });
+  document.querySelectorAll("[data-shell]").forEach((node) => {
+    const shell = node.dataset.shell;
+    const hidden = shell === "retail" ? shellType !== "retail" : shell === "fnb" ? shellType !== "fnb" : false;
+    node.classList.toggle("hidden", hidden);
+  });
   if (elements.platformAdminSwitcher) {
     elements.platformAdminSwitcher.classList.toggle("hidden", !isPlatformAdminProfile());
   }
@@ -1665,7 +1670,8 @@ function updateShellVisibility() {
   });
   elements.navButtons.forEach((node) => {
     if (!node.dataset.route) return;
-    node.classList.toggle("hidden", !canAccessRoute(node.dataset.route));
+    const disallowedForAdmin = isPlatformAdminProfile() && node.dataset.route === "users";
+    node.classList.toggle("hidden", disallowedForAdmin || !canAccessRoute(node.dataset.route));
   });
   configureBottomNav();
   if (elements.openDashboardButton) {
@@ -1683,10 +1689,10 @@ function setRoute(route) {
   }
   state.route = route;
   document.body.classList.toggle("route-admin-chooser", route === "adminChooser");
-  updateShellVisibility();
   Object.entries(elements.screens).forEach(([key, screen]) => {
     screen.classList.toggle("hidden", key !== route);
   });
+  updateShellVisibility();
   elements.navButtons.forEach((button) => {
     button.classList.toggle("nav-button--active", button.dataset.route === route);
   });

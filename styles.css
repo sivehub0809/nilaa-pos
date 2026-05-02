@@ -2144,6 +2144,10 @@ body.shop-type-fnb .retail-only {
   display: none !important;
 }
 
+body.shop-type-retail .fnb-only {
+  display: none !important;
+}
+
 .retail-checkout-fields {
   display: grid;
   gap: 10px;
@@ -2225,6 +2229,13 @@ body.shop-type-retail .record-box {
   line-height: 1.5;
 }
 
+.admin-form-note {
+  grid-column: 1 / -1;
+  padding: 12px 14px;
+  border: 1px solid rgba(0, 93, 253, 0.14);
+  background: #f7faff;
+}
+
 .route-admin-chooser .sidebar,
 .route-admin-chooser .bottom-nav,
 .route-admin-chooser #openDashboardButton {
@@ -2250,7 +2261,7 @@ body.shop-type-retail .record-box {
 .quick-product,
 .system-card,
 .user-chip {
-  border-radius: 10px !important;
+  border-radius: 8px !important;
 }
 
 .nav-button,
@@ -2267,7 +2278,7 @@ body.shop-type-retail .record-box {
 }
 
 .bottom-nav .nav-button {
-  border-radius: 10px !important;
+  border-radius: 8px !important;
 }
 
 @media (max-width: 719px) {
