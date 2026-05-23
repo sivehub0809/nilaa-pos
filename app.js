@@ -108,12 +108,18 @@ const elements = {
   retailSubtotalDiscountInput: document.getElementById("retailSubtotalDiscountInput"),
   retailTaxRateInput: document.getElementById("retailTaxRateInput"),
   retailStoreCreditInput: document.getElementById("retailStoreCreditInput"),
+  moneyReceivedInput: document.getElementById("moneyReceivedInput"),
   cartSubtotal: document.getElementById("cartSubtotal"),
   cartItemDiscount: document.getElementById("cartItemDiscount"),
   cartSubtotalDiscount: document.getElementById("cartSubtotalDiscount"),
   cartTax: document.getElementById("cartTax"),
   cartStoreCredit: document.getElementById("cartStoreCredit"),
   cartTotal: document.getElementById("cartTotal"),
+  cartItemsTotal: document.getElementById("cartItemsTotal"),
+  cartVatRate: document.getElementById("cartVatRate"),
+  cartExchangeRate: document.getElementById("cartExchangeRate"),
+  cartMoneyReceived: document.getElementById("cartMoneyReceived"),
+  cartChangeDue: document.getElementById("cartChangeDue"),
   checkoutButton: document.getElementById("checkoutButton"),
   expenseForm: document.getElementById("expenseForm"),
   expenseNote: document.getElementById("expenseNote"),
@@ -219,6 +225,10 @@ const elements = {
   settingsRetailBarcodeMode: document.getElementById("settingsRetailBarcodeMode"),
   settingsRetailStoreCreditLabel: document.getElementById("settingsRetailStoreCreditLabel"),
   settingsRetailLoyaltyLabel: document.getElementById("settingsRetailLoyaltyLabel"),
+  settingsExchangeRate: document.getElementById("settingsExchangeRate"),
+  settingsVatEnabled: document.getElementById("settingsVatEnabled"),
+  settingsVatRate: document.getElementById("settingsVatRate"),
+  settingsDisplayMode: document.getElementById("settingsDisplayMode"),
   settingsOptionSizes: document.getElementById("settingsOptionSizes"),
   settingsOptionSugar: document.getElementById("settingsOptionSugar"),
   settingsOptionIce: document.getElementById("settingsOptionIce"),
@@ -283,6 +293,7 @@ const elements = {
   cancelPaymentButton: document.getElementById("cancelPaymentButton"),
   markPaidButton: document.getElementById("markPaidButton"),
   paymentTotal: document.getElementById("paymentTotal"),
+  paymentSummary: document.getElementById("paymentSummary"),
   paymentInvoice: document.getElementById("paymentInvoice"),
   paymentMethod: document.getElementById("paymentMethod"),
   qrBox: document.getElementById("qrBox"),
@@ -1038,6 +1049,79 @@ function money(value) {
   }).format(Number(value || 0));
 }
 
+function exchangeRateKhr() {
+  return Math.max(1, Number(currentSettings().exchange_rate_khr || 4100));
+}
+
+function moneyKhr(value) {
+  return `${new Intl.NumberFormat("en-US", {
+    maximumFractionDigits: 0
+  }).format(Math.round(Number(value || 0) * exchangeRateKhr()))}៛`;
+}
+
+function moneyPairMarkup(value, className = "") {
+  const safeClass = className ? ` ${className}` : "";
+  return `
+    <span class="money-stack${safeClass}">
+      <span class="money-stack__usd">${money(value)}</span>
+      <small>${moneyKhr(value)}</small>
+    </span>
+  `;
+}
+
+function setMoneyPair(element, value, className = "") {
+  if (!element) return;
+  element.innerHTML = moneyPairMarkup(value, className);
+}
+
+function vatEnabled() {
+  return currentSettings().vat_enabled !== false && currentSettings().vat_enabled !== "false";
+}
+
+function vatRate() {
+  return vatEnabled() ? Math.max(0, Number(currentSettings().vat_rate ?? currentSettings().retail_tax_rate ?? 0)) : 0;
+}
+
+function productDisplayMode() {
+  const saved = String(currentSettings().product_display_mode || "").trim().toLowerCase();
+  if (saved === "retail" || saved === "list") return "retail";
+  if (saved === "cafe" || saved === "grid") return "cafe";
+  return currentShopType() === "retail" ? "retail" : "cafe";
+}
+
+function favoriteProductIds() {
+  const raw = currentSettings().favorite_product_ids;
+  if (Array.isArray(raw)) return raw.map(String);
+  if (typeof raw === "string") {
+    return raw.split(",").map((item) => item.trim()).filter(Boolean);
+  }
+  return [];
+}
+
+function isFavoriteProduct(productId) {
+  return favoriteProductIds().includes(String(productId));
+}
+
+function exchangeRateLabel() {
+  return `1 USD = ${new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(exchangeRateKhr())}៛`;
+}
+
+async function persistSettingsPatch(patch) {
+  const nextSettings = { ...currentSettings(), ...patch };
+  await backend.saveSettings(activeShopId(), nextSettings, state.profile);
+  state.settings = nextSettings;
+  return nextSettings;
+}
+
+async function toggleFavoriteProduct(productId) {
+  const favorites = new Set(favoriteProductIds());
+  const key = String(productId);
+  if (favorites.has(key)) favorites.delete(key);
+  else favorites.add(key);
+  await persistSettingsPatch({ favorite_product_ids: [...favorites] });
+  renderProducts();
+}
+
 function todayKey() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -1255,8 +1339,10 @@ function blankState(message) {
 
 function productImageMarkup(product, variant = "large") {
   const imageUrl = product?.image_url || product?.imageUrl;
-  if (!imageUrl) return "";
   const thumbClass = variant === "small" ? "product-thumb product-thumb--small" : "product-thumb";
+  if (!imageUrl) {
+    return `<div class="${thumbClass} product-thumb--placeholder" aria-hidden="true">${safeText((product?.name || "P").slice(0, 1).toUpperCase())}</div>`;
+  }
   return `<img class="${thumbClass}" src="${safeText(imageUrl)}" alt="${safeText(product.name || "product")}">`;
 }
 
@@ -1341,6 +1427,11 @@ function defaultSettingsForShopType(shopType = currentShopType()) {
     receipt_contact: "",
     receipt_manager: "",
     receipt_note: "",
+    exchange_rate_khr: 4100,
+    vat_enabled: retail,
+    vat_rate: retail ? 10 : 0,
+    product_display_mode: retail ? "retail" : "cafe",
+    favorite_product_ids: [],
     retail_tax_rate: retail ? 10 : 0,
     retail_barcode_mode: "camera",
     retail_store_credit_label: "Store credit",
@@ -1421,19 +1512,20 @@ function currentRetailCustomer() {
 function retailPricingSummary() {
   const subtotal = state.cart.reduce((sum, item) => sum + item.qty * item.price, 0);
   const fee = Number(elements.orderFee?.value || 0);
+  const itemCount = state.cart.reduce((sum, item) => sum + Number(item.qty || 0), 0);
   const itemDiscount = isRetailShop()
     ? state.cart.reduce((sum, item) => sum + Number(item.discount || 0) * Number(item.qty || 0), 0)
     : 0;
   const subtotalDiscount = isRetailShop() ? Number(elements.retailSubtotalDiscountInput?.value || 0) : 0;
-  const configuredRate = Number(currentSettings().retail_tax_rate || 0);
+  const configuredRate = vatRate();
   const taxRate = isRetailShop()
     ? Number(elements.retailTaxRateInput?.value || configuredRate || 0)
-    : 0;
+    : configuredRate;
   const member = currentRetailCustomer();
   const availableCredit = Number(member?.store_credit_balance || 0);
   let storeCreditUsed = isRetailShop() ? Number(elements.retailStoreCreditInput?.value || 0) : 0;
   const discountedSubtotal = Math.max(0, subtotal - itemDiscount - subtotalDiscount);
-  const tax = discountedSubtotal * (taxRate / 100);
+  const tax = vatEnabled() ? discountedSubtotal * (taxRate / 100) : 0;
   const beforeCredit = discountedSubtotal + tax + fee;
   if (storeCreditUsed > availableCredit) {
     storeCreditUsed = availableCredit;
@@ -1441,7 +1533,25 @@ function retailPricingSummary() {
   }
   storeCreditUsed = Math.min(storeCreditUsed, beforeCredit);
   const total = Math.max(0, beforeCredit - storeCreditUsed);
-  return { subtotal, fee, itemDiscount, subtotalDiscount, taxRate, tax, storeCreditUsed, total, member };
+  const moneyReceived = Math.max(0, Number(elements.moneyReceivedInput?.value || 0));
+  const changeDue = moneyReceived >= total ? moneyReceived - total : 0;
+  const balanceDue = moneyReceived >= total ? 0 : total - moneyReceived;
+  return {
+    subtotal,
+    fee,
+    itemCount,
+    itemDiscount,
+    subtotalDiscount,
+    taxRate,
+    tax,
+    storeCreditUsed,
+    total,
+    moneyReceived,
+    changeDue,
+    balanceDue,
+    exchangeRate: exchangeRateKhr(),
+    member
+  };
 }
 
 function syncBrandVisuals() {
@@ -1645,6 +1755,33 @@ function settingsSharedProfileAndPaymentMarkup(includeRetailSettings = false) {
             <input id="settingsQrUpload" type="file" accept="image/*">
           </label>
         </div>
+      </div>
+    </section>
+
+    <section class="record-box">
+      <div class="list-head">
+        <h4>${state.language === "en" ? "POS workstation" : "ការកំណត់ POS"}</h4>
+      </div>
+      <div class="settings-stack">
+        <label>
+          <span>${state.language === "en" ? "Exchange rate (KHR per USD)" : "អត្រាប្តូរ (KHR ក្នុង 1 USD)"}</span>
+          <input id="settingsExchangeRate" type="number" min="1" step="1" value="4100">
+        </label>
+        <label class="settings-inline-check">
+          <input id="settingsVatEnabled" type="checkbox">
+          <span>${state.language === "en" ? "Enable VAT / tax" : "បើក VAT / ពន្ធ"}</span>
+        </label>
+        <label>
+          <span>${state.language === "en" ? "VAT rate (%)" : "អត្រា VAT (%)"}</span>
+          <input id="settingsVatRate" type="number" min="0" step="0.01" value="0">
+        </label>
+        <label>
+          <span>${state.language === "en" ? "POS product display mode" : "របៀបបង្ហាញទំនិញ POS"}</span>
+          <select id="settingsDisplayMode">
+            <option value="cafe">${state.language === "en" ? "Cafe / restaurant cards" : "កាតធំ សម្រាប់កាហ្វេ / អាហារ"}</option>
+            <option value="retail">${state.language === "en" ? "Retail / supermarket compact" : "បែប Retail / Supermarket"}</option>
+          </select>
+        </label>
       </div>
     </section>
 
@@ -2220,6 +2357,10 @@ function syncSettingsScreenElementReferences() {
   elements.settingsReceiptContact = document.getElementById("settingsReceiptContact");
   elements.settingsReceiptManager = document.getElementById("settingsReceiptManager");
   elements.settingsReceiptNote = document.getElementById("settingsReceiptNote");
+  elements.settingsExchangeRate = document.getElementById("settingsExchangeRate");
+  elements.settingsVatEnabled = document.getElementById("settingsVatEnabled");
+  elements.settingsVatRate = document.getElementById("settingsVatRate");
+  elements.settingsDisplayMode = document.getElementById("settingsDisplayMode");
   elements.settingsRetailTaxRate = document.getElementById("settingsRetailTaxRate");
   elements.settingsRetailBarcodeMode = document.getElementById("settingsRetailBarcodeMode");
   elements.settingsRetailStoreCreditLabel = document.getElementById("settingsRetailStoreCreditLabel");
@@ -2273,7 +2414,11 @@ function renderSettings() {
   if (elements.settingsReceiptContact) elements.settingsReceiptContact.value = settings.receipt_contact || "";
   if (elements.settingsReceiptManager) elements.settingsReceiptManager.value = settings.receipt_manager || "";
   if (elements.settingsReceiptNote) elements.settingsReceiptNote.value = settings.receipt_note || "";
-  if (elements.settingsRetailTaxRate) elements.settingsRetailTaxRate.value = Number(settings.retail_tax_rate || 0);
+  if (elements.settingsExchangeRate) elements.settingsExchangeRate.value = Math.max(1, Number(settings.exchange_rate_khr || 4100));
+  if (elements.settingsVatEnabled) elements.settingsVatEnabled.checked = settings.vat_enabled !== false && settings.vat_enabled !== "false";
+  if (elements.settingsVatRate) elements.settingsVatRate.value = Number(settings.vat_rate ?? settings.retail_tax_rate ?? 0);
+  if (elements.settingsDisplayMode) elements.settingsDisplayMode.value = productDisplayMode();
+  if (elements.settingsRetailTaxRate) elements.settingsRetailTaxRate.value = Number(settings.vat_rate ?? settings.retail_tax_rate ?? 0);
   if (elements.settingsRetailBarcodeMode) elements.settingsRetailBarcodeMode.value = settings.retail_barcode_mode || "camera";
   if (elements.settingsRetailStoreCreditLabel) elements.settingsRetailStoreCreditLabel.value = settings.retail_store_credit_label || "Store credit";
   if (elements.settingsRetailLoyaltyLabel) elements.settingsRetailLoyaltyLabel.value = settings.retail_loyalty_label || "Loyalty points";
@@ -2581,6 +2726,10 @@ function fnbPosMarkup() {
         <div id="cartList" class="stack-list checkout-cart-list"></div>
 
         <div class="checkout-totals">
+          <div class="checkout-line checkout-line--muted">
+            <span>${state.language === "en" ? "Total items" : "ចំនួនទំនិញ"}</span>
+            <strong id="cartItemsTotal">0</strong>
+          </div>
           <label class="cart-footer__fee">
             <span data-i18n="feeLabel">Fee</span>
             <input id="orderFee" type="number" min="0" step="0.01" value="0">
@@ -2588,6 +2737,22 @@ function fnbPosMarkup() {
           <div class="checkout-line">
             <span data-i18n="subtotalLabel">Subtotal</span>
             <strong id="cartSubtotal">$0.00</strong>
+          </div>
+          <div class="checkout-line checkout-line--muted">
+            <span>${state.language === "en" ? "VAT %" : "VAT %"}</span>
+            <span id="cartVatRate">Off</span>
+          </div>
+          <div class="checkout-line checkout-line--muted">
+            <span>${state.language === "en" ? "Exchange rate" : "អត្រាប្តូរ"}</span>
+            <span id="cartExchangeRate">1 USD = 4,100៛</span>
+          </div>
+          <label class="cart-footer__fee">
+            <span>${state.language === "en" ? "Money received" : "ប្រាក់ទទួល"}</span>
+            <input id="moneyReceivedInput" type="number" min="0" step="0.01" value="0">
+          </label>
+          <div class="checkout-line checkout-line--muted">
+            <span data-change-label>${state.language === "en" ? "Change" : "ប្រាក់អាប់"}</span>
+            <span id="cartChangeDue">$0.00</span>
           </div>
           <div class="checkout-line checkout-line--grand">
             <span data-i18n="totalLabel">Total</span>
@@ -2688,6 +2853,10 @@ function retailPosMarkup() {
         <div id="cartList" class="stack-list checkout-cart-list"></div>
 
         <div class="checkout-totals">
+          <div class="checkout-line checkout-line--muted">
+            <span>${state.language === "en" ? "Total items" : "ចំនួនទំនិញ"}</span>
+            <strong id="cartItemsTotal">0</strong>
+          </div>
           <div class="retail-checkout-fields">
             <label>
               <span data-i18n="subtotalDiscountLabel">Subtotal discount</span>
@@ -2695,7 +2864,7 @@ function retailPosMarkup() {
             </label>
             <label>
               <span data-i18n="taxRateLabel">Tax rate (%)</span>
-              <input id="retailTaxRateInput" type="number" min="0" step="0.01" value="0">
+              <input id="retailTaxRateInput" type="number" min="0" step="0.01" value="0" readonly>
             </label>
             <label>
               <span data-i18n="storeCreditApplyLabel">Store credit</span>
@@ -2719,8 +2888,24 @@ function retailPosMarkup() {
             <span id="cartTax">$0.00</span>
           </div>
           <div class="checkout-line checkout-line--muted">
+            <span>${state.language === "en" ? "VAT %" : "VAT %"}</span>
+            <span id="cartVatRate">0%</span>
+          </div>
+          <div class="checkout-line checkout-line--muted">
+            <span>${state.language === "en" ? "Exchange rate" : "អត្រាប្តូរ"}</span>
+            <span id="cartExchangeRate">1 USD = 4,100៛</span>
+          </div>
+          <div class="checkout-line checkout-line--muted">
             <span data-i18n="storeCreditApplyLabel">Store credit</span>
             <span id="cartStoreCredit">$0.00</span>
+          </div>
+          <label class="cart-footer__fee">
+            <span>${state.language === "en" ? "Money received" : "ប្រាក់ទទួល"}</span>
+            <input id="moneyReceivedInput" type="number" min="0" step="0.01" value="0">
+          </label>
+          <div class="checkout-line checkout-line--muted">
+            <span data-change-label>${state.language === "en" ? "Change" : "ប្រាក់អាប់"}</span>
+            <span id="cartChangeDue">$0.00</span>
           </div>
           <div class="checkout-line checkout-line--grand">
             <span data-i18n="totalLabel">Total</span>
@@ -2760,12 +2945,18 @@ function syncPosElementReferences() {
   elements.retailSubtotalDiscountInput = document.getElementById("retailSubtotalDiscountInput");
   elements.retailTaxRateInput = document.getElementById("retailTaxRateInput");
   elements.retailStoreCreditInput = document.getElementById("retailStoreCreditInput");
+  elements.moneyReceivedInput = document.getElementById("moneyReceivedInput");
   elements.cartSubtotal = document.getElementById("cartSubtotal");
   elements.cartItemDiscount = document.getElementById("cartItemDiscount");
   elements.cartSubtotalDiscount = document.getElementById("cartSubtotalDiscount");
   elements.cartTax = document.getElementById("cartTax");
   elements.cartStoreCredit = document.getElementById("cartStoreCredit");
   elements.cartTotal = document.getElementById("cartTotal");
+  elements.cartItemsTotal = document.getElementById("cartItemsTotal");
+  elements.cartVatRate = document.getElementById("cartVatRate");
+  elements.cartExchangeRate = document.getElementById("cartExchangeRate");
+  elements.cartMoneyReceived = document.getElementById("cartMoneyReceived");
+  elements.cartChangeDue = document.getElementById("cartChangeDue");
   elements.checkoutButton = document.getElementById("checkoutButton");
   elements.mobileCheckoutButton = document.getElementById("mobileCheckoutButton");
   elements.posShopProfileImage = document.getElementById("posShopProfileImage");
@@ -2806,7 +2997,16 @@ function bindPosEvents() {
   [elements.retailSubtotalDiscountInput, elements.retailTaxRateInput, elements.retailStoreCreditInput, elements.orderFee].forEach((input) => {
     input?.addEventListener("input", () => renderCart());
   });
+  elements.moneyReceivedInput?.addEventListener("input", () => renderCart());
   elements.quickProductList?.addEventListener("click", (event) => {
+    const favoriteButton = event.target.closest("[data-favorite-product-id]");
+    if (favoriteButton) {
+      event.preventDefault();
+      toggleFavoriteProduct(favoriteButton.dataset.favoriteProductId).catch((error) => {
+        window.alert(error.message || (state.language === "en" ? "Could not update favorite." : "មិនអាចរក្សាទុកចំណូលចិត្តបាន។"));
+      });
+      return;
+    }
     const target = event.target.closest("[data-quick-product-id]");
     if (!target) return;
     const product = state.products.find((item) => item.id === target.dataset.quickProductId);
@@ -2830,6 +3030,7 @@ function bindPosEvents() {
   });
   elements.clearCartButton?.addEventListener("click", () => {
     state.cart = [];
+    if (elements.moneyReceivedInput) elements.moneyReceivedInput.value = "0";
     renderAll();
   });
   elements.checkoutButton?.addEventListener("click", async () => {
@@ -3053,14 +3254,29 @@ function renderAuth() {
 
 function renderCart() {
   const pricing = retailPricingSummary();
-  const itemCount = state.cart.reduce((sum, item) => sum + item.qty, 0);
+  const itemCount = pricing.itemCount;
   elements.cartCount.textContent = `${itemCount} ${t("itemUnit")}`;
-  elements.cartSubtotal.textContent = money(pricing.subtotal);
-  if (elements.cartItemDiscount) elements.cartItemDiscount.textContent = money(pricing.itemDiscount);
-  if (elements.cartSubtotalDiscount) elements.cartSubtotalDiscount.textContent = money(pricing.subtotalDiscount);
-  if (elements.cartTax) elements.cartTax.textContent = money(pricing.tax);
-  if (elements.cartStoreCredit) elements.cartStoreCredit.textContent = money(pricing.storeCreditUsed);
-  elements.cartTotal.textContent = money(pricing.total);
+  setMoneyPair(elements.cartSubtotal, pricing.subtotal);
+  if (elements.cartItemDiscount) setMoneyPair(elements.cartItemDiscount, pricing.itemDiscount, "money-stack--inline");
+  if (elements.cartSubtotalDiscount) setMoneyPair(elements.cartSubtotalDiscount, pricing.subtotalDiscount, "money-stack--inline");
+  if (elements.cartTax) setMoneyPair(elements.cartTax, pricing.tax, "money-stack--inline");
+  if (elements.cartStoreCredit) setMoneyPair(elements.cartStoreCredit, pricing.storeCreditUsed, "money-stack--inline");
+  setMoneyPair(elements.cartTotal, pricing.total, "money-stack--grand");
+  if (elements.cartItemsTotal) elements.cartItemsTotal.textContent = String(itemCount);
+  if (elements.cartVatRate) elements.cartVatRate.textContent = vatEnabled() ? `${pricing.taxRate.toFixed(pricing.taxRate % 1 ? 2 : 0)}%` : (state.language === "en" ? "Off" : "បិទ");
+  if (elements.cartExchangeRate) elements.cartExchangeRate.textContent = exchangeRateLabel();
+  if (elements.cartMoneyReceived) setMoneyPair(elements.cartMoneyReceived, pricing.moneyReceived, "money-stack--inline");
+  if (elements.cartChangeDue) {
+    setMoneyPair(elements.cartChangeDue, pricing.changeDue || pricing.balanceDue, "money-stack--inline");
+    elements.cartChangeDue.closest(".checkout-line")?.classList.toggle("checkout-line--alert", pricing.balanceDue > 0);
+    const label = elements.cartChangeDue.closest(".checkout-line")?.querySelector("[data-change-label]");
+    if (label) label.textContent = pricing.balanceDue > 0
+      ? (state.language === "en" ? "Money to pay back" : "ប្រាក់នៅខ្វះ")
+      : (state.language === "en" ? "Change" : "ប្រាក់អាប់");
+  }
+  if (elements.retailTaxRateInput && document.activeElement !== elements.retailTaxRateInput) {
+    elements.retailTaxRateInput.value = String(pricing.taxRate || 0);
+  }
   if (elements.mobileCheckoutButton) {
     elements.mobileCheckoutButton.textContent = `${t("scrollToCheckoutButton")} • ${itemCount} • ${money(pricing.total)}`;
     elements.mobileCheckoutButton.classList.toggle("hidden", state.cart.length === 0);
@@ -3084,7 +3300,7 @@ function renderCart() {
             <div>
               <strong>${safeText(item.name)}</strong>
               ${itemOptionsMarkup(item)}
-              <div class="meta-line">${money(item.price)}</div>
+              <div class="meta-line">${money(item.price)} • ${moneyKhr(item.price)}</div>
             </div>
           </div>
           <div class="cart-row__side">
@@ -3104,9 +3320,9 @@ function renderCart() {
 function renderMoney() {
   const todaySales = state.orders.reduce((sum, order) => sum + Number(order.total || 0), 0);
   const todayExpenses = state.expenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
-  elements.todaySalesValue.textContent = money(todaySales);
-  elements.todayExpenseValue.textContent = money(todayExpenses);
-  elements.todayNetValue.textContent = money(todaySales - todayExpenses);
+  setMoneyPair(elements.todaySalesValue, todaySales);
+  setMoneyPair(elements.todayExpenseValue, todayExpenses);
+  setMoneyPair(elements.todayNetValue, todaySales - todayExpenses);
 }
 
 function renderExpenses() {
@@ -3164,6 +3380,7 @@ function renderProducts() {
     button.classList.toggle("category-chip--active", button.dataset.productFilter === state.productFilter);
   });
   const query = state.productSearchQuery.trim().toLowerCase();
+  const displayMode = productDisplayMode();
   const filteredProducts = state.products
     .filter((product, index) => {
       const left = effectiveStock(product);
@@ -3179,7 +3396,12 @@ function renderProducts() {
       ].filter(Boolean).some((value) => String(value).toLowerCase().includes(query));
     })
     .sort((a, b) => {
-      if (!query) return a.name.localeCompare(b.name, "km");
+      if (!query) {
+        const aFavorite = isFavoriteProduct(a.id) ? 1 : 0;
+        const bFavorite = isFavoriteProduct(b.id) ? 1 : 0;
+        if (aFavorite !== bFavorite) return bFavorite - aFavorite;
+        return a.name.localeCompare(b.name, "km");
+      }
       const aExact = a.name.toLowerCase() === query ? 1 : 0;
       const bExact = b.name.toLowerCase() === query ? 1 : 0;
       if (aExact !== bExact) return bExact - aExact;
@@ -3188,15 +3410,38 @@ function renderProducts() {
       if (aStarts !== bStarts) return bStarts - aStarts;
       return a.name.localeCompare(b.name, "km");
     });
+  elements.quickProductList.className = `quick-product-list quick-product-list--desktop quick-product-list--${displayMode}`;
   elements.quickProductList.innerHTML = filteredProducts.length
     ? filteredProducts.map((product) => {
         const left = effectiveStock(product);
         const options = productOptionState(product);
         const optionCount = Object.values(options).filter(Boolean).length;
         const category = categoryById(product.category_id || product.categoryId);
+        const favorite = isFavoriteProduct(product.id);
         const retailMeta = isRetailShop()
           ? [product.brand, product.sku || product.barcode].filter(Boolean).join(" • ")
           : "";
+        const actionLabel = isRetailShop()
+          ? (optionCount ? (state.language === "en" ? "Open details" : "បើកព័ត៌មានទំនិញ") : (state.language === "en" ? "Add to cart" : "បន្ថែមទៅកន្ត្រក"))
+          : (optionCount ? t("optionsCountLabel", { count: optionCount }) : t("tapToAdd"));
+        return `
+          <article class="quick-product ${displayMode === "retail" ? "quick-product--compact" : ""} ${favorite ? "quick-product--favorite" : ""}">
+            <button class="quick-product__favorite ${favorite ? "quick-product__favorite--active" : ""}" type="button" data-favorite-product-id="${product.id}" aria-label="${safeText(state.language === "en" ? "Toggle favorite" : "បិទបើកចំណូលចិត្ត")}">♥</button>
+            <button class="quick-product__body" type="button" data-quick-product-id="${product.id}" ${left <= 0 ? "disabled" : ""}>
+              ${productImageMarkup(product)}
+              <div class="quick-product__copy">
+                <strong>${safeText(product.name)}</strong>
+                ${category ? `<small>${safeText(category.name)}</small>` : ""}
+                ${retailMeta ? `<small>${safeText(retailMeta.replaceAll(" â€¢ ", " • "))}</small>` : ""}
+                <div class="quick-product__price">${moneyPairMarkup(product.price)}</div>
+                <div class="quick-product__footer">
+                  <span class="quick-product__stock">${safeText(state.language === "en" ? `${left} in stock` : `${left} ស្តុក`)}</span>
+                  <span class="quick-product__hint">${safeText(actionLabel)}</span>
+                </div>
+              </div>
+            </button>
+          </article>
+        `;
         return `
           <button class="quick-product" type="button" data-quick-product-id="${product.id}" ${left <= 0 ? "disabled" : ""}>
             ${productImageMarkup(product)}
@@ -3630,7 +3875,12 @@ async function handleSaveSettings(event) {
       receipt_contact: elements.settingsReceiptContact?.value.trim() || "",
       receipt_manager: elements.settingsReceiptManager?.value.trim() || "",
       receipt_note: elements.settingsReceiptNote?.value.trim() || "",
-      retail_tax_rate: Number(elements.settingsRetailTaxRate?.value || 0),
+      exchange_rate_khr: Math.max(1, Number(elements.settingsExchangeRate?.value || 4100)),
+      vat_enabled: Boolean(elements.settingsVatEnabled?.checked),
+      vat_rate: Math.max(0, Number(elements.settingsVatRate?.value || 0)),
+      product_display_mode: elements.settingsDisplayMode?.value || (currentShopType() === "retail" ? "retail" : "cafe"),
+      favorite_product_ids: favoriteProductIds(),
+      retail_tax_rate: Math.max(0, Number(elements.settingsVatRate?.value || elements.settingsRetailTaxRate?.value || 0)),
       retail_barcode_mode: elements.settingsRetailBarcodeMode?.value || "camera",
       retail_store_credit_label: elements.settingsRetailStoreCreditLabel?.value?.trim() || "Store credit",
       retail_loyalty_label: elements.settingsRetailLoyaltyLabel?.value?.trim() || "Loyalty points",
@@ -3936,7 +4186,14 @@ function openPayment(order) {
   const settings = currentSettings();
   const retailCustomer = currentRetailCustomer();
   state.pendingPaymentOrder = order;
-  elements.paymentTotal.textContent = money(order.total);
+  setMoneyPair(elements.paymentTotal, order.total, "money-stack--grand");
+  if (elements.paymentSummary) {
+    elements.paymentSummary.innerHTML = `
+      <div class="checkout-line checkout-line--muted"><span>${state.language === "en" ? "Items" : "ចំនួនទំនិញ"}</span><span>${order.items.reduce((sum, item) => sum + Number(item.qty || 0), 0)}</span></div>
+      <div class="checkout-line checkout-line--muted"><span>${state.language === "en" ? "VAT" : "VAT"}</span><span>${vatEnabled() ? `${vatRate()}%` : (state.language === "en" ? "Off" : "បិទ")}</span></div>
+      <div class="checkout-line checkout-line--muted"><span>${state.language === "en" ? "Exchange" : "អត្រាប្តូរ"}</span><span>${exchangeRateLabel()}</span></div>
+    `;
+  }
   elements.paymentInvoice.textContent = order.invoice_no || order.invoiceNo;
   renderBetaQr(`${order.invoice_no || order.invoiceNo}-${order.total}`);
   elements.paymentMethod.value = "";
@@ -4025,6 +4282,7 @@ async function completePayment() {
     elements.buyerName.value = "";
     elements.buyerPhone.value = "";
     elements.orderFee.value = "0";
+    if (elements.moneyReceivedInput) elements.moneyReceivedInput.value = "0";
     if (elements.retailSubtotalDiscountInput) elements.retailSubtotalDiscountInput.value = "0";
     if (elements.retailStoreCreditInput) elements.retailStoreCreditInput.value = "0";
     state.latestReceipt = buildReceipt(receiptOrder);
@@ -5265,6 +5523,11 @@ function createSupabaseBackend() {
         receipt_contact: payload.receipt_contact,
         receipt_manager: payload.receipt_manager,
         receipt_note: payload.receipt_note,
+        exchange_rate_khr: payload.exchange_rate_khr,
+        vat_enabled: payload.vat_enabled,
+        vat_rate: payload.vat_rate,
+        product_display_mode: payload.product_display_mode,
+        favorite_product_ids: payload.favorite_product_ids,
         retail_tax_rate: payload.retail_tax_rate,
         retail_barcode_mode: payload.retail_barcode_mode,
         retail_store_credit_label: payload.retail_store_credit_label,

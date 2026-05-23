@@ -178,6 +178,11 @@ create table if not exists settings (
   receipt_contact text,
   receipt_manager text,
   receipt_note text,
+  exchange_rate_khr numeric(12,2) not null default 4100,
+  vat_enabled boolean not null default false,
+  vat_rate numeric(8,2) not null default 0,
+  product_display_mode text not null default 'cafe',
+  favorite_product_ids jsonb not null default '[]'::jsonb,
   retail_tax_rate numeric(8,2) not null default 0,
   retail_barcode_mode text not null default 'camera',
   retail_store_credit_label text,
@@ -204,6 +209,11 @@ alter table settings add column if not exists receipt_address text;
 alter table settings add column if not exists receipt_contact text;
 alter table settings add column if not exists receipt_manager text;
 alter table settings add column if not exists receipt_note text;
+alter table settings add column if not exists exchange_rate_khr numeric(12,2) not null default 4100;
+alter table settings add column if not exists vat_enabled boolean not null default false;
+alter table settings add column if not exists vat_rate numeric(8,2) not null default 0;
+alter table settings add column if not exists product_display_mode text not null default 'cafe';
+alter table settings add column if not exists favorite_product_ids jsonb not null default '[]'::jsonb;
 alter table settings add column if not exists retail_tax_rate numeric(8,2) not null default 0;
 alter table settings add column if not exists retail_barcode_mode text not null default 'camera';
 alter table settings add column if not exists retail_store_credit_label text;
