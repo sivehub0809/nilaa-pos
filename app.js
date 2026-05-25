@@ -3423,9 +3423,11 @@ function renderCart() {
     setMoneyPair(elements.cartChangeDue, pricing.changeDue || pricing.balanceDue, "money-stack--inline");
     elements.cartChangeDue.closest(".checkout-line")?.classList.toggle("checkout-line--alert", pricing.balanceDue > 0);
     const label = elements.cartChangeDue.closest(".checkout-line")?.querySelector("[data-change-label]");
-    if (label) label.textContent = pricing.balanceDue > 0
-      ? (state.language === "en" ? "Money to pay back" : "ប្រាក់នៅខ្វះ")
-      : (state.language === "en" ? "Change" : "ប្រាក់អាប់");
+    if (label) {
+      label.textContent = pricing.balanceDue > 0
+        ? (state.language === "en" ? "Amount still due" : "ប្រាក់នៅខ្វះ")
+        : (state.language === "en" ? "Change" : "ប្រាក់អាប់");
+    }
   }
   if (elements.retailTaxRateInput && document.activeElement !== elements.retailTaxRateInput) {
     elements.retailTaxRateInput.value = String(pricing.taxRate || 0);
@@ -4560,7 +4562,7 @@ function openPayment(order) {
     elements.paymentQrDueUsd.textContent = money(order.total || 0);
   }
   if (elements.paymentQrDueKhr) {
-    elements.paymentQrDueKhr.textContent = formatKhr(Number(order.total || 0) * exchangeRate());
+    elements.paymentQrDueKhr.textContent = formatKhr(Number(order.total || 0) * exchangeRateKhr());
   }
   renderBetaQr(`${order.invoice_no || order.invoiceNo}-${order.total}`);
   elements.paymentMethod.value = "";
