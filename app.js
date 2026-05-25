@@ -1768,6 +1768,7 @@ function settingsSharedProfileAndPaymentMarkup(includeRetailSettings = false) {
             <span data-i18n="profileImageLabel">Business logo</span>
             <input id="settingsProfileImage" type="file" accept="image/*">
           </label>
+          <small id="settingsProfileStatus" class="meta-line">${state.language === "en" ? "No business logo uploaded yet." : "មិនទាន់មានឡូហ្គោអាជីវកម្មនៅឡើយទេ។"}</small>
         </div>
         <label>
           <span data-i18n="businessNameLabel">Business name</span>
@@ -1799,6 +1800,7 @@ function settingsSharedProfileAndPaymentMarkup(includeRetailSettings = false) {
             <span data-i18n="bankQrLabel">Bank QR image</span>
             <input id="settingsQrUpload" type="file" accept="image/*">
           </label>
+          <small id="settingsQrStatus" class="meta-line">${state.language === "en" ? "No QR image uploaded yet." : "មិនទាន់មានរូបភាព QR នៅឡើយទេ។"}</small>
         </div>
       </div>
     </section>
@@ -2129,6 +2131,7 @@ function fnbStockMarkup() {
             <span data-i18n="productImageLabel">Product image</span>
             <input id="productImageInput" type="file" accept="image/*">
           </label>
+          <small id="productImageStatus" class="meta-line">${state.language === "en" ? "No product image uploaded yet." : "មិនទាន់មានរូបភាពទំនិញនៅឡើយទេ។"}</small>
         </div>
         <label data-non-staff="true">
           <span data-i18n="productCategoryLabel">Product category</span>
@@ -2208,6 +2211,7 @@ function retailStockMarkup() {
             <span data-i18n="productImageLabel">Product image</span>
             <input id="productImageInput" type="file" accept="image/*">
           </label>
+          <small id="productImageStatus" class="meta-line">${state.language === "en" ? "No product image uploaded yet." : "មិនទាន់មានរូបភាពទំនិញនៅឡើយទេ។"}</small>
         </div>
         <label data-non-staff="true">
           <span data-i18n="productCategoryLabel">Product category</span>
@@ -2482,6 +2486,18 @@ function renderSettings() {
     elements.settingsQrPreview.src = qrUrl || "assets/nilaa-logo.png";
     elements.settingsQrPreview.classList.toggle("hidden", !qrUrl);
   }
+  setStatusText(
+    "settingsProfileStatus",
+    settings.shop_logo_url
+      ? (state.language === "en" ? "Logo saved and visible across POS and receipts." : "ឡូហ្គោត្រូវបានរក្សាទុក ហើយបង្ហាញលើ POS និងបង្កាន់ដៃ។")
+      : (state.language === "en" ? "No business logo uploaded yet." : "មិនទាន់មានឡូហ្គោអាជីវកម្មនៅឡើយទេ។")
+  );
+  setStatusText(
+    "settingsQrStatus",
+    settings.qr_image_url
+      ? (state.language === "en" ? "QR image saved and ready for payment." : "រូបភាព QR ត្រូវបានរក្សាទុក ហើយរួចរាល់សម្រាប់ការទូទាត់។")
+      : (state.language === "en" ? "No QR image uploaded yet." : "មិនទាន់មានរូបភាព QR នៅឡើយទេ។")
+  );
   syncBrandVisuals();
 }
 
@@ -4270,9 +4286,24 @@ function openPayment(order) {
   setMoneyPair(elements.paymentTotal, order.total, "money-stack--grand");
   if (elements.paymentSummary) {
     elements.paymentSummary.innerHTML = `
-      <div class="checkout-line checkout-line--muted"><span>${state.language === "en" ? "Items" : "ចំនួនទំនិញ"}</span><span>${order.items.reduce((sum, item) => sum + Number(item.qty || 0), 0)}</span></div>
-      <div class="checkout-line checkout-line--muted"><span>${state.language === "en" ? "VAT" : "VAT"}</span><span>${vatEnabled() ? `${vatRate()}%` : (state.language === "en" ? "Off" : "បិទ")}</span></div>
-      <div class="checkout-line checkout-line--muted"><span>${state.language === "en" ? "Exchange" : "អត្រាប្តូរ"}</span><span>${exchangeRateLabel()}</span></div>
+      <div class="payment-summary__grid">
+        <div class="payment-summary__metric">
+          <span>${state.language === "en" ? "Items" : "ចំនួនទំនិញ"}</span>
+          <strong>${order.items.reduce((sum, item) => sum + Number(item.qty || 0), 0)}</strong>
+        </div>
+        <div class="payment-summary__metric">
+          <span>${state.language === "en" ? "Subtotal" : "សរុបរង"}</span>
+          <strong>${money(order.subtotal || 0)}</strong>
+        </div>
+        <div class="payment-summary__metric">
+          <span>${state.language === "en" ? "VAT" : "VAT"}</span>
+          <strong>${vatEnabled() ? `${vatRate()}%` : (state.language === "en" ? "Off" : "បិទ")}</strong>
+        </div>
+        <div class="payment-summary__metric">
+          <span>${state.language === "en" ? "Exchange" : "អត្រាប្តូរ"}</span>
+          <strong>${exchangeRateLabel()}</strong>
+        </div>
+      </div>
     `;
   }
   elements.paymentInvoice.textContent = order.invoice_no || order.invoiceNo;
@@ -4395,14 +4426,38 @@ function previewImage(input, target) {
   if (!file) {
     target.src = "";
     target.classList.add("hidden");
+    if (input.id === "productImageInput") setStatusText("productImageStatus", state.language === "en" ? "No product image uploaded yet." : "មិនទាន់មានរូបភាពទំនិញនៅឡើយទេ។");
+    if (input.id === "settingsProfileImage") setStatusText("settingsProfileStatus", state.language === "en" ? "No business logo uploaded yet." : "មិនទាន់មានឡូហ្គោអាជីវកម្មនៅឡើយទេ។");
+    if (input.id === "settingsQrUpload") setStatusText("settingsQrStatus", state.language === "en" ? "No QR image uploaded yet." : "មិនទាន់មានរូបភាព QR នៅឡើយទេ។");
     return;
   }
   const reader = new FileReader();
   reader.onload = () => {
     target.src = String(reader.result || "");
     target.classList.remove("hidden");
+    if (input.id === "productImageInput") setStatusText("productImageStatus", state.language === "en" ? "Draft image loaded. Save product to publish it on POS cards." : "រូបភាពសាកល្បងត្រូវបានផ្ទុក។ សូមរក្សាទុកទំនិញ ដើម្បីបង្ហាញលើកាត POS។");
+    if (input.id === "settingsProfileImage") setStatusText("settingsProfileStatus", state.language === "en" ? "Draft logo loaded. Save settings to publish it across the POS." : "ឡូហ្គោសាកល្បងត្រូវបានផ្ទុក។ សូមរក្សាទុក Settings ដើម្បីបង្ហាញទូទាំង POS។");
+    if (input.id === "settingsQrUpload") setStatusText("settingsQrStatus", state.language === "en" ? "Draft QR loaded. Save settings to use it for payments." : "QR សាកល្បងត្រូវបានផ្ទុក។ សូមរក្សាទុក Settings ដើម្បីប្រើសម្រាប់ការទូទាត់។");
   };
   reader.readAsDataURL(file);
+}
+
+function setStatusText(id, text) {
+  const element = document.getElementById(id);
+  if (element) element.textContent = text;
+}
+
+function productImageStatusText(product = null) {
+  if (!product) return state.language === "en" ? "No product image uploaded yet." : "មិនទាន់មានរូបភាពទំនិញនៅឡើយទេ។";
+  if (product?.image_url || product?.imageUrl || product?.image) {
+    return state.language === "en" ? "Image saved and visible on POS cards." : "រូបភាពត្រូវបានរក្សាទុក ហើយបង្ហាញលើកាត POS។";
+  }
+  if (getStoredProductImage(activeShopId(), product)) {
+    return state.language === "en"
+      ? "Fallback image is in use. Re-save this product to restore the backend image path."
+      : "កំពុងប្រើរូបភាពជំនួស។ សូមរក្សាទុកទំនិញនេះម្តងទៀត ដើម្បីភ្ជាប់រូបភាពទៅ backend វិញ។";
+  }
+  return state.language === "en" ? "No product image uploaded yet." : "មិនទាន់មានរូបភាពទំនិញនៅឡើយទេ។";
 }
 
 function makeDownload(data) {
@@ -5876,6 +5931,7 @@ function syncProductFormPreview(product = null) {
   const imageUrl = resolveProductImage(product || {});
   elements.productImagePreview.src = imageUrl || "";
   elements.productImagePreview.classList.toggle("hidden", !imageUrl);
+  setStatusText("productImageStatus", productImageStatusText(product));
   const options = productOptionState(product || {});
   if (elements.productCategorySelect) elements.productCategorySelect.value = product?.category_id || product?.categoryId || "";
   if (elements.productBarcodeInput) elements.productBarcodeInput.value = product?.barcode || "";
