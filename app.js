@@ -4562,7 +4562,7 @@ function openPayment(order) {
     elements.paymentQrDueUsd.textContent = money(order.total || 0);
   }
   if (elements.paymentQrDueKhr) {
-    elements.paymentQrDueKhr.textContent = formatKhr(Number(order.total || 0) * exchangeRateKhr());
+    elements.paymentQrDueKhr.textContent = moneyKhr(order.total || 0);
   }
   renderBetaQr(`${order.invoice_no || order.invoiceNo}-${order.total}`);
   elements.paymentMethod.value = "";
