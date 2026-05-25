@@ -6181,7 +6181,8 @@ async function openAdminWorkspaceByType(shopType) {
 async function registerOfflineSupport() {
   if (!("serviceWorker" in navigator)) return;
   try {
-    await navigator.serviceWorker.register(new URL("./sw.js", window.location.href), { scope: "./" });
+    const registration = await navigator.serviceWorker.register(new URL("./sw.js", window.location.href), { scope: "./" });
+    registration.update?.();
   } catch {
     // Ignore registration failures so the main POS keeps working online.
   }
