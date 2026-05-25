@@ -194,6 +194,7 @@ create table if not exists settings (
   option_toppings text,
   order_counter integer not null default 1,
   qr_image_url text,
+  payment_banner_url text,
   currency text not null default 'USD',
   printer_mode text not null default 'browser',
   shop_logo_url text,
@@ -225,6 +226,7 @@ alter table settings add column if not exists option_coffee_levels text;
 alter table settings add column if not exists option_toppings text;
 alter table settings add column if not exists order_counter integer not null default 1;
 alter table settings add column if not exists qr_image_url text;
+alter table settings add column if not exists payment_banner_url text;
 alter table settings add column if not exists currency text not null default 'USD';
 alter table settings add column if not exists printer_mode text not null default 'browser';
 alter table settings add column if not exists shop_logo_url text;

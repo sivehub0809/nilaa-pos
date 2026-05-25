@@ -5,6 +5,7 @@ const MOCK_STORAGE_KEY = "nilaa-os-preview-store-v2";
 const LANGUAGE_STORAGE_KEY = "nilaa-os-language";
 const OFFLINE_SNAPSHOT_STORAGE_KEY = "nilaa-os-offline-snapshots-v1";
 const PRODUCT_IMAGE_STORAGE_KEY = "nilaa-os-product-images-v1";
+const FAVORITE_PRODUCT_STORAGE_KEY = "nilaa-os-favorites-v1";
 
 const state = {
   route: "pos",
@@ -1128,13 +1129,38 @@ function productDisplayMode() {
   return currentShopType() === "retail" ? "retail" : "cafe";
 }
 
+function favoriteProductStore() {
+  try {
+    return JSON.parse(localStorage.getItem(FAVORITE_PRODUCT_STORAGE_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function favoriteProductStoreKey(shopId = activeShopId()) {
+  return `${shopId || "default"}::favorites`;
+}
+
+function localFavoriteProductIds(shopId = activeShopId()) {
+  const store = favoriteProductStore();
+  const value = store[favoriteProductStoreKey(shopId)];
+  return Array.isArray(value) ? value.map(String) : [];
+}
+
+function saveLocalFavoriteProductIds(productIds, shopId = activeShopId()) {
+  const store = favoriteProductStore();
+  store[favoriteProductStoreKey(shopId)] = Array.isArray(productIds) ? productIds.map(String) : [];
+  localStorage.setItem(FAVORITE_PRODUCT_STORAGE_KEY, JSON.stringify(store));
+}
+
 function favoriteProductIds() {
   const raw = currentSettings().favorite_product_ids;
-  if (Array.isArray(raw)) return raw.map(String);
+  if (Array.isArray(raw) && raw.length) return raw.map(String);
   if (typeof raw === "string") {
-    return raw.split(",").map((item) => item.trim()).filter(Boolean);
+    const parsed = raw.split(",").map((item) => item.trim()).filter(Boolean);
+    if (parsed.length) return parsed;
   }
-  return [];
+  return localFavoriteProductIds();
 }
 
 function isFavoriteProduct(productId) {
@@ -1147,6 +1173,9 @@ function exchangeRateLabel() {
 
 async function persistSettingsPatch(patch) {
   const nextSettings = { ...currentSettings(), ...patch };
+  if (Object.prototype.hasOwnProperty.call(patch, "favorite_product_ids")) {
+    saveLocalFavoriteProductIds(patch.favorite_product_ids);
+  }
   await backend.saveSettings(activeShopId(), nextSettings, state.profile);
   state.settings = nextSettings;
   return nextSettings;
@@ -5304,9 +5333,32 @@ function createSupabaseBackend() {
   };
 
   const columnMissing = (error) => String(error?.message || "").toLowerCase().includes("column");
+  const missingColumnName = (error) => {
+    const message = String(error?.message || "");
+    return message.match(/column ['"]?([a-zA-Z0-9_]+)['"]?/i)?.[1]
+      || message.match(/Could not find the ['"]([^'"]+)['"] column/i)?.[1]
+      || null;
+  };
   const relationMissing = (error) => {
     const message = String(error?.message || "").toLowerCase();
     return message.includes("schema cache") || message.includes("could not find the table") || message.includes("relation");
+  };
+  const upsertSettingsCompat = async (record) => {
+    const payload = { ...record };
+    for (let attempts = 0; attempts < 16; attempts += 1) {
+      const { error } = await supabase.from("settings").upsert(payload, { onConflict: "shop_id" });
+      if (!error) return null;
+      if (relationMissing(error)) return error;
+      if (columnMissing(error)) {
+        const missing = missingColumnName(error);
+        if (missing && Object.prototype.hasOwnProperty.call(payload, missing)) {
+          delete payload[missing];
+          continue;
+        }
+      }
+      return error;
+    }
+    return new Error(t("schemaBanner"));
   };
   const detectTable = async (name) => {
     const { error } = await supabase.from(name).select("id").limit(1);
@@ -5961,23 +6013,7 @@ function createSupabaseBackend() {
         order_counter: payload.order_counter,
         updated_at: new Date().toISOString()
       };
-      let { error } = await supabase.from("settings").upsert(settingsRecord, { onConflict: "shop_id" });
-      if (error && columnMissing(error)) {
-        const legacySettings = {
-          shop_id: shopId,
-          business_name: payload.business_name,
-          business_description: payload.business_description,
-          payment_method: payload.payment_method,
-          receipt_name: payload.receipt_name,
-          receipt_footer: payload.receipt_footer,
-          qr_image_url: payload.qr_image_url,
-          payment_banner_url: payload.payment_banner_url,
-          shop_logo_url: payload.shop_logo_url,
-          updated_at: new Date().toISOString()
-        };
-        const fallback = await supabase.from("settings").upsert(legacySettings, { onConflict: "shop_id" });
-        error = fallback.error;
-      }
+      let error = await upsertSettingsCompat(settingsRecord);
       if (error && relationMissing(error)) {
         throw new Error(t("schemaBanner"));
       }
