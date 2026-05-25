@@ -38,6 +38,9 @@ const state = {
   ordersSearchQuery: "",
   customerSearchQuery: "",
   pendingCustomizerProduct: null,
+  editingProductId: null,
+  paymentQrExpiresAt: 0,
+  paymentQrTimerId: null,
   platformData: { shops: [], users: [] },
   platformAdminView: "adminChooser",
   adminShopFilterType: "all",
@@ -168,6 +171,33 @@ const elements = {
   productEnableToppings: document.getElementById("productEnableToppings"),
   productList: document.getElementById("productList"),
   productCount: document.getElementById("productCount"),
+  productEditorModal: document.getElementById("productEditorModal"),
+  productEditorTitle: document.getElementById("productEditorTitle"),
+  productEditorForm: document.getElementById("productEditorForm"),
+  productEditorName: document.getElementById("productEditorName"),
+  productEditorImage: document.getElementById("productEditorImage"),
+  productEditorImagePreview: document.getElementById("productEditorImagePreview"),
+  productEditorImageStatus: document.getElementById("productEditorImageStatus"),
+  productEditorCategory: document.getElementById("productEditorCategory"),
+  productEditorPrice: document.getElementById("productEditorPrice"),
+  productEditorBarcode: document.getElementById("productEditorBarcode"),
+  productEditorSku: document.getElementById("productEditorSku"),
+  productEditorCostPrice: document.getElementById("productEditorCostPrice"),
+  productEditorBrand: document.getElementById("productEditorBrand"),
+  productEditorSupplier: document.getElementById("productEditorSupplier"),
+  productEditorColor: document.getElementById("productEditorColor"),
+  productEditorSizeLabel: document.getElementById("productEditorSizeLabel"),
+  productEditorDiscount: document.getElementById("productEditorDiscount"),
+  productEditorVariants: document.getElementById("productEditorVariants"),
+  productEditorStock: document.getElementById("productEditorStock"),
+  productEditorLowStock: document.getElementById("productEditorLowStock"),
+  productEditorEnableSize: document.getElementById("productEditorEnableSize"),
+  productEditorEnableSugar: document.getElementById("productEditorEnableSugar"),
+  productEditorEnableIce: document.getElementById("productEditorEnableIce"),
+  productEditorEnableCoffee: document.getElementById("productEditorEnableCoffee"),
+  productEditorEnableToppings: document.getElementById("productEditorEnableToppings"),
+  closeProductEditorButton: document.getElementById("closeProductEditorButton"),
+  cancelProductEditorButton: document.getElementById("cancelProductEditorButton"),
   mobileCheckoutButton: document.getElementById("mobileCheckoutButton"),
   ordersSearchInput: document.getElementById("ordersSearchInput"),
   ordersPageCountSummary: document.getElementById("ordersPageCountSummary"),
@@ -217,6 +247,8 @@ const elements = {
   settingsPaymentMethod: document.getElementById("settingsPaymentMethod"),
   settingsQrUpload: document.getElementById("settingsQrUpload"),
   settingsQrPreview: document.getElementById("settingsQrPreview"),
+  settingsPaymentBannerUpload: document.getElementById("settingsPaymentBannerUpload"),
+  settingsPaymentBannerPreview: document.getElementById("settingsPaymentBannerPreview"),
   settingsReceiptTitle: document.getElementById("settingsReceiptTitle"),
   settingsReceiptFooter: document.getElementById("settingsReceiptFooter"),
   settingsReceiptAddress: document.getElementById("settingsReceiptAddress"),
@@ -253,6 +285,10 @@ const elements = {
   currentSystemBadge: document.getElementById("currentSystemBadge"),
   nonStaffFields: [...document.querySelectorAll("[data-non-staff='true']")],
   paymentQrImage: document.getElementById("paymentQrImage"),
+  paymentBannerImage: document.getElementById("paymentBannerImage"),
+  paymentBannerPlaceholder: document.getElementById("paymentBannerPlaceholder"),
+  paymentQrTitle: document.getElementById("paymentQrTitle"),
+  paymentQrCountdown: document.getElementById("paymentQrCountdown"),
   receiptHeaderTitle: document.getElementById("receiptHeaderTitle"),
   receiptBrandLogo: document.getElementById("receiptBrandLogo"),
   receiptBrandName: document.getElementById("receiptBrandName"),
@@ -1457,9 +1493,10 @@ function defaultSettingsForShopType(shopType = currentShopType()) {
   return {
     business_name: state.shop?.name || "nilaa-os",
     business_description: "",
-    payment_method: "both",
-    qr_image_url: "",
-    receipt_name: "nilaa-os",
+  payment_method: "both",
+  qr_image_url: "",
+  payment_banner_url: "",
+  receipt_name: "nilaa-os",
     receipt_footer: t("receiptThanks"),
     shop_logo_url: "",
     receipt_address: "",
@@ -1801,6 +1838,14 @@ function settingsSharedProfileAndPaymentMarkup(includeRetailSettings = false) {
             <input id="settingsQrUpload" type="file" accept="image/*">
           </label>
           <small id="settingsQrStatus" class="meta-line">${state.language === "en" ? "No QR image uploaded yet." : "មិនទាន់មានរូបភាព QR នៅឡើយទេ។"}</small>
+        </div>
+        <div class="settings-media">
+          <img id="settingsPaymentBannerPreview" class="settings-preview settings-preview--banner hidden" alt="Payment banner preview">
+          <label>
+            <span>${state.language === "en" ? "Payment banner" : "ផ្ទាំងបង់ប្រាក់"}</span>
+            <input id="settingsPaymentBannerUpload" type="file" accept="image/*">
+          </label>
+          <small id="settingsPaymentBannerStatus" class="meta-line">${state.language === "en" ? "No payment banner uploaded yet." : "មិនទាន់មានផ្ទាំងបង់ប្រាក់នៅឡើយទេ។"}</small>
         </div>
       </div>
     </section>
@@ -2401,6 +2446,8 @@ function syncSettingsScreenElementReferences() {
   elements.settingsPaymentMethod = document.getElementById("settingsPaymentMethod");
   elements.settingsQrUpload = document.getElementById("settingsQrUpload");
   elements.settingsQrPreview = document.getElementById("settingsQrPreview");
+  elements.settingsPaymentBannerUpload = document.getElementById("settingsPaymentBannerUpload");
+  elements.settingsPaymentBannerPreview = document.getElementById("settingsPaymentBannerPreview");
   elements.settingsReceiptTitle = document.getElementById("settingsReceiptTitle");
   elements.settingsReceiptFooter = document.getElementById("settingsReceiptFooter");
   elements.settingsReceiptAddress = document.getElementById("settingsReceiptAddress");
@@ -2486,6 +2533,11 @@ function renderSettings() {
     elements.settingsQrPreview.src = qrUrl || "assets/nilaa-logo.png";
     elements.settingsQrPreview.classList.toggle("hidden", !qrUrl);
   }
+  if (elements.settingsPaymentBannerPreview) {
+    const bannerUrl = settings.payment_banner_url || "";
+    elements.settingsPaymentBannerPreview.src = bannerUrl || "";
+    elements.settingsPaymentBannerPreview.classList.toggle("hidden", !bannerUrl);
+  }
   setStatusText(
     "settingsProfileStatus",
     settings.shop_logo_url
@@ -2497,6 +2549,12 @@ function renderSettings() {
     settings.qr_image_url
       ? (state.language === "en" ? "QR image saved and ready for payment." : "រូបភាព QR ត្រូវបានរក្សាទុក ហើយរួចរាល់សម្រាប់ការទូទាត់។")
       : (state.language === "en" ? "No QR image uploaded yet." : "មិនទាន់មានរូបភាព QR នៅឡើយទេ។")
+  );
+  setStatusText(
+    "settingsPaymentBannerStatus",
+    settings.payment_banner_url
+      ? (state.language === "en" ? "Payment banner saved and ready for QR screen." : "ផ្ទាំងបង់ប្រាក់ត្រូវបានរក្សាទុក ហើយរួចរាល់សម្រាប់អេក្រង់ QR។")
+      : (state.language === "en" ? "No payment banner uploaded yet." : "មិនទាន់មានផ្ទាំងបង់ប្រាក់នៅឡើយទេ។")
   );
   syncBrandVisuals();
 }
@@ -3571,7 +3629,12 @@ function renderProducts() {
             </div>
             <div>
               <span class="tag ${isLow ? "tag--low" : ""}">${isLow ? t("lowStock") : t("normalStock")}</span>
-              ${canEditProductMeta() ? `<button class="delete-button" type="button" data-product-id="${product.id}">${t("deleteButton")}</button>` : ""}
+              ${canEditProductMeta() ? `
+                <div class="record-actions__buttons record-actions__buttons--inline">
+                  <button class="secondary-button edit-button" type="button" data-edit-product-id="${product.id}" aria-label="${safeText(state.language === "en" ? "Edit product" : "កែទិន្នន័យទំនិញ")}">&#9998;</button>
+                  <button class="delete-button" type="button" data-product-id="${product.id}">${t("deleteButton")}</button>
+                </div>
+              ` : ""}
             </div>
           </article>
         `;
@@ -3797,6 +3860,97 @@ function handleProductImageDraftChange() {
   previewImage(elements.productImageInput, elements.productImagePreview);
 }
 
+function populateProductCategorySelect(selectElement, selectedValue = "") {
+  if (!selectElement) return;
+  selectElement.innerHTML = [
+    `<option value="">${safeText(t("productCategoryPlaceholder"))}</option>`,
+    ...state.categories
+      .slice()
+      .sort((a, b) => a.name.localeCompare(b.name, "km"))
+      .map((category) => `<option value="${category.id}">${safeText(category.name)}</option>`)
+  ].join("");
+  selectElement.value = selectedValue && state.categories.some((item) => item.id === selectedValue) ? selectedValue : "";
+}
+
+function applyProductEditorMode() {
+  const retail = currentShopType() === "retail";
+  document.querySelectorAll(".product-editor-retail-field").forEach((element) => {
+    element.classList.toggle("hidden", !retail);
+  });
+  if (elements.productEditorEnableSugar?.closest(".option-check")) {
+    elements.productEditorEnableSugar.closest(".option-check").classList.toggle("hidden", retail);
+  }
+  if (elements.productEditorEnableIce?.closest(".option-check")) {
+    elements.productEditorEnableIce.closest(".option-check").classList.toggle("hidden", retail);
+  }
+  if (elements.productEditorEnableCoffee?.closest(".option-check")) {
+    elements.productEditorEnableCoffee.closest(".option-check").classList.toggle("hidden", retail);
+  }
+}
+
+function openProductEditor(product) {
+  if (!product || !elements.productEditorModal) return;
+  state.editingProductId = product.id;
+  elements.productEditorTitle.textContent = state.language === "en" ? `Edit ${product.name}` : `កែ ${product.name}`;
+  elements.productEditorName.value = product.name || "";
+  populateProductCategorySelect(elements.productEditorCategory, product.category_id || product.categoryId || "");
+  elements.productEditorPrice.value = Number(product.price || 0);
+  elements.productEditorStock.value = Number(product.stock_qty ?? product.stockQty ?? 0);
+  elements.productEditorLowStock.value = Number(product.low_stock_at ?? product.lowStockAt ?? 5);
+  elements.productEditorBarcode.value = product.barcode || "";
+  elements.productEditorSku.value = product.sku || "";
+  elements.productEditorCostPrice.value = Number(product.cost_price || 0);
+  elements.productEditorBrand.value = product.brand || "";
+  elements.productEditorSupplier.value = product.supplier || "";
+  elements.productEditorColor.value = product.color || "";
+  elements.productEditorSizeLabel.value = product.size_label || "";
+  elements.productEditorDiscount.value = Number(product.discount || 0);
+  elements.productEditorVariants.value = Array.isArray(product.variant_options) ? product.variant_options.join("\n") : "";
+  elements.productEditorEnableSize.checked = Boolean(product.enable_size);
+  elements.productEditorEnableSugar.checked = Boolean(product.enable_sugar);
+  elements.productEditorEnableIce.checked = Boolean(product.enable_ice);
+  elements.productEditorEnableCoffee.checked = Boolean(product.enable_coffee);
+  elements.productEditorEnableToppings.checked = Boolean(product.enable_toppings);
+  const imageUrl = resolveProductImage(product);
+  elements.productEditorImagePreview.src = imageUrl || "";
+  elements.productEditorImagePreview.classList.toggle("hidden", !imageUrl);
+  elements.productEditorImage.value = "";
+  setStatusText("productEditorImageStatus", productImageStatusText(product));
+  applyProductEditorMode();
+  elements.productEditorModal.classList.remove("hidden");
+}
+
+function closeProductEditor() {
+  state.editingProductId = null;
+  if (!elements.productEditorModal) return;
+  elements.productEditorModal.classList.add("hidden");
+  elements.productEditorForm?.reset();
+  elements.productEditorImagePreview?.classList.add("hidden");
+  setStatusText("productEditorImageStatus", state.language === "en" ? "No product image uploaded yet." : "មិនទាន់មានរូបភាពទំនិញនៅឡើយទេ។");
+}
+
+async function saveProductFromPayload(existing, payload) {
+  const savedProduct = await runWithStatus({
+    title: state.language === "en" ? "Saving product" : "កំពុងរក្សាទុកទំនិញ",
+    message: state.language === "en" ? "Please wait..." : "សូមរង់ចាំ...",
+    successTitle: state.language === "en" ? "Product saved" : "រក្សាទុកបាន"
+  }, () => backend.saveProduct(activeShopId(), payload));
+  const finalProduct = {
+    ...(savedProduct || {}),
+    ...payload,
+    id: savedProduct?.id || existing?.id || crypto.randomUUID(),
+    shop_id: activeShopId(),
+    image_url: savedProduct?.image_url || payload.image_url || resolveProductImage(existing || payload, activeShopId())
+  };
+  if (finalProduct.image_url) saveProductImage(activeShopId(), finalProduct, finalProduct.image_url);
+  if (existing) {
+    Object.assign(existing, finalProduct);
+  } else {
+    state.products.push(finalProduct);
+  }
+  return finalProduct;
+}
+
 async function handleSaveProduct(event) {
   event.preventDefault();
   if (!state.profile || !elements.productNameInput) return;
@@ -3857,24 +4011,7 @@ async function handleSaveProduct(event) {
       variant_options,
       ...optionPayload
     };
-    const savedProduct = await runWithStatus({
-      title: state.language === "en" ? "Saving product" : "áž€áŸ†áž–áž»áž„ážšáž€áŸ’ážŸáž¶áž‘áž»áž€áž‘áŸ†áž“áž·áž‰",
-      message: state.language === "en" ? "Please wait..." : "ážŸáž¼áž˜ážšáž„áŸ‹áž…áž¶áŸ†...",
-      successTitle: state.language === "en" ? "Product saved" : "ážšáž€áŸ’ážŸáž¶áž‘áž»áž€áž”áž¶áž“"
-    }, () => backend.saveProduct(activeShopId(), payload));
-    const finalProduct = {
-      ...(savedProduct || {}),
-      ...payload,
-      id: savedProduct?.id || existing?.id || crypto.randomUUID(),
-      shop_id: activeShopId(),
-      image_url: savedProduct?.image_url || payload.image_url || resolveProductImage(existing || payload, activeShopId())
-    };
-    if (finalProduct.image_url) saveProductImage(activeShopId(), finalProduct, finalProduct.image_url);
-    if (existing) {
-      Object.assign(existing, finalProduct);
-    } else {
-      state.products.push(finalProduct);
-    }
+    await saveProductFromPayload(existing, payload);
   } catch (error) {
     window.alert(error.message || t("saveProductFailed"));
     return;
@@ -3898,12 +4035,76 @@ async function handleDeleteProductClick(event) {
   renderAll();
 }
 
+async function handleSaveEditedProduct(event) {
+  event.preventDefault();
+  const existing = state.products.find((item) => item.id === state.editingProductId);
+  if (!existing) return;
+  const retailProduct = currentShopType() === "retail";
+  const payload = {
+    ...existing,
+    name: elements.productEditorName.value.trim(),
+    category_id: elements.productEditorCategory.value || null,
+    price: Number(elements.productEditorPrice.value || 0),
+    stock_qty: Number(elements.productEditorStock.value || 0),
+    low_stock_at: Number(elements.productEditorLowStock.value || 0),
+    barcode: retailProduct ? elements.productEditorBarcode.value.trim() : "",
+    sku: retailProduct ? elements.productEditorSku.value.trim() : "",
+    cost_price: retailProduct ? Number(elements.productEditorCostPrice.value || 0) : 0,
+    brand: retailProduct ? elements.productEditorBrand.value.trim() : "",
+    supplier: retailProduct ? elements.productEditorSupplier.value.trim() : "",
+    color: retailProduct ? elements.productEditorColor.value.trim() : "",
+    size_label: retailProduct ? elements.productEditorSizeLabel.value.trim() : "",
+    discount: retailProduct ? Number(elements.productEditorDiscount.value || 0) : 0,
+    variant_options: retailProduct ? elements.productEditorVariants.value.split(/\r?\n/).map((item) => item.trim()).filter(Boolean) : [],
+    enable_size: elements.productEditorEnableSize.checked,
+    enable_sugar: retailProduct ? false : elements.productEditorEnableSugar.checked,
+    enable_ice: retailProduct ? false : elements.productEditorEnableIce.checked,
+    enable_coffee: retailProduct ? false : elements.productEditorEnableCoffee.checked,
+    enable_toppings: elements.productEditorEnableToppings.checked,
+    image_url: elements.productEditorImage.files?.[0]
+      ? await readFileAsDataUrl(elements.productEditorImage.files[0])
+      : existing.image_url || resolveProductImage(existing)
+  };
+  if (!payload.name || payload.price < 0 || payload.stock_qty < 0 || payload.low_stock_at < 0) {
+    window.alert(t("productInvalid"));
+    return;
+  }
+  try {
+    await saveProductFromPayload(existing, payload);
+    closeProductEditor();
+    syncProductFormPreview(existing);
+    renderAll();
+  } catch (error) {
+    window.alert(error.message || t("saveProductFailed"));
+  }
+}
+
 function bindStockScreenEvents() {
   elements.productNameInput?.addEventListener("input", handleProductNameDraftInput);
   elements.productCategorySelect?.addEventListener("change", handleProductCategoryDraftChange);
   elements.productImageInput?.addEventListener("change", handleProductImageDraftChange);
   elements.productForm?.addEventListener("submit", handleSaveProduct);
-  elements.productList?.addEventListener("click", handleDeleteProductClick);
+  elements.productList?.addEventListener("click", async (event) => {
+    const editTarget = event.target.closest("[data-edit-product-id]");
+    if (editTarget) {
+      const product = state.products.find((item) => item.id === editTarget.dataset.editProductId);
+      if (product) openProductEditor(product);
+      return;
+    }
+    await handleDeleteProductClick(event);
+  });
+  if (elements.productEditorImage) {
+    elements.productEditorImage.onchange = () => previewImage(elements.productEditorImage, elements.productEditorImagePreview);
+  }
+  if (elements.productEditorForm) {
+    elements.productEditorForm.onsubmit = handleSaveEditedProduct;
+  }
+  if (elements.closeProductEditorButton) {
+    elements.closeProductEditorButton.onclick = closeProductEditor;
+  }
+  if (elements.cancelProductEditorButton) {
+    elements.cancelProductEditorButton.onclick = closeProductEditor;
+  }
 }
 
 async function handleSaveCustomer(event) {
@@ -3956,11 +4157,15 @@ async function handleSaveSettings(event) {
     const qrImage = elements.settingsQrUpload?.files?.[0]
       ? await readFileAsDataUrl(elements.settingsQrUpload.files[0])
       : current.qr_image_url || "";
+    const paymentBanner = elements.settingsPaymentBannerUpload?.files?.[0]
+      ? await readFileAsDataUrl(elements.settingsPaymentBannerUpload.files[0])
+      : current.payment_banner_url || "";
     const payload = {
       business_name: elements.settingsBusinessName?.value.trim() || activeShop()?.name || "nilaa-os",
       business_description: elements.settingsBusinessDescription?.value.trim() || "",
       payment_method: elements.settingsPaymentMethod?.value || "both",
       qr_image_url: qrImage,
+      payment_banner_url: paymentBanner,
       receipt_name: elements.settingsReceiptTitle?.value.trim() || "nilaa-os",
       receipt_footer: elements.settingsReceiptFooter?.value.trim() || t("receiptThanks"),
       shop_logo_url: profileImage,
@@ -3995,6 +4200,7 @@ async function handleSaveSettings(event) {
     state.settings = { ...current, ...payload };
     if (elements.settingsProfileImage) elements.settingsProfileImage.value = "";
     if (elements.settingsQrUpload) elements.settingsQrUpload.value = "";
+    if (elements.settingsPaymentBannerUpload) elements.settingsPaymentBannerUpload.value = "";
     renderAll();
   } catch (error) {
     window.alert(error.message || t("saveSettingsFailed"));
@@ -4040,6 +4246,9 @@ function bindSettingsScreenEvents() {
   });
   elements.settingsQrUpload?.addEventListener("change", () => {
     previewImage(elements.settingsQrUpload, elements.settingsQrPreview);
+  });
+  elements.settingsPaymentBannerUpload?.addEventListener("change", () => {
+    previewImage(elements.settingsPaymentBannerUpload, elements.settingsPaymentBannerPreview);
   });
   elements.resetOrderCounterButton?.addEventListener("click", () => {
     if (elements.settingsOrderCounter) elements.settingsOrderCounter.value = "1";
@@ -4279,6 +4488,44 @@ function closeReceipt() {
   renderReceipt();
 }
 
+function clearPaymentQrTimer() {
+  if (state.paymentQrTimerId) {
+    window.clearInterval(state.paymentQrTimerId);
+    state.paymentQrTimerId = null;
+  }
+  state.paymentQrExpiresAt = 0;
+}
+
+function setPaymentCardMode(mode = "") {
+  const paymentCard = document.querySelector("#paymentModal .payment-card");
+  if (!paymentCard) return;
+  paymentCard.classList.toggle("payment-card--qr-mode", mode === "qr");
+}
+
+function updatePaymentCountdown() {
+  if (!elements.paymentQrCountdown) return;
+  if (!state.paymentQrExpiresAt) {
+    elements.paymentQrCountdown.textContent = "03:00";
+    return;
+  }
+  const remaining = Math.max(0, state.paymentQrExpiresAt - Date.now());
+  const minutes = String(Math.floor(remaining / 60000)).padStart(2, "0");
+  const seconds = String(Math.floor((remaining % 60000) / 1000)).padStart(2, "0");
+  elements.paymentQrCountdown.textContent = `${minutes}:${seconds}`;
+  if (remaining <= 0) {
+    clearPaymentQrTimer();
+    if (elements.markPaidButton) elements.markPaidButton.classList.add("hidden");
+    elements.paymentQrCountdown.textContent = state.language === "en" ? "Expired" : "ផុតកំណត់";
+  }
+}
+
+function startPaymentQrTimer() {
+  clearPaymentQrTimer();
+  state.paymentQrExpiresAt = Date.now() + 3 * 60 * 1000;
+  updatePaymentCountdown();
+  state.paymentQrTimerId = window.setInterval(updatePaymentCountdown, 1000);
+}
+
 function openPayment(order) {
   const settings = currentSettings();
   const retailCustomer = currentRetailCustomer();
@@ -4309,24 +4556,29 @@ function openPayment(order) {
   elements.paymentInvoice.textContent = order.invoice_no || order.invoiceNo;
   renderBetaQr(`${order.invoice_no || order.invoiceNo}-${order.total}`);
   elements.paymentMethod.value = "";
+  elements.payManualButton.textContent = state.language === "en" ? "Pay by cash" : "បង់ជាសាច់ប្រាក់";
+  elements.payQrButton.textContent = t("payQrButton");
   elements.qrBox.classList.add("hidden");
   elements.markPaidButton.classList.add("hidden");
+  setPaymentCardMode("");
+  clearPaymentQrTimer();
   if (elements.paymentQrImage) {
     elements.paymentQrImage.src = settings.qr_image_url || "";
     elements.paymentQrImage.classList.toggle("hidden", !settings.qr_image_url);
   }
-  elements.qrBox.querySelector("strong").textContent = settings.qr_image_url ? t("paymentBankLabel") : "Beta QR";
+  if (elements.paymentBannerImage) {
+    elements.paymentBannerImage.src = settings.payment_banner_url || "";
+    elements.paymentBannerImage.classList.toggle("hidden", !settings.payment_banner_url);
+  }
+  if (elements.paymentBannerPlaceholder) {
+    elements.paymentBannerPlaceholder.classList.toggle("hidden", Boolean(settings.payment_banner_url));
+  }
+  if (elements.paymentQrTitle) {
+    elements.paymentQrTitle.textContent = settings.qr_image_url ? "ABA KHQR" : "KHQR";
+  }
   elements.betaQrGrid.classList.toggle("hidden", Boolean(settings.qr_image_url));
-  if (settings.payment_method === "bank") {
-    elements.payManualButton.classList.add("hidden");
-  } else {
-    elements.payManualButton.classList.remove("hidden");
-  }
-  if (settings.payment_method === "cash") {
-    elements.payQrButton.classList.add("hidden");
-  } else {
-    elements.payQrButton.classList.remove("hidden");
-  }
+  elements.payManualButton.classList.remove("hidden");
+  elements.payQrButton.classList.remove("hidden");
   [elements.payCardButton, elements.payBankButton, elements.paySplitButton].forEach((button) => {
     button?.classList.toggle("hidden", !isRetailShop());
   });
@@ -4335,7 +4587,9 @@ function openPayment(order) {
 }
 
 function closePayment() {
+  clearPaymentQrTimer();
   state.pendingPaymentOrder = null;
+  setPaymentCardMode("");
   elements.paymentModal.classList.add("hidden");
 }
 
@@ -4404,6 +4658,8 @@ async function completePayment() {
     return;
   }
   state.pendingPaymentOrder = null;
+  clearPaymentQrTimer();
+  setPaymentCardMode("");
   elements.paymentModal.classList.add("hidden");
   renderAll();
 }
@@ -4411,6 +4667,12 @@ async function completePayment() {
 function choosePaymentMethod(method) {
   elements.paymentMethod.value = method;
   elements.qrBox.classList.toggle("hidden", method !== "bank");
+  setPaymentCardMode(method === "bank" ? "qr" : "");
+  if (method === "bank") {
+    startPaymentQrTimer();
+  } else {
+    clearPaymentQrTimer();
+  }
   elements.markPaidButton.classList.remove("hidden");
 }
 
@@ -4418,6 +4680,8 @@ function backToPaymentChoice() {
   elements.paymentMethod.value = "";
   elements.qrBox.classList.add("hidden");
   elements.markPaidButton.classList.add("hidden");
+  setPaymentCardMode("");
+  clearPaymentQrTimer();
 }
 
 function previewImage(input, target) {
@@ -4427,8 +4691,10 @@ function previewImage(input, target) {
     target.src = "";
     target.classList.add("hidden");
     if (input.id === "productImageInput") setStatusText("productImageStatus", state.language === "en" ? "No product image uploaded yet." : "មិនទាន់មានរូបភាពទំនិញនៅឡើយទេ។");
+    if (input.id === "productEditorImage") setStatusText("productEditorImageStatus", state.language === "en" ? "No product image uploaded yet." : "មិនទាន់មានរូបភាពទំនិញនៅឡើយទេ។");
     if (input.id === "settingsProfileImage") setStatusText("settingsProfileStatus", state.language === "en" ? "No business logo uploaded yet." : "មិនទាន់មានឡូហ្គោអាជីវកម្មនៅឡើយទេ។");
     if (input.id === "settingsQrUpload") setStatusText("settingsQrStatus", state.language === "en" ? "No QR image uploaded yet." : "មិនទាន់មានរូបភាព QR នៅឡើយទេ។");
+    if (input.id === "settingsPaymentBannerUpload") setStatusText("settingsPaymentBannerStatus", state.language === "en" ? "No payment banner uploaded yet." : "មិនទាន់មានផ្ទាំងបង់ប្រាក់នៅឡើយទេ។");
     return;
   }
   const reader = new FileReader();
@@ -4436,8 +4702,10 @@ function previewImage(input, target) {
     target.src = String(reader.result || "");
     target.classList.remove("hidden");
     if (input.id === "productImageInput") setStatusText("productImageStatus", state.language === "en" ? "Draft image loaded. Save product to publish it on POS cards." : "រូបភាពសាកល្បងត្រូវបានផ្ទុក។ សូមរក្សាទុកទំនិញ ដើម្បីបង្ហាញលើកាត POS។");
+    if (input.id === "productEditorImage") setStatusText("productEditorImageStatus", state.language === "en" ? "Draft image loaded. Save changes to publish it on POS cards." : "រូបភាពសាកល្បងត្រូវបានផ្ទុក។ សូមរក្សាទុកការកែប្រែ ដើម្បីបង្ហាញលើកាត POS។");
     if (input.id === "settingsProfileImage") setStatusText("settingsProfileStatus", state.language === "en" ? "Draft logo loaded. Save settings to publish it across the POS." : "ឡូហ្គោសាកល្បងត្រូវបានផ្ទុក។ សូមរក្សាទុក Settings ដើម្បីបង្ហាញទូទាំង POS។");
     if (input.id === "settingsQrUpload") setStatusText("settingsQrStatus", state.language === "en" ? "Draft QR loaded. Save settings to use it for payments." : "QR សាកល្បងត្រូវបានផ្ទុក។ សូមរក្សាទុក Settings ដើម្បីប្រើសម្រាប់ការទូទាត់។");
+    if (input.id === "settingsPaymentBannerUpload") setStatusText("settingsPaymentBannerStatus", state.language === "en" ? "Draft banner loaded. Save settings to publish it on the QR payment screen." : "ផ្ទាំងសាកល្បងត្រូវបានផ្ទុក។ សូមរក្សាទុក Settings ដើម្បីបង្ហាញលើអេក្រង់បង់ QR។");
   };
   reader.readAsDataURL(file);
 }
@@ -5658,6 +5926,7 @@ function createSupabaseBackend() {
         business_description: payload.business_description,
         payment_method: payload.payment_method,
         qr_image_url: payload.qr_image_url,
+        payment_banner_url: payload.payment_banner_url,
         receipt_name: payload.receipt_name,
         receipt_footer: payload.receipt_footer,
         shop_logo_url: payload.shop_logo_url,
@@ -5692,6 +5961,7 @@ function createSupabaseBackend() {
           receipt_name: payload.receipt_name,
           receipt_footer: payload.receipt_footer,
           qr_image_url: payload.qr_image_url,
+          payment_banner_url: payload.payment_banner_url,
           shop_logo_url: payload.shop_logo_url,
           updated_at: new Date().toISOString()
         };
@@ -6283,6 +6553,9 @@ elements.closePaymentButton.addEventListener("click", closePayment);
 elements.cancelPaymentButton.addEventListener("click", closePayment);
 elements.paymentModal.addEventListener("click", (event) => {
   if (event.target.id === "paymentModal") closePayment();
+});
+elements.productEditorModal?.addEventListener("click", (event) => {
+  if (event.target.id === "productEditorModal") closeProductEditor();
 });
 elements.payQrButton.addEventListener("click", () => choosePaymentMethod("bank"));
 elements.payManualButton.addEventListener("click", () => choosePaymentMethod("cash"));

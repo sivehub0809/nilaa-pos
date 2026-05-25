@@ -766,17 +766,32 @@
       <div id="paymentSummary" class="payment-summary"></div>
 
       <div class="qr-box hidden" id="qrBox" aria-label="Beta QR">
-        <img id="paymentQrImage" class="payment-qr-image hidden" alt="Bank QR code">
-        <div class="qr-grid" id="betaQrGrid"></div>
-        <strong>Beta QR</strong>
-        <span id="paymentInvoice">#00000000</span>
+        <div class="payment-qr-stage">
+          <div class="payment-qr-stage__banner">
+            <img id="paymentBannerImage" class="payment-banner-image hidden" alt="Company payment banner">
+            <div id="paymentBannerPlaceholder" class="payment-banner-placeholder">
+              <strong>Nilaa POS</strong>
+              <span>Upload a payment banner in Settings</span>
+            </div>
+          </div>
+          <div class="payment-qr-stage__code">
+            <div class="payment-qr-stage__head">
+              <strong id="paymentQrTitle">ABA KHQR</strong>
+              <span id="paymentQrCountdown">03:00</span>
+            </div>
+            <img id="paymentQrImage" class="payment-qr-image hidden" alt="Bank QR code">
+            <div class="qr-grid" id="betaQrGrid"></div>
+            <strong>ABA KHQR</strong>
+            <span id="paymentInvoice">#00000000</span>
+          </div>
+        </div>
       </div>
 
       <div class="payment-methods">
         <p class="eyebrow" data-i18n="paymentMethodLabel">Payment method</p>
         <div class="payment-choice-grid">
+          <button id="payManualButton" class="secondary-button payment-choice-grid__cash" type="button">Pay by cash</button>
           <button id="payQrButton" class="primary-button" type="button" data-i18n="payQrButton">Pay with QR</button>
-          <button id="payManualButton" class="secondary-button" type="button" data-i18n="payManualButton">Pay manual</button>
           <button id="payCardButton" class="secondary-button hidden" type="button" data-i18n="payCardButton">Card</button>
           <button id="payBankButton" class="secondary-button hidden" type="button" data-i18n="payBankPlaceholder">Bank</button>
           <button id="paySplitButton" class="secondary-button hidden" type="button" data-i18n="paySplitPlaceholder">Split</button>
@@ -790,6 +805,100 @@
         <button id="markPaidButton" class="primary-button hidden" type="button" data-i18n="markPaidButton">Payment received</button>
         <button id="cancelPaymentButton" class="secondary-button" type="button" data-i18n="cancelButton">Cancel</button>
       </div>
+    </div>
+  </section>
+
+  <section id="productEditorModal" class="modal hidden">
+    <div class="payment-card product-editor-card">
+      <div class="receipt-card__top">
+        <div>
+          <h3 id="productEditorTitle">Edit product</h3>
+          <p class="receipt-support">Update image, price, stock, and item details.</p>
+        </div>
+        <button id="closeProductEditorButton" class="icon-button" type="button">&times;</button>
+      </div>
+      <form id="productEditorForm" class="settings-stack">
+        <label>
+          <span>Product name</span>
+          <input id="productEditorName" type="text" placeholder="Iced latte">
+        </label>
+        <div class="settings-media">
+          <img id="productEditorImagePreview" class="settings-preview settings-preview--logo hidden" src="" alt="Product editor preview">
+          <label>
+            <span>Product image</span>
+            <input id="productEditorImage" type="file" accept="image/*">
+          </label>
+          <small id="productEditorImageStatus" class="meta-line">No product image uploaded yet.</small>
+        </div>
+        <div class="product-editor-grid">
+          <label>
+            <span>Category</span>
+            <select id="productEditorCategory"></select>
+          </label>
+          <label>
+            <span>Price</span>
+            <input id="productEditorPrice" type="number" min="0" step="0.01" placeholder="0.00">
+          </label>
+          <label>
+            <span>Stock left</span>
+            <input id="productEditorStock" type="number" min="0" value="0">
+          </label>
+          <label>
+            <span>Low stock alert</span>
+            <input id="productEditorLowStock" type="number" min="0" value="5">
+          </label>
+          <label class="product-editor-retail-field">
+            <span>Barcode</span>
+            <input id="productEditorBarcode" type="text" placeholder="8851234567890">
+          </label>
+          <label class="product-editor-retail-field">
+            <span>SKU</span>
+            <input id="productEditorSku" type="text" placeholder="SKU-001">
+          </label>
+          <label class="product-editor-retail-field">
+            <span>Cost price</span>
+            <input id="productEditorCostPrice" type="number" min="0" step="0.01" placeholder="0.00">
+          </label>
+          <label class="product-editor-retail-field">
+            <span>Brand</span>
+            <input id="productEditorBrand" type="text" placeholder="Nilaa Home">
+          </label>
+          <label class="product-editor-retail-field">
+            <span>Supplier</span>
+            <input id="productEditorSupplier" type="text" placeholder="Supplier">
+          </label>
+          <label class="product-editor-retail-field">
+            <span>Color</span>
+            <input id="productEditorColor" type="text" placeholder="Black">
+          </label>
+          <label class="product-editor-retail-field">
+            <span>Size label</span>
+            <input id="productEditorSizeLabel" type="text" placeholder="Small / Medium / Large">
+          </label>
+          <label class="product-editor-retail-field">
+            <span>Discount</span>
+            <input id="productEditorDiscount" type="number" min="0" step="0.01" placeholder="0.00">
+          </label>
+        </div>
+        <label class="product-editor-retail-field">
+          <span>Variants (one per line)</span>
+          <textarea id="productEditorVariants" rows="3" placeholder="Black&#10;White"></textarea>
+        </label>
+        <fieldset class="option-fieldset">
+          <legend>Enable options for this product</legend>
+          <div class="option-toggle-grid">
+            <label class="option-check"><input id="productEditorEnableSize" type="checkbox"><span>Size</span></label>
+            <label class="option-check"><input id="productEditorEnableSugar" type="checkbox"><span>Sugar</span></label>
+            <label class="option-check"><input id="productEditorEnableIce" type="checkbox"><span>Ice</span></label>
+            <label class="option-check"><input id="productEditorEnableCoffee" type="checkbox"><span>Coffee</span></label>
+            <label class="option-check"><input id="productEditorEnableToppings" type="checkbox"><span>Toppings</span></label>
+          </div>
+        </fieldset>
+        <div class="receipt-actions">
+          <button id="cancelProductEditorButton" class="secondary-button" type="button">Cancel</button>
+          <button class="primary-button" type="submit">Save changes</button>
+        </div>
+      </form>
     </div>
   </section>
 
