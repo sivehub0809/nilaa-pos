@@ -289,6 +289,8 @@ const elements = {
   paymentBannerPlaceholder: document.getElementById("paymentBannerPlaceholder"),
   paymentQrTitle: document.getElementById("paymentQrTitle"),
   paymentQrCountdown: document.getElementById("paymentQrCountdown"),
+  paymentQrDueUsd: document.getElementById("paymentQrDueUsd"),
+  paymentQrDueKhr: document.getElementById("paymentQrDueKhr"),
   receiptHeaderTitle: document.getElementById("receiptHeaderTitle"),
   receiptBrandLogo: document.getElementById("receiptBrandLogo"),
   receiptBrandName: document.getElementById("receiptBrandName"),
@@ -4554,6 +4556,12 @@ function openPayment(order) {
     `;
   }
   elements.paymentInvoice.textContent = order.invoice_no || order.invoiceNo;
+  if (elements.paymentQrDueUsd) {
+    elements.paymentQrDueUsd.textContent = money(order.total || 0);
+  }
+  if (elements.paymentQrDueKhr) {
+    elements.paymentQrDueKhr.textContent = formatKhr(Number(order.total || 0) * exchangeRate());
+  }
   renderBetaQr(`${order.invoice_no || order.invoiceNo}-${order.total}`);
   elements.paymentMethod.value = "";
   elements.payManualButton.textContent = state.language === "en" ? "Pay by cash" : "បង់ជាសាច់ប្រាក់";
