@@ -4,6 +4,7 @@ import { appSettings, supabaseConfig } from "./supabase-config.js";
 const MOCK_STORAGE_KEY = "nilaa-os-preview-store-v2";
 const LANGUAGE_STORAGE_KEY = "nilaa-os-language";
 const OFFLINE_SNAPSHOT_STORAGE_KEY = "nilaa-os-offline-snapshots-v1";
+const PRODUCT_IMAGE_STORAGE_KEY = "nilaa-os-product-images-v1";
 
 const state = {
   route: "pos",
@@ -109,6 +110,7 @@ const elements = {
   retailTaxRateInput: document.getElementById("retailTaxRateInput"),
   retailStoreCreditInput: document.getElementById("retailStoreCreditInput"),
   moneyReceivedInput: document.getElementById("moneyReceivedInput"),
+  moneyReceivedCurrency: document.getElementById("moneyReceivedCurrency"),
   cartSubtotal: document.getElementById("cartSubtotal"),
   cartItemDiscount: document.getElementById("cartItemDiscount"),
   cartSubtotalDiscount: document.getElementById("cartSubtotalDiscount"),
@@ -319,6 +321,8 @@ const elements = {
   receiptSubtotalDiscount: document.getElementById("receiptSubtotalDiscount"),
   receiptTax: document.getElementById("receiptTax"),
   receiptStoreCredit: document.getElementById("receiptStoreCredit"),
+  receiptVatRate: document.getElementById("receiptVatRate"),
+  receiptExchangeRate: document.getElementById("receiptExchangeRate"),
   receiptSubtotal: document.getElementById("receiptSubtotal"),
   receiptFee: document.getElementById("receiptFee"),
   receiptTotal: document.getElementById("receiptTotal"),
@@ -1083,9 +1087,6 @@ function vatRate() {
 }
 
 function productDisplayMode() {
-  const saved = String(currentSettings().product_display_mode || "").trim().toLowerCase();
-  if (saved === "retail" || saved === "list") return "retail";
-  if (saved === "cafe" || saved === "grid") return "cafe";
   return currentShopType() === "retail" ? "retail" : "cafe";
 }
 
@@ -1337,8 +1338,46 @@ function blankState(message) {
   return `<p class="meta-line">${safeText(message)}</p>`;
 }
 
+function productImageStore() {
+  try {
+    return JSON.parse(localStorage.getItem(PRODUCT_IMAGE_STORAGE_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function productImageKey(shopId, product = {}) {
+  const idPart = product?.id || "";
+  const namePart = String(product?.name || "").trim().toLowerCase();
+  return `${shopId || "default"}::${idPart || namePart}`;
+}
+
+function saveProductImage(shopId, product, imageUrl) {
+  if (!imageUrl) return;
+  const store = productImageStore();
+  store[productImageKey(shopId, product)] = imageUrl;
+  if (product?.id && product?.name) {
+    store[`${shopId || "default"}::${String(product.name).trim().toLowerCase()}`] = imageUrl;
+  }
+  localStorage.setItem(PRODUCT_IMAGE_STORAGE_KEY, JSON.stringify(store));
+}
+
+function getStoredProductImage(shopId, product = {}) {
+  const store = productImageStore();
+  const direct = store[productImageKey(shopId, product)];
+  if (direct) return direct;
+  if (product?.id && product?.name) {
+    return store[`${shopId || "default"}::${String(product.name).trim().toLowerCase()}`] || "";
+  }
+  return "";
+}
+
+function resolveProductImage(product = {}, shopId = activeShopId()) {
+  return product?.image_url || product?.imageUrl || product?.image || getStoredProductImage(shopId, product) || "";
+}
+
 function productImageMarkup(product, variant = "large") {
-  const imageUrl = product?.image_url || product?.imageUrl;
+  const imageUrl = resolveProductImage(product);
   const thumbClass = variant === "small" ? "product-thumb product-thumb--small" : "product-thumb";
   if (!imageUrl) {
     return `<div class="${thumbClass} product-thumb--placeholder" aria-hidden="true">${safeText((product?.name || "P").slice(0, 1).toUpperCase())}</div>`;
@@ -1533,7 +1572,11 @@ function retailPricingSummary() {
   }
   storeCreditUsed = Math.min(storeCreditUsed, beforeCredit);
   const total = Math.max(0, beforeCredit - storeCreditUsed);
-  const moneyReceived = Math.max(0, Number(elements.moneyReceivedInput?.value || 0));
+  const receivedInput = Math.max(0, Number(elements.moneyReceivedInput?.value || 0));
+  const receivedCurrency = elements.moneyReceivedCurrency?.value || "usd";
+  const moneyReceived = receivedCurrency === "khr"
+    ? receivedInput / Math.max(1, exchangeRateKhr())
+    : receivedInput;
   const changeDue = moneyReceived >= total ? moneyReceived - total : 0;
   const balanceDue = moneyReceived >= total ? 0 : total - moneyReceived;
   return {
@@ -1546,6 +1589,8 @@ function retailPricingSummary() {
     tax,
     storeCreditUsed,
     total,
+    receivedInput,
+    receivedCurrency,
     moneyReceived,
     changeDue,
     balanceDue,
@@ -1777,10 +1822,11 @@ function settingsSharedProfileAndPaymentMarkup(includeRetailSettings = false) {
         </label>
         <label>
           <span>${state.language === "en" ? "POS product display mode" : "របៀបបង្ហាញទំនិញ POS"}</span>
-          <select id="settingsDisplayMode">
+          <select id="settingsDisplayMode" disabled>
             <option value="cafe">${state.language === "en" ? "Cafe / restaurant cards" : "កាតធំ សម្រាប់កាហ្វេ / អាហារ"}</option>
             <option value="retail">${state.language === "en" ? "Retail / supermarket compact" : "បែប Retail / Supermarket"}</option>
           </select>
+          <small class="meta-line">${state.language === "en" ? "Assigned by platform admin when the shop account is created." : "កំណត់ដោយ Platform admin ពេលបង្កើតគណនីហាង។"}</small>
         </label>
       </div>
     </section>
@@ -2417,7 +2463,10 @@ function renderSettings() {
   if (elements.settingsExchangeRate) elements.settingsExchangeRate.value = Math.max(1, Number(settings.exchange_rate_khr || 4100));
   if (elements.settingsVatEnabled) elements.settingsVatEnabled.checked = settings.vat_enabled !== false && settings.vat_enabled !== "false";
   if (elements.settingsVatRate) elements.settingsVatRate.value = Number(settings.vat_rate ?? settings.retail_tax_rate ?? 0);
-  if (elements.settingsDisplayMode) elements.settingsDisplayMode.value = productDisplayMode();
+  if (elements.settingsDisplayMode) {
+    elements.settingsDisplayMode.value = currentShopType() === "retail" ? "retail" : "cafe";
+    elements.settingsDisplayMode.disabled = true;
+  }
   if (elements.settingsRetailTaxRate) elements.settingsRetailTaxRate.value = Number(settings.vat_rate ?? settings.retail_tax_rate ?? 0);
   if (elements.settingsRetailBarcodeMode) elements.settingsRetailBarcodeMode.value = settings.retail_barcode_mode || "camera";
   if (elements.settingsRetailStoreCreditLabel) elements.settingsRetailStoreCreditLabel.value = settings.retail_store_credit_label || "Store credit";
@@ -2659,7 +2708,7 @@ function posCategoryMarkup() {
 
 function fnbPosMarkup() {
   return `
-    <div class="pos-layout pos-layout--fnb">
+    <div class="pos-layout">
       <article class="panel panel--pos-main">
         <div class="pos-head">
           <div>
@@ -2668,7 +2717,6 @@ function fnbPosMarkup() {
           </div>
           <div class="pos-head__meta">
             <span id="currentSystemBadge" class="tag tag--system">F&amp;B POS</span>
-            <span class="tag" data-i18n="fixedPriceTag">Fixed prices</span>
             <button id="clearCartButton" class="ghost-button" type="button" data-i18n="clearCart">Clear cart</button>
           </div>
         </div>
@@ -2739,17 +2787,30 @@ function fnbPosMarkup() {
             <strong id="cartSubtotal">$0.00</strong>
           </div>
           <div class="checkout-line checkout-line--muted">
-            <span>${state.language === "en" ? "VAT %" : "VAT %"}</span>
+            <span>VAT %</span>
             <span id="cartVatRate">Off</span>
           </div>
           <div class="checkout-line checkout-line--muted">
             <span>${state.language === "en" ? "Exchange rate" : "អត្រាប្តូរ"}</span>
             <span id="cartExchangeRate">1 USD = 4,100៛</span>
           </div>
-          <label class="cart-footer__fee">
-            <span>${state.language === "en" ? "Money received" : "ប្រាក់ទទួល"}</span>
-            <input id="moneyReceivedInput" type="number" min="0" step="0.01" value="0">
-          </label>
+          <div class="checkout-money-row">
+            <label class="cart-footer__fee">
+              <span>${state.language === "en" ? "Money received" : "ប្រាក់ទទួល"}</span>
+              <input id="moneyReceivedInput" type="number" min="0" step="0.01" value="0">
+            </label>
+            <label class="cart-footer__fee cart-footer__fee--compact">
+              <span>${state.language === "en" ? "Currency" : "រូបិយប័ណ្ណ"}</span>
+              <select id="moneyReceivedCurrency">
+                <option value="usd">USD ($)</option>
+                <option value="khr">KHR (៛)</option>
+              </select>
+            </label>
+          </div>
+          <div class="checkout-line checkout-line--muted">
+            <span>${state.language === "en" ? "Received value" : "ប្រាក់ទទួល"}</span>
+            <span id="cartMoneyReceived">$0.00</span>
+          </div>
           <div class="checkout-line checkout-line--muted">
             <span data-change-label>${state.language === "en" ? "Change" : "ប្រាក់អាប់"}</span>
             <span id="cartChangeDue">$0.00</span>
@@ -2888,7 +2949,7 @@ function retailPosMarkup() {
             <span id="cartTax">$0.00</span>
           </div>
           <div class="checkout-line checkout-line--muted">
-            <span>${state.language === "en" ? "VAT %" : "VAT %"}</span>
+            <span>VAT %</span>
             <span id="cartVatRate">0%</span>
           </div>
           <div class="checkout-line checkout-line--muted">
@@ -2899,10 +2960,23 @@ function retailPosMarkup() {
             <span data-i18n="storeCreditApplyLabel">Store credit</span>
             <span id="cartStoreCredit">$0.00</span>
           </div>
-          <label class="cart-footer__fee">
-            <span>${state.language === "en" ? "Money received" : "ប្រាក់ទទួល"}</span>
-            <input id="moneyReceivedInput" type="number" min="0" step="0.01" value="0">
-          </label>
+          <div class="checkout-money-row">
+            <label class="cart-footer__fee">
+              <span>${state.language === "en" ? "Money received" : "ប្រាក់ទទួល"}</span>
+              <input id="moneyReceivedInput" type="number" min="0" step="0.01" value="0">
+            </label>
+            <label class="cart-footer__fee cart-footer__fee--compact">
+              <span>${state.language === "en" ? "Currency" : "រូបិយប័ណ្ណ"}</span>
+              <select id="moneyReceivedCurrency">
+                <option value="usd">USD ($)</option>
+                <option value="khr">KHR (៛)</option>
+              </select>
+            </label>
+          </div>
+          <div class="checkout-line checkout-line--muted">
+            <span>${state.language === "en" ? "Received value" : "ប្រាក់ទទួល"}</span>
+            <span id="cartMoneyReceived">$0.00</span>
+          </div>
           <div class="checkout-line checkout-line--muted">
             <span data-change-label>${state.language === "en" ? "Change" : "ប្រាក់អាប់"}</span>
             <span id="cartChangeDue">$0.00</span>
@@ -2946,6 +3020,7 @@ function syncPosElementReferences() {
   elements.retailTaxRateInput = document.getElementById("retailTaxRateInput");
   elements.retailStoreCreditInput = document.getElementById("retailStoreCreditInput");
   elements.moneyReceivedInput = document.getElementById("moneyReceivedInput");
+  elements.moneyReceivedCurrency = document.getElementById("moneyReceivedCurrency");
   elements.cartSubtotal = document.getElementById("cartSubtotal");
   elements.cartItemDiscount = document.getElementById("cartItemDiscount");
   elements.cartSubtotalDiscount = document.getElementById("cartSubtotalDiscount");
@@ -2998,6 +3073,7 @@ function bindPosEvents() {
     input?.addEventListener("input", () => renderCart());
   });
   elements.moneyReceivedInput?.addEventListener("input", () => renderCart());
+  elements.moneyReceivedCurrency?.addEventListener("change", () => renderCart());
   elements.quickProductList?.addEventListener("click", (event) => {
     const favoriteButton = event.target.closest("[data-favorite-product-id]");
     if (favoriteButton) {
@@ -3031,6 +3107,7 @@ function bindPosEvents() {
   elements.clearCartButton?.addEventListener("click", () => {
     state.cart = [];
     if (elements.moneyReceivedInput) elements.moneyReceivedInput.value = "0";
+    if (elements.moneyReceivedCurrency) elements.moneyReceivedCurrency.value = "usd";
     renderAll();
   });
   elements.checkoutButton?.addEventListener("click", async () => {
@@ -3382,9 +3459,7 @@ function renderProducts() {
   const query = state.productSearchQuery.trim().toLowerCase();
   const displayMode = productDisplayMode();
   const filteredProducts = state.products
-    .filter((product, index) => {
-      const left = effectiveStock(product);
-      const lowAt = Number(product.low_stock_at ?? product.lowStockAt ?? 0);
+    .filter((product) => {
       if (state.productFilter !== "all" && (product.category_id || product.categoryId) !== state.productFilter) return false;
       if (!query) return true;
       return [
@@ -3424,35 +3499,29 @@ function renderProducts() {
         const actionLabel = isRetailShop()
           ? (optionCount ? (state.language === "en" ? "Open details" : "បើកព័ត៌មានទំនិញ") : (state.language === "en" ? "Add to cart" : "បន្ថែមទៅកន្ត្រក"))
           : (optionCount ? t("optionsCountLabel", { count: optionCount }) : t("tapToAdd"));
+        const compactActionLabel = isRetailShop()
+          ? (state.language === "en" ? "Quick sell" : "លក់លឿន")
+          : actionLabel;
         return `
           <article class="quick-product ${displayMode === "retail" ? "quick-product--compact" : ""} ${favorite ? "quick-product--favorite" : ""}">
-            <button class="quick-product__favorite ${favorite ? "quick-product__favorite--active" : ""}" type="button" data-favorite-product-id="${product.id}" aria-label="${safeText(state.language === "en" ? "Toggle favorite" : "បិទបើកចំណូលចិត្ត")}">♥</button>
+            <button class="quick-product__favorite ${favorite ? "quick-product__favorite--active" : ""}" type="button" data-favorite-product-id="${product.id}" aria-label="${safeText(state.language === "en" ? "Toggle favorite" : "បិទបើកចំណូលចិត្ត")}">&#9829;</button>
             <button class="quick-product__body" type="button" data-quick-product-id="${product.id}" ${left <= 0 ? "disabled" : ""}>
               ${productImageMarkup(product)}
               <div class="quick-product__copy">
-                <strong>${safeText(product.name)}</strong>
+                <div class="quick-product__title-row">
+                  <strong>${safeText(product.name)}</strong>
+                  ${displayMode === "retail" ? `<span class="quick-product__scan-tag">${safeText(product.sku || product.barcode || (state.language === "en" ? "Ready" : "រួចរាល់"))}</span>` : ""}
+                </div>
                 ${category ? `<small>${safeText(category.name)}</small>` : ""}
-                ${retailMeta ? `<small>${safeText(retailMeta.replaceAll(" â€¢ ", " • "))}</small>` : ""}
+                ${retailMeta ? `<small>${safeText(retailMeta)}</small>` : ""}
                 <div class="quick-product__price">${moneyPairMarkup(product.price)}</div>
                 <div class="quick-product__footer">
                   <span class="quick-product__stock">${safeText(state.language === "en" ? `${left} in stock` : `${left} ស្តុក`)}</span>
-                  <span class="quick-product__hint">${safeText(actionLabel)}</span>
+                  <span class="quick-product__hint">${safeText(displayMode === "retail" ? compactActionLabel : actionLabel)}</span>
                 </div>
               </div>
             </button>
           </article>
-        `;
-        return `
-          <button class="quick-product" type="button" data-quick-product-id="${product.id}" ${left <= 0 ? "disabled" : ""}>
-            ${productImageMarkup(product)}
-            <strong>${safeText(product.name)}</strong>
-            ${category ? `<small>${safeText(category.name)}</small>` : ""}
-            ${retailMeta ? `<small>${safeText(retailMeta)}</small>` : ""}
-            <span>${money(product.price)} • ${left}</span>
-            <span class="quick-product__hint">${safeText(isRetailShop()
-              ? (optionCount ? (state.language === "en" ? "Open details" : "បើកព័ត៌មានទំនិញ") : (state.language === "en" ? "Add to cart" : "បន្ថែមទៅកន្ត្រក"))
-              : (optionCount ? t("optionsCountLabel", { count: optionCount }) : t("tapToAdd")))}</span>
-          </button>
         `;
       }).join("")
     : blankState(t("noProducts"));
@@ -3514,7 +3583,7 @@ function renderOrdersHistory() {
   const salesTotal = filteredOrders.reduce((sum, order) => sum + Number(order.total || 0), 0);
   elements.ordersPageCount.textContent = filteredOrders.length;
   if (elements.ordersPageCountSummary) elements.ordersPageCountSummary.textContent = filteredOrders.length;
-  if (elements.ordersSalesTotal) elements.ordersSalesTotal.textContent = money(salesTotal);
+  if (elements.ordersSalesTotal) setMoneyPair(elements.ordersSalesTotal, salesTotal);
   if (elements.ordersCustomerCount) elements.ordersCustomerCount.textContent = buyerCount;
   elements.ordersHistoryList.innerHTML = filteredOrders.length
     ? filteredOrders.map((order) => `
@@ -3526,7 +3595,7 @@ function renderOrdersHistory() {
             <div class="meta-line">${safeText(orderSummary(order))}</div>
           </div>
           <div class="record-actions">
-            <strong>${money(order.total)}</strong>
+            ${moneyPairMarkup(order.total, "money-stack--inline")}
             <div class="record-actions__buttons">
               <button class="secondary-button" type="button" data-open-receipt-id="${order.id}">${t("receiptTitle")}</button>
               <button class="delete-button" type="button" data-order-id="${order.id}">${t("deleteButton")}</button>
@@ -3548,7 +3617,7 @@ function renderReports() {
   elements.reportOrderCount.textContent = state.orders.length;
   elements.reportItemCount.textContent = itemCount;
   elements.reportLowStockCount.textContent = lowStock.length;
-  if (elements.reportSalesTotal) elements.reportSalesTotal.textContent = money(salesTotal);
+  if (elements.reportSalesTotal) setMoneyPair(elements.reportSalesTotal, salesTotal);
   elements.orderCount.textContent = recentOrders.length;
   elements.lowStockLabel.textContent = lowStock.length;
   elements.orderList.innerHTML = recentOrders.length
@@ -3566,7 +3635,7 @@ function renderReports() {
             </div>
           </div>
           <div class="record-actions">
-            <strong>${money(order.total)}</strong>
+            ${moneyPairMarkup(order.total, "money-stack--inline")}
             <div class="record-actions__buttons">
               <button class="secondary-button" type="button" data-open-receipt-id="${order.id}">${t("receiptTitle")}</button>
             </div>
@@ -3777,10 +3846,18 @@ async function handleSaveProduct(event) {
       message: state.language === "en" ? "Please wait..." : "ážŸáž¼áž˜ážšáž„áŸ‹áž…áž¶áŸ†...",
       successTitle: state.language === "en" ? "Product saved" : "ážšáž€áŸ’ážŸáž¶áž‘áž»áž€áž”áž¶áž“"
     }, () => backend.saveProduct(activeShopId(), payload));
+    const finalProduct = {
+      ...(savedProduct || {}),
+      ...payload,
+      id: savedProduct?.id || existing?.id || crypto.randomUUID(),
+      shop_id: activeShopId(),
+      image_url: savedProduct?.image_url || payload.image_url || resolveProductImage(existing || payload, activeShopId())
+    };
+    if (finalProduct.image_url) saveProductImage(activeShopId(), finalProduct, finalProduct.image_url);
     if (existing) {
-      Object.assign(existing, savedProduct || payload);
+      Object.assign(existing, finalProduct);
     } else {
-      state.products.push(savedProduct || { id: crypto.randomUUID(), shop_id: activeShopId(), ...payload });
+      state.products.push(finalProduct);
     }
   } catch (error) {
     window.alert(error.message || t("saveProductFailed"));
@@ -3878,7 +3955,7 @@ async function handleSaveSettings(event) {
       exchange_rate_khr: Math.max(1, Number(elements.settingsExchangeRate?.value || 4100)),
       vat_enabled: Boolean(elements.settingsVatEnabled?.checked),
       vat_rate: Math.max(0, Number(elements.settingsVatRate?.value || 0)),
-      product_display_mode: elements.settingsDisplayMode?.value || (currentShopType() === "retail" ? "retail" : "cafe"),
+      product_display_mode: currentShopType() === "retail" ? "retail" : "cafe",
       favorite_product_ids: favoriteProductIds(),
       retail_tax_rate: Math.max(0, Number(elements.settingsVatRate?.value || elements.settingsRetailTaxRate?.value || 0)),
       retail_barcode_mode: elements.settingsRetailBarcodeMode?.value || "camera",
@@ -4094,7 +4171,9 @@ function buildReceipt(order) {
     subtotalDiscount: Number(order.subtotal_discount || 0),
     tax: Number(order.tax || 0),
     storeCreditUsed: Number(order.store_credit_used || 0),
-    shopType: currentShopType()
+    shopType: currentShopType(),
+    exchangeRateLabel: exchangeRateLabel(),
+    vatRateLabel: vatEnabled() ? `${vatRate()}%` : (state.language === "en" ? "Off" : "បិទ")
   };
 }
 
@@ -4125,18 +4204,20 @@ function renderReceipt() {
   elements.receiptItems.innerHTML = state.latestReceipt.items.map((item) => `
       <div class="receipt-row">
         <span>${item.qty}</span>
-        <span>${safeText(item.name)}${itemOptionsMarkup(item)}<small>${money(item.price)} x ${item.qty}${item.sku ? ` • ${safeText(item.sku)}` : ""}</small></span>
-        <span>${money(item.qty * item.price)}</span>
+        <span>${safeText(item.name)}${itemOptionsMarkup(item)}<small>${money(item.price)} / ${moneyKhr(item.price)} x ${item.qty}${item.sku ? ` • ${safeText(item.sku)}` : ""}</small></span>
+        <span>${moneyPairMarkup(item.qty * item.price, "money-stack--inline")}</span>
       </div>
     `).join("");
   elements.receiptRetailSummary?.classList.toggle("hidden", !isRetailShop());
-  if (elements.receiptItemDiscount) elements.receiptItemDiscount.textContent = money(state.latestReceipt.itemDiscount || 0);
-  if (elements.receiptSubtotalDiscount) elements.receiptSubtotalDiscount.textContent = money(state.latestReceipt.subtotalDiscount || 0);
-  if (elements.receiptTax) elements.receiptTax.textContent = money(state.latestReceipt.tax || 0);
-  if (elements.receiptStoreCredit) elements.receiptStoreCredit.textContent = money(state.latestReceipt.storeCreditUsed || 0);
-  elements.receiptSubtotal.textContent = money(state.latestReceipt.subtotal);
-  elements.receiptFee.textContent = money(state.latestReceipt.fee);
-  elements.receiptTotal.textContent = money(state.latestReceipt.total);
+  if (elements.receiptItemDiscount) setMoneyPair(elements.receiptItemDiscount, state.latestReceipt.itemDiscount || 0);
+  if (elements.receiptSubtotalDiscount) setMoneyPair(elements.receiptSubtotalDiscount, state.latestReceipt.subtotalDiscount || 0);
+  if (elements.receiptTax) setMoneyPair(elements.receiptTax, state.latestReceipt.tax || 0);
+  if (elements.receiptStoreCredit) setMoneyPair(elements.receiptStoreCredit, state.latestReceipt.storeCreditUsed || 0);
+  if (elements.receiptVatRate) elements.receiptVatRate.textContent = state.latestReceipt.vatRateLabel || "-";
+  if (elements.receiptExchangeRate) elements.receiptExchangeRate.textContent = state.latestReceipt.exchangeRateLabel || "-";
+  setMoneyPair(elements.receiptSubtotal, state.latestReceipt.subtotal);
+  setMoneyPair(elements.receiptFee, state.latestReceipt.fee);
+  setMoneyPair(elements.receiptTotal, state.latestReceipt.total, "money-stack--grand");
   elements.receiptNote.textContent = state.latestReceipt.note || "";
   elements.receiptNote.classList.toggle("hidden", !state.latestReceipt.note);
   elements.receiptBarcodeValue.textContent = state.latestReceipt.barcodeValue || "";
@@ -4283,6 +4364,7 @@ async function completePayment() {
     elements.buyerPhone.value = "";
     elements.orderFee.value = "0";
     if (elements.moneyReceivedInput) elements.moneyReceivedInput.value = "0";
+    if (elements.moneyReceivedCurrency) elements.moneyReceivedCurrency.value = "usd";
     if (elements.retailSubtotalDiscountInput) elements.retailSubtotalDiscountInput.value = "0";
     if (elements.retailStoreCreditInput) elements.retailStoreCreditInput.value = "0";
     state.latestReceipt = buildReceipt(receiptOrder);
@@ -4309,7 +4391,12 @@ function backToPaymentChoice() {
 
 function previewImage(input, target) {
   const [file] = input.files || [];
-  if (!file || !target) return;
+  if (!target) return;
+  if (!file) {
+    target.src = "";
+    target.classList.add("hidden");
+    return;
+  }
   const reader = new FileReader();
   reader.onload = () => {
     target.src = String(reader.result || "");
@@ -5643,6 +5730,7 @@ async function loadDashboardData() {
   });
   state.products = data.products.map((row) => ({
     ...row,
+    image_url: row.image_url || row.imageUrl || getStoredProductImage(shopId, row) || "",
     stock_qty: Number(row.stock_qty ?? row.stockQty ?? 0),
     price: Number(row.price || 0),
     cost_price: Number(row.cost_price || 0),
@@ -5785,7 +5873,7 @@ function resetOrderInputs() {
 }
 
 function syncProductFormPreview(product = null) {
-  const imageUrl = product?.image_url || "";
+  const imageUrl = resolveProductImage(product || {});
   elements.productImagePreview.src = imageUrl || "";
   elements.productImagePreview.classList.toggle("hidden", !imageUrl);
   const options = productOptionState(product || {});
